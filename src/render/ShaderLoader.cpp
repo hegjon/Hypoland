@@ -1,4 +1,5 @@
 #include "ShaderLoader.hpp"
+#include "GLES2ShaderCompat.hpp"
 #include <format>
 #include <hyprutils/memory/Casts.hpp>
 #include <hyprutils/memory/UniquePtr.hpp>
@@ -14,7 +15,8 @@
 
 using namespace Render;
 
-CShaderLoader::CShaderLoader(const std::vector<std::string> includes, const std::array<std::string, SH_FRAG_LAST>& frags, const std::string shaderPath) : m_shaderPath(shaderPath) {
+CShaderLoader::CShaderLoader(const std::vector<std::string> includes, const std::array<std::string, SH_FRAG_LAST>& frags, const std::string shaderPath, bool legacyGLES) :
+    m_legacyGLES(legacyGLES), m_shaderPath(shaderPath) {
     m_callbacks = glsl_include_callbacks_t{
         .include_local =
             [](void* ctx, const char* header_name, const char* includer_name, size_t include_depth) {
@@ -132,7 +134,19 @@ std::string CShaderLoader::processSource(const std::string& source, glslang_stag
     }
 
     glslang_shader_delete(shader);
-    return code;
+
+    if (!m_legacyGLES)
+        return code;
+
+    // The shaders are written in GLSL ES 3.00. On a GLES2-only driver they are
+    // rewritten into GLSL ES 1.00 here, now that includes and #ifs have been
+    // resolved by the preprocessor above.
+    const auto DOWNGRADED = NGLES2Shader::downgradeToES100(code, stage == GLSLANG_STAGE_VERTEX);
+    if (!DOWNGRADED.ok) {
+        Log::logger->log(Log::ERR, "GLES2: cannot downgrade shader to GLSL ES 1.00: {}", DOWNGRADED.error);
+        throw std::runtime_error(std::format("shader is not expressible in GLSL ES 1.00: {}", DOWNGRADED.error));
+    }
+    return DOWNGRADED.source;
 }
 
 std::string CShaderLoader::process(const std::string& filename) {
@@ -152,6 +166,11 @@ std::string CShaderLoader::process(const std::string& filename, const std::map<s
 
 std::string CShaderLoader::getVariantSource(ePreparedFragmentShader frag, SShaderVariant variant) {
     static const auto PCM = CConfigValue<Config::INTEGER>("render:cm_enabled");
+    // None of these can be expressed in GLSL ES 1.00: colour management and
+    // tonemapping need switch/inverse/transpose, ICC needs sampler3D, mirror
+    // needs a second colour attachment, and motion blur needs textureSize.
+    if (m_legacyGLES)
+        variant.features &= ~(SH_FEAT_CM | SH_FEAT_TONEMAP | SH_FEAT_ALT_TONEMAP | SH_FEAT_SDR_MOD | SH_FEAT_ICC | SH_FEAT_MIRROR | SH_FEAT_MOTION_BLUR);
     if (!*PCM)
         variant.features &= ~(SH_FEAT_CM | SH_FEAT_TONEMAP | SH_FEAT_ALT_TONEMAP | SH_FEAT_SDR_MOD);
 

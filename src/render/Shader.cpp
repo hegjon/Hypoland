@@ -1,4 +1,5 @@
 #include "Shader.hpp"
+#include <utility>
 #include "../errorOverlay/Overlay.hpp"
 #include "../config/ConfigValue.hpp"
 #include "OpenGL.hpp"
@@ -423,6 +424,18 @@ void CShader::setUniformMatrix3fv(eShaderUniform location, GLsizei count, GLbool
     if (m_uniformLocations.at(location) == -1)
         return;
 
+    // GLES2 requires transpose to be GL_FALSE: glUniformMatrix3fv raises
+    // GL_INVALID_VALUE otherwise, the uniform is left at its default, and every
+    // vertex collapses to the origin -- a completely blank screen with no error
+    // anywhere else. Transpose on the CPU instead, which is what the renderer
+    // did before the legacy path was removed.
+    if (transpose == GL_TRUE && g_pHyprOpenGL->m_legacyGLES) {
+        std::swap(value[1], value[3]);
+        std::swap(value[2], value[6]);
+        std::swap(value[5], value[7]);
+        transpose = GL_FALSE;
+    }
+
     auto& cached = uniformStatus.at(location);
 
     if (cached.index() != 0) {
@@ -448,6 +461,13 @@ void CShader::setUniformMatrix4x2fv(eShaderUniform location, GLsizei count, GLbo
     }
 
     cached = SUniformMatrix4Data{.count = count, .transpose = transpose, .value = value};
+    // Non-square matrix uniforms do not exist in GLES2. No shader on the legacy
+    // path uses one, so this is unreachable there rather than merely skipped.
+    if (g_pHyprOpenGL->m_legacyGLES) {
+        Log::logger->log(Log::ERR, "setUniformMatrix4x2fv is unsupported on the GLES2 render path");
+        return;
+    }
+
     GLCALL(glUniformMatrix4x2fv(m_uniformLocations[location], count, transpose, value.data()));
 }
 

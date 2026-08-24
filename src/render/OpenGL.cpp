@@ -1,4 +1,5 @@
 #include <GLES3/gl32.h>
+#include "../helpers/GLES2Compat.hpp"
 #include <cstdint>
 #include <hyprgraphics/color/Color.hpp>
 #include <hyprutils/memory/SharedPtr.hpp>
@@ -152,6 +153,10 @@ static int openRenderNode(int drmFd) {
 }
 
 static ShaderFeatureFlags globalFeatures() {
+    // GLES2 has a single colour attachment, so the mirror pass cannot run.
+    if (g_pHyprOpenGL->m_legacyGLES)
+        return 0;
+
     return g_pHyprRenderer->m_renderData.pMonitor && g_pHyprRenderer->m_renderData.pMonitor->needsUnmodifiedCopy() && g_pHyprRenderer->m_renderData.currentFB->getMirrorTexture() ?
         SH_FEAT_MIRROR :
         0;
@@ -224,8 +229,22 @@ void CHyprOpenGLImpl::initEGL(bool gbm) {
         m_eglContext        = eglCreateContext(m_eglDisplay, EGL_NO_CONFIG_KHR, EGL_NO_CONTEXT, attrs.data());
         m_eglContextVersion = EGL_CONTEXT_GLES_3_0;
 
-        if (m_eglContext == EGL_NO_CONTEXT)
-            RASSERT(false, "EGL: failed to create a context with either GLES3.2 or 3.0");
+        if (m_eglContext == EGL_NO_CONTEXT) {
+            // Pre-GLES3 hardware (Intel gen4/4.5/5 under crocus) refuses a GLES3
+            // context outright, so drop to 2.0 rather than giving up.
+            Log::logger->log(Log::WARN, "EGL: Failed to create a context with GLES3.0, retrying 2.0");
+
+            attrs = attrsNoVer;
+            attrs.push_back(EGL_CONTEXT_CLIENT_VERSION);
+            attrs.push_back(2);
+            attrs.push_back(EGL_NONE);
+
+            m_eglContext        = eglCreateContext(m_eglDisplay, EGL_NO_CONFIG_KHR, EGL_NO_CONTEXT, attrs.data());
+            m_eglContextVersion = EGL_CONTEXT_GLES_2_0;
+
+            if (m_eglContext == EGL_NO_CONTEXT)
+                RASSERT(false, "EGL: failed to create a context with GLES3.2, 3.0 or 2.0");
+        }
     }
 
     if (m_exts.IMG_context_priority) {
@@ -238,6 +257,17 @@ void CHyprOpenGLImpl::initEGL(bool gbm) {
     }
 
     eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, m_eglContext);
+
+    // Only the version the driver reports is authoritative: requesting a GLES2
+    // context on modern hardware still yields a 3.2 one, so the requested
+    // version cannot be used to pick the render path.
+    m_legacyGLES = NGLES2Compat::currentContextIsGLES2();
+
+    if (m_legacyGLES) {
+        m_eglContextVersion = EGL_CONTEXT_GLES_2_0;
+        Log::logger->log(Log::WARN, "!RENDERER: GLES2-only driver detected, using the legacy render path");
+        RASSERT(NGLES2Compat::checkVertexArrayObjectExt(), "GLES2: GL_OES_vertex_array_object is required but unavailable");
+    }
 }
 
 static bool drmDeviceHasName(const drmDevice* device, const std::string& name) {
@@ -619,7 +649,10 @@ void CHyprOpenGLImpl::initDRMFormats() {
     m_drmFormats = dmaFormats;
 
     // FP16 needs both a half float renderable color buffer and the drm format
-    m_fp16Supported = m_exts.EXT_color_buffer_half_float && std::ranges::any_of(m_drmFormats, [](const auto& fmt) { return fmt.drmFormat == DRM_FORMAT_ABGR16161616F; });
+    // A half-float colour buffer needs a sized internal format, which GLES2
+    // does not have, so fp16 render targets are off on the legacy path.
+    m_fp16Supported =
+        !m_legacyGLES && m_exts.EXT_color_buffer_half_float && std::ranges::any_of(m_drmFormats, [](const auto& fmt) { return fmt.drmFormat == DRM_FORMAT_ABGR16161616F; });
 
     if (!m_fp16Supported)
         Log::logger->log(Log::WARN, "Your GPU does not support rendering to FP16 buffers, some effects and CM settings might be unavailable.");
@@ -682,7 +715,9 @@ EGLImageKHR CHyprOpenGLImpl::createEGLImage(const Aquamarine::SDMABUFAttrs& attr
 void CHyprOpenGLImpl::beginSimple(PHLMONITOR pMonitor, const CRegion& damage, SP<IRenderbuffer> rb, SP<IFramebuffer> fb) {
     g_pHyprRenderer->m_renderData.pMonitor = pMonitor;
 
-    const GLenum RESETSTATUS = glGetGraphicsResetStatus();
+    // glGetGraphicsResetStatus needs GLES 3.2 (or KHR_robustness, which the old
+    // Intel parts the legacy path targets do not advertise).
+    const GLenum RESETSTATUS = m_legacyGLES ? GL_NO_ERROR : glGetGraphicsResetStatus();
     if (RESETSTATUS != GL_NO_ERROR) {
         std::string errStr = "";
         switch (RESETSTATUS) {
@@ -728,7 +763,9 @@ void CHyprOpenGLImpl::makeEGLCurrent() {
 void CHyprOpenGLImpl::begin(PHLMONITOR pMonitor, const CRegion& damage_, SP<IFramebuffer> fb, std::optional<CRegion> finalDamage) {
     g_pHyprRenderer->m_renderData.pMonitor = pMonitor;
 
-    const GLenum RESETSTATUS = glGetGraphicsResetStatus();
+    // glGetGraphicsResetStatus needs GLES 3.2 (or KHR_robustness, which the old
+    // Intel parts the legacy path targets do not advertise).
+    const GLenum RESETSTATUS = m_legacyGLES ? GL_NO_ERROR : glGetGraphicsResetStatus();
     if (RESETSTATUS != GL_NO_ERROR) {
         std::string errStr = "";
         switch (RESETSTATUS) {
@@ -978,17 +1015,43 @@ const std::array<std::string, SH_FRAG_LAST> FRAG_SHADERS = {
     "hazefinish.frag",
 };
 
+// These effects need GLSL ES 3.00 features with no ES 1.00 equivalent:
+// textureSize() (ripple, water, prism, acrylic, fluidjar finish) and unsigned
+// integer samplers (the whole fluid-jar simulation). On a GLES2-only driver
+// they are swapped for a plain passthrough, so selecting one of these blur
+// styles simply has no visual effect rather than failing to compile.
+static const std::array<std::string_view, 12> GLES2_UNSUPPORTED_EFFECTS = {
+    "ripplefinish.frag",   "waterfinish.frag",      "fluidjarinit.frag",
+    "fluidjarstep.frag",   "fluidjargraph.frag",    "fluidjartrack.frag",
+    "fluidjarvisual.frag", "fluidjarresample.frag", "fluidjartrackingresample.frag",
+    "fluidjarfinish.frag", "prismfinish.frag",      "acrylicfinish.frag",
+};
+
+static std::array<std::string, SH_FRAG_LAST> fragShadersFor(bool legacyGLES) {
+    auto frags = FRAG_SHADERS;
+    if (!legacyGLES)
+        return frags;
+
+    for (auto& f : frags) {
+        if (std::ranges::contains(GLES2_UNSUPPORTED_EFFECTS, f))
+            f = "passthru.frag";
+    }
+    return frags;
+}
+
 bool CHyprOpenGLImpl::initShaders(const std::string& path) {
     auto              shaders = makeShared<SPreparedShaders>();
     static const auto PCM     = CConfigValue<Config::INTEGER>("render:cm_enabled");
 
     try {
-        auto shaderLoader = makeUnique<CShaderLoader>(SHADER_INCLUDES, FRAG_SHADERS, path);
+        auto shaderLoader = makeUnique<CShaderLoader>(SHADER_INCLUDES, fragShadersFor(m_legacyGLES), path, m_legacyGLES);
 
         shaders->TEXVERTSRC    = shaderLoader->process("tex300.vert");
         shaders->TEXVERTSRC320 = shaderLoader->process("tex320.vert");
 
-        m_cmSupported = *PCM;
+        // Colour management needs GLSL ES 3.00 (switch, inverse, transpose,
+        // sampler3D), none of which exist in ES 1.00.
+        m_cmSupported = *PCM && !m_legacyGLES;
 
         g_pShaderLoader = std::move(shaderLoader);
 
@@ -2475,6 +2538,16 @@ void CHyprOpenGLImpl::bindFramebuffer(GLenum target, GLuint fb) {
 
     if ((DRAW || READ) && (!DRAW || m_boundDrawFB == fb) && (!READ || m_boundReadFB == fb))
         return;
+
+    if (m_legacyGLES) {
+        // GLES2 has only the combined GL_FRAMEBUFFER target; separate read and
+        // draw bindings arrived with GLES3. Binding the combined target sets
+        // both, so both have to be recorded or a later bind would be skipped.
+        GLCALL(glBindFramebuffer(GL_FRAMEBUFFER, fb));
+        m_boundDrawFB = fb;
+        m_boundReadFB = fb;
+        return;
+    }
 
     GLCALL(glBindFramebuffer(target, fb));
 

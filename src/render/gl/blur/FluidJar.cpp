@@ -372,7 +372,10 @@ void CFluidJarBlurMaterial::clearIntegerBuffers(const std::array<SP<CGLFramebuff
         buffer->bind();
         g_pHyprRenderer->disableScissor();
         g_pHyprRenderer->blend(false);
-        glClearBufferuiv(GL_COLOR, 0, CLEAR_VALUE.data());
+        // Integer render targets do not exist in GLES2, so the fluid-jar blur
+        // cannot work at all there; it is gated off when shaders are loaded.
+        if (!g_pHyprOpenGL->m_legacyGLES)
+            glClearBufferuiv(GL_COLOR, 0, CLEAR_VALUE.data());
     }
 }
 

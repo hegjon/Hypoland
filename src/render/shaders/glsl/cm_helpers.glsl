@@ -18,6 +18,9 @@ vec4 saturate(vec4 color, mat3 primaries, float saturation) {
 }
 #endif
 
+#if USE_ICC
+// sampler3D is GLES3-only, and this helper is only ever called from the USE_ICC
+// path, so keep its definition behind the same guard as its call sites.
 vec3 applyIcc3DLut(vec3 linearRgb01, highp sampler3D iccLut3D, float iccLutSize) {
     vec3 x = clamp(linearRgb01, 0.0, 1.0);
 
@@ -27,6 +30,7 @@ vec3 applyIcc3DLut(vec3 linearRgb01, highp sampler3D iccLut3D, float iccLutSize)
 
     return texture(iccLut3D, coord).rgb;
 }
+#endif
 
 vec3 xy2xyz(vec2 xy) {
     if (xy.y == 0.0)
@@ -45,7 +49,7 @@ vec3 tfInvHLG(vec3 color) {
     bvec3 isLow = lessThanEqual(color.rgb, vec3(HLG_E_CUT));
     vec3  lo    = color.rgb * color.rgb / 3.0;
     vec3  hi    = (exp((color.rgb - HLG_C) / HLG_A) + HLG_B) / 12.0;
-    return mix(hi, lo, isLow);
+    return mix(hi, lo, vec3(isLow));
 }
 
 // Many transfer functions (including sRGB) follow the same pattern: a linear
@@ -56,7 +60,7 @@ vec3 tfInvLinPow(vec3 color, float gamma, float thres, float scale, float alpha)
     bvec3 isLow = lessThanEqual(color.rgb, vec3(thres * scale));
     vec3  lo    = color.rgb / scale;
     vec3  hi    = pow((color.rgb + alpha - 1.0) / alpha, vec3(gamma));
-    return mix(hi, lo, isLow);
+    return mix(hi, lo, vec3(isLow));
 }
 
 vec3 tfInvSRGB(vec3 color) {
@@ -92,14 +96,14 @@ vec3 tfHLG(vec3 color) {
     bvec3 isLow = lessThanEqual(color.rgb, vec3(HLG_D_CUT));
     vec3  lo    = sqrt(max(color.rgb, vec3(0.0)) * 3.0);
     vec3  hi    = HLG_A * log(max(12.0 * color.rgb - HLG_B, vec3(0.0001))) + HLG_C;
-    return mix(hi, lo, isLow);
+    return mix(hi, lo, vec3(isLow));
 }
 
 vec3 tfLinPow(vec3 color, float gamma, float thres, float scale, float alpha) {
     bvec3 isLow = lessThanEqual(color.rgb, vec3(thres));
     vec3  lo    = color.rgb * scale;
     vec3  hi    = pow(color.rgb, vec3(1.0 / gamma)) * alpha - (alpha - 1.0);
-    return mix(hi, lo, isLow);
+    return mix(hi, lo, vec3(isLow));
 }
 
 vec3 tfSRGB(vec3 color) {
@@ -136,8 +140,8 @@ vec3 toLinearRGB(vec3 color, int tf) {
         case CM_TRANSFER_FUNCTION_EXT_SRGB: return tfInvExtSRGB(color);
         case CM_TRANSFER_FUNCTION_BT1886: return tfInvBT1886(color);
         case CM_TRANSFER_FUNCTION_ST240: return tfInvST240(color);
-        case CM_TRANSFER_FUNCTION_LOG_100: return mix(exp((color - 1.0) * 2.0 * log(10.0)), vec3(0.0), lessThanEqual(color, vec3(0.0)));
-        case CM_TRANSFER_FUNCTION_LOG_316: return mix(exp((color - 1.0) * 2.5 * log(10.0)), vec3(0.0), lessThanEqual(color, vec3(0.0)));
+        case CM_TRANSFER_FUNCTION_LOG_100: return mix(exp((color - 1.0) * 2.0 * log(10.0)), vec3(0.0), vec3(lessThanEqual(color, vec3(0.0))));
+        case CM_TRANSFER_FUNCTION_LOG_316: return mix(exp((color - 1.0) * 2.5 * log(10.0)), vec3(0.0), vec3(lessThanEqual(color, vec3(0.0))));
         case CM_TRANSFER_FUNCTION_XVYCC: return tfInvXVYCC(color);
         case CM_TRANSFER_FUNCTION_ST428: return pow(max(color, vec3(0.0)), vec3(ST428_POW)) * ST428_SCALE;
         case CM_TRANSFER_FUNCTION_SRGB:
@@ -170,8 +174,8 @@ vec3 fromLinearRGB(vec3 color, int tf) {
         case CM_TRANSFER_FUNCTION_EXT_SRGB: return tfExtSRGB(color);
         case CM_TRANSFER_FUNCTION_BT1886: return tfBT1886(color);
         case CM_TRANSFER_FUNCTION_ST240: return tfST240(color);
-        case CM_TRANSFER_FUNCTION_LOG_100: return mix(1.0 + log(color) / log(10.0) / 2.0, vec3(0.0), lessThanEqual(color, vec3(0.01)));
-        case CM_TRANSFER_FUNCTION_LOG_316: return mix(1.0 + log(color) / log(10.0) / 2.5, vec3(0.0), lessThanEqual(color, vec3(sqrt(10.0) / 1000.0)));
+        case CM_TRANSFER_FUNCTION_LOG_100: return mix(1.0 + log(color) / log(10.0) / 2.0, vec3(0.0), vec3(lessThanEqual(color, vec3(0.01))));
+        case CM_TRANSFER_FUNCTION_LOG_316: return mix(1.0 + log(color) / log(10.0) / 2.5, vec3(0.0), vec3(lessThanEqual(color, vec3(sqrt(10.0) / 1000.0))));
         case CM_TRANSFER_FUNCTION_XVYCC: return tfXVYCC(color);
         case CM_TRANSFER_FUNCTION_ST428: return pow(max(color, vec3(0.0)) / ST428_SCALE, vec3(1.0 / ST428_POW));
         case CM_TRANSFER_FUNCTION_SRGB:

@@ -26,15 +26,24 @@ void CGLElementRenderer::draw(WP<CClearPassElement> element, const CRegion& dama
     TRACY_GPU_ZONE("RenderClear");
     const std::array<GLfloat, 4> c = {sc<GLfloat>(color.r), sc<GLfloat>(color.g), sc<GLfloat>(color.b), sc<GLfloat>(color.a)};
 
-    if (!g_pHyprRenderer->m_renderData.damage.empty()) {
-        g_pHyprRenderer->m_renderData.damage.forEachRect([&c](const auto& RECT) {
-            g_pHyprOpenGL->scissor(&RECT, g_pHyprRenderer->m_renderData.transformDamage);
+    // glClearBufferfv is GLES3-only; GLES2 clears via the clear-colour state.
+    const auto clearBuffer = [&c]() {
+        if (g_pHyprOpenGL->m_legacyGLES) {
+            glClearColor(c[0], c[1], c[2], c[3]);
+            glClear(GL_COLOR_BUFFER_BIT);
+        } else
             glClearBufferfv(GL_COLOR, 0, c.data());
+    };
+
+    if (!g_pHyprRenderer->m_renderData.damage.empty()) {
+        g_pHyprRenderer->m_renderData.damage.forEachRect([&clearBuffer](const auto& RECT) {
+            g_pHyprOpenGL->scissor(&RECT, g_pHyprRenderer->m_renderData.transformDamage);
+            clearBuffer();
         });
 
         g_pHyprOpenGL->scissor(nullptr);
     } else
-        glClearBufferfv(GL_COLOR, 0, c.data());
+        clearBuffer();
 };
 
 void CGLElementRenderer::draw(WP<CFramebufferElement> element, const CRegion& damage) {

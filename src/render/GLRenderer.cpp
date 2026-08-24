@@ -227,14 +227,20 @@ SP<ITexture> CHyprGLRenderer::createTexture(const int width, const int height, u
 
     tex->m_size = {width, height};
     // copy the data to an OpenGL texture we have
-    const GLint glFormat = GL_RGBA;
+    // GLES2 has no texture swizzle. EXT_texture_format_BGRA8888 -- which Mesa
+    // exposes on crocus and every other gallium driver -- lets us upload the
+    // BGRA data directly instead of uploading RGBA and swizzling on sample.
+    const bool  LEGACY   = g_pHyprOpenGL->m_legacyGLES;
+    const GLint glFormat = LEGACY ? GL_BGRA_EXT : GL_RGBA;
     const GLint glType   = GL_UNSIGNED_BYTE;
 
     tex->bind();
     tex->setTexParameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     tex->setTexParameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    tex->setTexParameter(GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-    tex->setTexParameter(GL_TEXTURE_SWIZZLE_B, GL_RED);
+    if (!LEGACY) {
+        tex->setTexParameter(GL_TEXTURE_SWIZZLE_R, GL_BLUE);
+        tex->setTexParameter(GL_TEXTURE_SWIZZLE_B, GL_RED);
+    }
 
     glTexImage2D(GL_TEXTURE_2D, 0, glFormat, tex->m_size.x, tex->m_size.y, 0, glFormat, glType, data);
     tex->unbind();
@@ -249,9 +255,11 @@ SP<ITexture> CHyprGLRenderer::createTexture(cairo_surface_t* cairo) {
 
     tex->allocate({cairo_image_surface_get_width(cairo), cairo_image_surface_get_height(cairo)});
 
-    const GLint glIFormat = CAIROFORMAT == CAIRO_FORMAT_RGB96F ? GL_RGB32F : GL_RGBA;
-    const GLint glFormat  = CAIROFORMAT == CAIRO_FORMAT_RGB96F ? GL_RGB : GL_RGBA;
-    const GLint glType    = CAIROFORMAT == CAIRO_FORMAT_RGB96F ? GL_FLOAT : GL_UNSIGNED_BYTE;
+    const bool  LEGACY     = g_pHyprOpenGL->m_legacyGLES;
+    const GLint RGBAFORMAT = LEGACY ? GL_BGRA_EXT : GL_RGBA;
+    const GLint glIFormat  = CAIROFORMAT == CAIRO_FORMAT_RGB96F ? GL_RGB32F : RGBAFORMAT;
+    const GLint glFormat   = CAIROFORMAT == CAIRO_FORMAT_RGB96F ? GL_RGB : RGBAFORMAT;
+    const GLint glType     = CAIROFORMAT == CAIRO_FORMAT_RGB96F ? GL_FLOAT : GL_UNSIGNED_BYTE;
 
     const auto  DATA = cairo_image_surface_get_data(cairo);
     tex->bind();
@@ -259,8 +267,10 @@ SP<ITexture> CHyprGLRenderer::createTexture(cairo_surface_t* cairo) {
     tex->setTexParameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
     if (CAIROFORMAT != CAIRO_FORMAT_RGB96F) {
-        tex->setTexParameter(GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-        tex->setTexParameter(GL_TEXTURE_SWIZZLE_B, GL_RED);
+        if (!LEGACY) {
+            tex->setTexParameter(GL_TEXTURE_SWIZZLE_R, GL_BLUE);
+            tex->setTexParameter(GL_TEXTURE_SWIZZLE_B, GL_RED);
+        }
         tex->m_drmFormat = DRM_FORMAT_ARGB8888;
     }
 

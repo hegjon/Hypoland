@@ -1,4 +1,5 @@
 #include "GLTexture.hpp"
+#include "../../helpers/GLES2Compat.hpp"
 #include "../Renderer.hpp"
 #include "../../Compositor.hpp"
 #include "../../helpers/Format.hpp"
@@ -46,7 +47,8 @@ CGLTexture::CGLTexture(uint32_t drmFormat, uint8_t* pixels, uint32_t stride, con
     setTexParameter(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     setTexParameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    if (format->swizzle.has_value())
+    const auto GLFMT = NGLES2Compat::glFormatFor(format, g_pHyprOpenGL->m_legacyGLES);
+    if (GLFMT.needsSwizzle)
         swizzle(format->swizzle.value());
 
     bool alignmentChanged = false;
@@ -57,7 +59,7 @@ CGLTexture::CGLTexture(uint32_t drmFormat, uint8_t* pixels, uint32_t stride, con
     }
 
     GLCALL(glPixelStorei(GL_UNPACK_ROW_LENGTH_EXT, stride / format->bytesPerBlock));
-    GLCALL(glTexImage2D(GL_TEXTURE_2D, 0, format->glInternalFormat ? format->glInternalFormat : format->glFormat, size_.x, size_.y, 0, format->glFormat, format->glType, pixels));
+    GLCALL(glTexImage2D(GL_TEXTURE_2D, 0, GLFMT.internalFormat, size_.x, size_.y, 0, GLFMT.format, GLFMT.type, pixels));
     GLCALL(glPixelStorei(GL_UNPACK_ROW_LENGTH_EXT, 0));
     if (alignmentChanged)
         GLCALL(glPixelStorei(GL_UNPACK_ALIGNMENT, 4));
@@ -131,7 +133,13 @@ void CGLTexture::update(uint32_t drmFormat, uint8_t* pixels, uint32_t stride, co
 
     bind();
 
-    if (format->swizzle.has_value())
+    // Must use the same format mapping as createFromShm(): on the legacy path
+    // the texture was allocated as GL_BGRA_EXT, so uploading with the table's
+    // GL_RGBA here is a format mismatch and every update silently fails,
+    // leaving the window texture empty. Swizzle does not exist on GLES2 either.
+    const auto GLFMT = NGLES2Compat::glFormatFor(format, g_pHyprOpenGL->m_legacyGLES);
+
+    if (GLFMT.needsSwizzle)
         swizzle(format->swizzle.value());
 
     bool alignmentChanged = false;
@@ -143,13 +151,13 @@ void CGLTexture::update(uint32_t drmFormat, uint8_t* pixels, uint32_t stride, co
 
     GLCALL(glPixelStorei(GL_UNPACK_ROW_LENGTH_EXT, stride / format->bytesPerBlock));
 
-    damage.copy().intersect(CBox{{}, m_size}).forEachRect([&format, &pixels](const auto& rect) {
+    damage.copy().intersect(CBox{{}, m_size}).forEachRect([&GLFMT, &pixels](const auto& rect) {
         GLCALL(glPixelStorei(GL_UNPACK_SKIP_PIXELS_EXT, rect.x1));
         GLCALL(glPixelStorei(GL_UNPACK_SKIP_ROWS_EXT, rect.y1));
 
         int width  = rect.x2 - rect.x1;
         int height = rect.y2 - rect.y1;
-        GLCALL(glTexSubImage2D(GL_TEXTURE_2D, 0, rect.x1, rect.y1, width, height, format->glFormat, format->glType, pixels));
+        GLCALL(glTexSubImage2D(GL_TEXTURE_2D, 0, rect.x1, rect.y1, width, height, GLFMT.format, GLFMT.type, pixels));
     });
 
     if (alignmentChanged)

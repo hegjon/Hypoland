@@ -124,6 +124,9 @@ message(STATUS "Checking deps...")
 
 find_package(Threads REQUIRED)
 
+# One binary serves both modern GPUs and pre-GLES3 hardware: the renderer
+# detects the context version at runtime (see CHyprOpenGLImpl::m_legacyGLES)
+# and avoids GLES3-only calls when the driver only offers OpenGL ES 2.0.
 set(GLES_VERSION "GLES3")
 find_package(OpenGL REQUIRED COMPONENTS ${GLES_VERSION})
 find_package(glslang CONFIG REQUIRED)

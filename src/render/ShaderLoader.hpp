@@ -81,7 +81,7 @@ namespace Render {
 
     class CShaderLoader {
       public:
-        CShaderLoader(const std::vector<std::string> includes, const std::array<std::string, SH_FRAG_LAST>& frags, const std::string shaderPath = "");
+        CShaderLoader(const std::vector<std::string> includes, const std::array<std::string, SH_FRAG_LAST>& frags, const std::string shaderPath = "", bool legacyGLES = false);
         ~CShaderLoader();
 
         void                                      include(const std::string& filename);
@@ -100,6 +100,10 @@ namespace Render {
         std::string processSource(const std::string& source, glslang_stage_t stage = GLSLANG_STAGE_FRAGMENT);
 
         //
+        // When set, sources are rewritten to GLSL ES 1.00 and the shader
+        // features that need GLES3 are masked off. Fixed for the process: it
+        // comes from the context version detected at startup.
+        bool                                                            m_legacyGLES = false;
         std::string                                                     m_shaderPath;
         std::array<std::string, SH_FRAG_LAST>                           m_fragFiles;
         std::array<std::map<SShaderVariant, std::string>, SH_FRAG_LAST> m_fragVariants;

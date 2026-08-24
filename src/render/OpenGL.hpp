@@ -310,6 +310,12 @@ namespace Render::GL {
 
         eEGLContextVersion m_eglContextVersion = EGL_CONTEXT_GLES_3_2;
 
+        // Set once in initEGL() from the version the driver actually reports.
+        // When true the renderer avoids every GLES3-only call and downgrades
+        // its shaders to GLSL ES 1.00, which is what lets one binary run on
+        // both a modern GPU and pre-GLES3 hardware such as an Intel GM45.
+        bool m_legacyGLES = false;
+
         enum eCachedCapStatus : uint8_t {
             CAP_STATUS_BLEND = 0,
             CAP_STATUS_SCISSOR_TEST,

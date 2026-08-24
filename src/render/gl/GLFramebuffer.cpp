@@ -1,4 +1,5 @@
 #include "GLFramebuffer.hpp"
+#include "../../helpers/GLES2Compat.hpp"
 #include "../OpenGL.hpp"
 #include "../Renderer.hpp"
 #include "macros.hpp"
@@ -33,26 +34,35 @@ bool CGLFramebuffer::internalAlloc(int w, int h, uint32_t drmFormat) {
     }
 
     const auto format = getPixelFormatFromDRM(drmFormat);
+    const auto GLFMT  = NGLES2Compat::glFormatFor(format, g_pHyprOpenGL->m_legacyGLES);
+    if (!GLFMT.usable)
+        Log::logger->log(Log::ERR, "Framebuffer \"{}\": drm format 0x{:x} cannot be used on this GL context", m_name, drmFormat);
     m_tex->bind();
-    glTexImage2D(GL_TEXTURE_2D, 0, format->glInternalFormat ? format->glInternalFormat : format->glFormat, w, h, 0, format->glFormat, format->glType, nullptr);
+    GLCALL(glTexImage2D(GL_TEXTURE_2D, 0, GLFMT.internalFormat, w, h, 0, GLFMT.format, GLFMT.type, nullptr));
     g_pHyprOpenGL->bindFramebuffer(GL_FRAMEBUFFER, m_fb);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_tex->m_texID, 0);
 
-    if (m_mirrorTex) {
-        const auto format = getPixelFormatFromDRM(m_mirrorTex->m_drmFormat);
+    // GLES2 has exactly one colour attachment: GL_COLOR_ATTACHMENT1 is not a
+    // valid attachment point there, so neither attaching nor detaching it is
+    // allowed -- doing so raises GL_INVALID_ENUM and leaves the FB incomplete.
+    if (m_mirrorTex && !g_pHyprOpenGL->m_legacyGLES) {
+        const auto format    = getPixelFormatFromDRM(m_mirrorTex->m_drmFormat);
+        const auto MIRRORFMT = NGLES2Compat::glFormatFor(format, false);
         m_mirrorTex->bind();
-        glTexImage2D(GL_TEXTURE_2D, 0, format->glInternalFormat ? format->glInternalFormat : format->glFormat, w, h, 0, format->glFormat, format->glType, nullptr);
+        GLCALL(glTexImage2D(GL_TEXTURE_2D, 0, MIRRORFMT.internalFormat, w, h, 0, MIRRORFMT.format, MIRRORFMT.type, nullptr));
         g_pHyprOpenGL->bindFramebuffer(GL_FRAMEBUFFER, m_fb);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, m_mirrorTex->m_texID, 0);
         GLenum drawBuffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
         glDrawBuffers(2, drawBuffers);
-    } else {
+    } else if (!g_pHyprOpenGL->m_legacyGLES) {
+        // GLES2 has a single colour attachment; there is no second target to detach.
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, 0, 0);
         GLenum drawBuffers[] = {GL_COLOR_ATTACHMENT0};
         glDrawBuffers(1, drawBuffers);
     }
 
-    if (m_stencilTex && m_stencilTex->ok()) {
+    // GL_DEPTH_STENCIL_ATTACHMENT is not a GLES2 attachment point.
+    if (!g_pHyprOpenGL->m_legacyGLES && m_stencilTex && m_stencilTex->ok()) {
         m_stencilTex->bind();
         glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, w, h, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_stencilTex->m_texID, 0);
@@ -62,6 +72,10 @@ bool CGLFramebuffer::internalAlloc(int w, int h, uint32_t drmFormat) {
     }
 
     auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE)
+        Log::logger->log(
+            Log::ERR, "Framebuffer \"{}\" incomplete: status 0x{:x}, drm format 0x{:x}, gl iformat 0x{:x} format 0x{:x} type 0x{:x}, stencil {}, mirror {}, legacyGLES {}", m_name,
+            status, drmFormat, GLFMT.internalFormat, GLFMT.format, GLFMT.type, m_stencilTex ? "yes" : "no", m_mirrorTex ? "yes" : "no", g_pHyprOpenGL->m_legacyGLES);
     RASSERT((status == GL_FRAMEBUFFER_COMPLETE), "Framebuffer incomplete, couldn't create! (FB status: {}, GL Error: 0x{:x})", status, sc<int>(glGetError()));
 
     if (m_stencilTex && m_stencilTex->ok())
@@ -105,7 +119,9 @@ void CGLFramebuffer::bind() {
         g_pHyprOpenGL->bindFramebuffer(GL_DRAW_FRAMEBUFFER, m_fb);
         g_pHyprOpenGL->setViewport(0, 0, m_size.x, m_size.y);
     } else {
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_fb);
+        // no g_pHyprOpenGL here, so this cannot consult the runtime flag; the
+        // combined target is valid on both GLES2 and GLES3.
+        glBindFramebuffer(GL_FRAMEBUFFER, m_fb);
         glViewport(0, 0, m_size.x, m_size.y);
     }
 }
@@ -114,7 +130,7 @@ void CGLFramebuffer::unbind() {
     if (g_pHyprOpenGL)
         g_pHyprOpenGL->bindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     else
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void CGLFramebuffer::release() {
@@ -271,7 +287,8 @@ void CGLFramebuffer::invalidate(const std::vector<GLenum>& attachments) {
         return;
 
     static const auto PFBINVALIDATE = CConfigValue<Config::INTEGER>("debug:invalidate_buffers");
-    if (*PFBINVALIDATE)
+    // glInvalidateFramebuffer is GLES3-only. Skipping it costs performance, not correctness.
+    if (*PFBINVALIDATE && !g_pHyprOpenGL->m_legacyGLES)
         glInvalidateFramebuffer(GL_FRAMEBUFFER, attachments.size(), attachments.data());
 
     // m_cleared tracks the color attachment only, see clearAfterInvalidation()
