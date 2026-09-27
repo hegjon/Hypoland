@@ -1,5 +1,5 @@
 <div align="center">
-<img src="assets/logo/header.svg" width="760" alt="Hypoland">
+<img src="assets/logo/retro/header-retro.svg" width="760" alt="Hypoland">
 </div>
 
 # Hypoland
