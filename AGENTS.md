@@ -181,17 +181,32 @@ Tools:
   stderr every 120 frames. On the X200 put it in `~/hypoland/env` (sourced by the loop), read `~/hypoland/loop.log`.
   It slows rendering down, remove the env file afterwards.
 - `debug:overlay` works and shows frame and render times.
+- `scripts/x200/kmsgrab.c` (installed on the X200 as root: `/usr/local/bin/hypoland-kmsgrab out.ppm`) saves the buffer
+  the display scans out. Use it to check what really reaches the screen: a `grim` screenshot counts as screen
+  sharing, which makes the compositor use the work buffer copy path instead of direct rendering. The read takes
+  about 80 ms and the compositor draws into that buffer again a few frames later, so an animating client can
+  show up half drawn in the capture; freeze it (`pkill -STOP`) for exact results.
+- `HYPOLAND_NO_DIRECT_RENDER=1` makes every frame go through the work buffer, for comparing the two paths.
 
-Performance findings (X200, profiler):
-- Fill rate is the limit: one fullscreen 1280x800 blended surface costs about 3.3 ms, a clear 1.4 ms, the copy
-  from the work buffer to the output 3.4 ms. A full redraw of 4 windows plus the Quickshell layers is 14-17 ms,
-  so full-screen changes run at 30 fps. Damage-tracked updates cost 2-4 ms and hold 60 fps.
+Performance (X200, `HYPOLAND_PROFILE_PASS`, GPU time per frame, 4 windows plus a 60 fps client):
+
+| | before 2026-09-27 evening | now |
+|---|---|---|
+| full-screen redraw | 19.1 ms (pass 14.3 + clear 1.4 + copy 3.4) | 14.4 ms |
+| small updates | 3.4 ms (pass 1.7 + clear 1.4 + copy 0.3) | 1.7 ms |
+
+- Every frame used to clear the whole 1280x800 work buffer (1.4 ms, Gen4 has no fast clear). Now only the damage
+  is cleared: the pass paints the background over its damage anyway (`clearRegionAfterInvalidation()`).
+- Frames are drawn straight into the screen buffer when nothing needs the work buffer (no zoom, no rotated output,
+  no screen shader, no mirror or screen sharing), `CHyprOpenGLImpl::canRenderDirectly()`. That removes the copy
+  from the work buffer to the screen. Screen buffers are imported twice: as a renderbuffer to render into and as a
+  texture to sample from (blur), with a stencil renderbuffer. The screen buffer holds the frame from bufferAge
+  frames ago and the damage covers everything since, so blur samples correct pixels outside the damage.
+- Fill rate is the limit: one fullscreen 1280x800 blended surface costs about 3.3 ms.
 - Borders cost about 0.4 ms per window on a full redraw, they are already limited to the border ring.
 - Omarchy gives every window an opacity rule (`default-opacity` tag), so no window occludes the wallpaper.
   With opaque windows the occlusion pass skips what is underneath.
 - Quickshell's notification overlay is a transparent fullscreen layer that is blended over every damaged area.
-- Not done: rendering straight to the output buffer would save the copy (about 25% of a frame), but it changes
-  how damage and buffer age work.
 
 CPU profile: run `./profile-x200.sh`. It builds with frame pointers in `build-prof`, deploys, switches the
 Omarchy screensaver and idle lock off, records five workloads with `perf` as root, prints the report to
@@ -210,8 +225,14 @@ Findings:
   17% (`read_hpet` 12%), the rest is spread over animation ticks, layout and damage.
 - Hypoland's own code is flat, no function has more than about 1% self time.
 - The X200 uses the HPET clocksource (the TSC is marked unstable), so every clock read is a slow syscall.
-- Candidates, not done: avoid the new buffer per shm upload, cache the DRM properties that aquamarine re-reads
-  on every commit, fewer clock reads per frame.
+- Fixed: uploading into a shm texture the GPU still reads from made crocus allocate, clear and cache-flush a
+  staging buffer every time (2.4x the cost of the upload, measured with a standalone benchmark). Synchronous
+  textures are now double buffered (`CGLTexture::update()`): the update goes into the texture that was shown one
+  update ago, plus the damage it missed. Chromium 26.8% -> 12.8% CPU, fast terminal scrolling 14.8% -> 11.3%.
+- Fixed: the event loop read the clock once per timer when rescheduling and when timers fire; it reads it once
+  per pass now. Workspace switching 14.9% -> 12.7%.
+- Not done: aquamarine re-reads the CRTC mode on every commit (about 0.3% of a core at 60 fps); caching it would
+  need to handle VT switches.
 
 Fixed upstream bugs that showed on this hardware:
 - `IHyprRenderer::renderText(STextResourceData&&)` queued the text on the hyprgraphics worker and blocked in
