@@ -629,17 +629,6 @@ protocolwayland()
 add_subdirectory(hyprctl)
 add_subdirectory(start)
 
-# plugins are not supported, hyprpm is only built on request
-option(WITH_HYPRPM "Build hyprpm" OFF)
-if(NOT WITH_HYPRPM)
-  set(NO_HYPRPM ON)
-endif()
-if(NO_HYPRPM)
-  message(STATUS "hyprpm is disabled")
-else()
-  add_subdirectory(hyprpm)
-  message(STATUS "hyprpm is enabled (NO_HYPRPM not defined)")
-endif()
 
 # Set proper permissions for directories, otherwise they could end up 700
 set(CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS
