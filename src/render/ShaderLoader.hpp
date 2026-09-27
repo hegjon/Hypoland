@@ -2,7 +2,6 @@
 
 #include <array>
 #include <compare>
-#include <glslang/Include/glslang_c_interface.h>
 #include <string>
 #include <vector>
 #include <map>
@@ -55,7 +54,6 @@ namespace Render {
     class CShaderLoader {
       public:
         CShaderLoader(const std::vector<std::string> includes, const std::array<std::string, SH_FRAG_LAST>& frags, const std::string shaderPath = "");
-        ~CShaderLoader();
 
         void                                      include(const std::string& filename);
         std::string                               process(const std::string& filename);
@@ -65,12 +63,12 @@ namespace Render {
 
         const std::map<std::string, std::string>& includes();
 
-        std::vector<glsl_include_result_t*>       m_includeResults;
-
       private:
-        std::string loadShader(const std::string& filename);
-        std::string getDefines(const SShaderVariant& variant);
-        std::string processSource(const std::string& source, glslang_stage_t stage = GLSLANG_STAGE_FRAGMENT);
+        std::string             loadShader(const std::string& filename);
+        std::string             getDefines(const SShaderVariant& variant);
+        std::string             processSource(const std::string& source, size_t depth = 0);
+
+        static constexpr size_t MAX_INCLUDE_DEPTH = 16;
 
         //
         std::string                                                     m_shaderPath;
@@ -79,7 +77,6 @@ namespace Render {
         std::map<std::string, std::string>                              m_includes;
 
         std::string                                                     m_overrideDefines;
-        glsl_include_callbacks_t                                        m_callbacks;
     };
 
     inline UP<CShaderLoader> g_pShaderLoader;

@@ -17,7 +17,6 @@ depends=(
   cairo
   glib2
   glibc
-  glslang
   hyprcursor
   hyprgraphics
   hyprlang

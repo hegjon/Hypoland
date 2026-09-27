@@ -47,7 +47,8 @@ Hypoland's renderer and shaders are GLES 2.0 / GLSL ES 1.00 only; that port is d
     Color management, tonemapping, ICC, mirror and motion blur code is gone from the shaders; `color.glsl` keeps
     only the sRGB / gamma 2.2 transfer functions that gradients need.
   - Blur variants ripple, water, fluid_jar, prism and acrylic are removed and fall back to dual Kawase.
-  - The embedded aquamarine is patched in-tree the same way (GLES2 context and ES 1.00 shaders only).
+  - The embedded aquamarine is patched in-tree the same way (GLES2 context and ES 1.00 shaders only). It also
+    creates its DRM renderer for the primary GPU only when a secondary GPU needs it.
   - Framebuffers have one color attachment. The stencil is a `GL_STENCIL_INDEX8` renderbuffer per framebuffer
     (GLES2 has no packed depth/stencil texture); blur needs it for `ignore_alpha`.
   - Removed as dead code: the color management render paths and protocol (`wp_color_manager_v1` is not
@@ -162,7 +163,7 @@ wallpaper, notifications, windows, Xwayland, Chromium). `./test-x200.sh` passes,
 window is really drawn (the test terminal fills itself with magenta and the screenshot is checked for it).
 
 Measured on the X200 (1280x800, Omarchy config):
-- idle compositor CPU 0%, RSS 115-130 MiB (about 80 MiB of it is Mesa/LLVM file mappings)
+- idle compositor CPU 0%, RSS about 100 MiB (about 73 MiB of it are file mappings, mostly Mesa and LLVM)
 - `weston-simple-egl` 60 fps, compositor 8-9% CPU; blur on costs about 1% more
 - 4 windows with rounding, shadows, blur, opacity, dim and animations: 58-60 fps, compositor 12% CPU
 - `glmark2-es2-wayland` score 127; glxgears through Xwayland 30 fps
@@ -232,6 +233,21 @@ Findings:
 - Fixed: the event loop read the clock once per timer when rescheduling and when timers fire; it reads it once
   per pass now. Workspace switching 14.9% -> 12.7%.
 - Not done: aquamarine re-reads the CRTC mode on every commit (about 0.3% of a core at 60 fps); caching it would
+
+Memory (X200, idle Omarchy session 60 s after start, `heaptrack` and `/proc/<pid>/smaps`):
+- Fixed: aquamarine created a second EGL context for the primary GPU, which is only needed when a secondary GPU
+  blits (`CDRMBackend::primaryRenderer()` now creates it on demand). It cost heap and a Mesa driver thread.
+- Fixed: shaders were preprocessed with glslang, only to resolve `#include`. `CShaderLoader` expands includes
+  itself now and leaves `#define` / `#if` to the driver, so libglslang (2.5 MiB, private to the compositor) is no
+  longer loaded.
+- Both together: RSS 113.6 -> 100.1 MiB, anonymous 38.0 -> 27.2 MiB, PSS 73.8 -> 60.1 MiB, one thread less,
+  compositor CPU with `weston-simple-egl` unchanged (7.3%).
+- What is left: about 17 MiB heap, of which about 7 MiB is Mesa compiler state created with the first shader and
+  1.7 MiB the GL context. libLLVM shows 19 MiB RSS but only 6 MiB PSS, the pages are shared with Quickshell and
+  Xwayland and come from loading the library (`DRAW_USE_LLVM=0` changes nothing). The Hypoland binary is about
+  14 MiB of clean file pages.
+- The "started without start-hypoland" notification loads fontconfig and pango (about 1.5 MiB heap) on the X200
+  loop, a normal start does not.
   need to handle VT switches.
 
 Fixed upstream bugs that showed on this hardware:

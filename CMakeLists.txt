@@ -128,7 +128,6 @@ find_package(Threads REQUIRED)
 # src/render/gl/GLES2.hpp.
 set(GLES_VERSION "GLES2")
 find_package(OpenGL REQUIRED COMPONENTS ${GLES_VERSION})
-find_package(glslang CONFIG REQUIRED)
 
 find_package(glaze QUIET)
 if(NOT glaze_FOUND)
@@ -537,9 +536,9 @@ function(protocolWayland)
 endfunction()
 
 if(TARGET OpenGL::GL)
-  target_link_libraries(hyprland_lib PUBLIC OpenGL::EGL OpenGL::GL glslang::glslang glslang::glslang-default-resource-limits glslang::SPIRV Threads::Threads)
+  target_link_libraries(hyprland_lib PUBLIC OpenGL::EGL OpenGL::GL Threads::Threads)
 else()
-  target_link_libraries(hyprland_lib PUBLIC OpenGL::EGL OpenGL::GLES2 glslang::glslang glslang::glslang-default-resource-limits glslang::SPIRV Threads::Threads)
+  target_link_libraries(hyprland_lib PUBLIC OpenGL::EGL OpenGL::GLES2 Threads::Threads)
 endif()
 
 pkg_check_modules(hyprland_protocols_dep hyprland-protocols>=0.7.0)
