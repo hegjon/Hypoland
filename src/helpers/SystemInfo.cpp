@@ -235,7 +235,6 @@ std::string SystemInfo::getSystemInfo() {
         result += std::format("\nExplicit sync: {}", g_pHyprOpenGL->m_exts.EGL_ANDROID_native_fence_sync_ext ? "supported" : "missing");
         result += std::format("\nGL ver: {}", NGLES2Compat::contextVersion());
         result += "\nRender path: GLES2 (GLSL ES 1.00 shaders)";
-        result += std::format("\nFP16: {}", g_pHyprOpenGL->fp16Supported() ? "supported" : "missing");
     }
 
     if (g_pCompositor) {

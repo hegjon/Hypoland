@@ -25,7 +25,6 @@
 #include "../desktop/state/FocusState.hpp"
 #include "../protocols/LayerShell.hpp"
 #include "../protocols/core/Compositor.hpp"
-#include "../protocols/ColorManagement.hpp"
 #include "../helpers/cm/ColorManagement.hpp"
 #include "../managers/input/InputManager.hpp"
 #include "../managers/eventLoop/EventLoopManager.hpp"
@@ -152,10 +151,6 @@ static int openRenderNode(int drmFd) {
 
     free(renderName); // NOLINT(cppcoreguidelines-no-malloc)
     return renderFD;
-}
-
-static ShaderFeatureFlags globalFeatures() {
-    return 0;
 }
 
 void CHyprOpenGLImpl::initEGL(bool gbm) {
@@ -610,10 +605,6 @@ void CHyprOpenGLImpl::initDRMFormats() {
             Log::WARN, "EGL: WARNING: No dmabuf formats were found, dmabuf will be disabled. This will degrade performance, but is most likely a driver issue or a very old GPU.");
 
     m_drmFormats = dmaFormats;
-
-    // FP16 needs both a half float renderable color buffer and the drm format
-    // A half-float colour buffer needs a sized internal format, which GLES2 does not have
-    m_fp16Supported = false;
 }
 
 EGLImageKHR CHyprOpenGLImpl::createEGLImage(const Aquamarine::SDMABUFAttrs& attrs) {
@@ -732,16 +723,6 @@ void CHyprOpenGLImpl::begin(PHLMONITOR pMonitor, const CRegion& damage_, SP<IFra
 
     g_pHyprRenderer->m_renderData.mainFB = g_pHyprRenderer->m_renderData.currentFB;
     g_pHyprRenderer->m_renderData.outFB  = fb ? fb : dc<CHyprGLRenderer*>(g_pHyprRenderer.get())->m_currentRenderbuffer->getFB();
-
-    if UNLIKELY (g_pHyprRenderer->m_renderData.pMonitor->needsUnmodifiedCopy() && !m_fakeFrame) {
-        if (!g_pHyprRenderer->m_renderData.pMonitor->resources()->m_mirrorTex)
-            g_pHyprRenderer->m_renderData.pMonitor->resources()->enableMirror();
-        g_pHyprRenderer->m_renderData.mainFB->enableMirror(g_pHyprRenderer->m_renderData.pMonitor->resources()->m_mirrorTex);
-    } else {
-        if (g_pHyprRenderer->m_renderData.pMonitor->resources()->m_mirrorTex)
-            g_pHyprRenderer->m_renderData.pMonitor->resources()->disableMirror();
-        g_pHyprRenderer->m_renderData.mainFB->disableMirror();
-    }
 }
 
 void CHyprOpenGLImpl::end() {
@@ -782,7 +763,6 @@ void CHyprOpenGLImpl::end() {
                 g_pHyprRenderer->m_renderData.useNearestNeighbor = true;
 
             // copy the damaged areas into the mirror buffer
-            // we can't use the offloadFB for mirroring / ss, as it contains artifacts from blurring
             if UNLIKELY (g_pHyprRenderer->m_renderData.pMonitor->needsACopyFB() && !m_fakeFrame) {
                 if (saveBufferForMirror(monbox))
                     g_pHyprRenderer->m_renderData.pMonitor->resources()->markMirrorFBUpdated();
@@ -792,63 +772,29 @@ void CHyprOpenGLImpl::end() {
 
             blend(false);
 
-            const bool NEEDS_CM = g_pHyprRenderer->m_renderData.pMonitor->m_imageDescription->value() != g_pHyprRenderer->m_renderData.mainFB->imageDescription()->value();
             const bool WANTS_FINAL_SHADER = !g_pHyprRenderer->m_renderData.blockScreenShader && (m_finalScreenShader->program() >= 1 || g_pHyprRenderer->m_crashingInProgress);
 
-            auto       finalTexture = g_pHyprRenderer->m_renderData.currentFB->getTexture();
-            CBox       finalBox     = monbox;
-            std::array<SP<IFramebuffer>, 2>                    postProcessFBs;
-            std::array<NColorManagement::PImageDescription, 2> savedDescriptions;
-            size_t                                             postProcessCount = 0;
-            bool                                               finalCMComplete  = false;
+            auto             finalTexture = g_pHyprRenderer->m_renderData.currentFB->getTexture();
+            CBox             finalBox     = monbox;
+            SP<IFramebuffer> postProcessFB;
 
             if (WANTS_FINAL_SHADER) {
-                if (NEEDS_CM) {
-                    postProcessFBs[postProcessCount] = g_pHyprRenderer->m_renderData.pMonitor->resources()->getUnusedWorkBuffer();
-                    if (postProcessFBs[postProcessCount]) {
-                        savedDescriptions[postProcessCount] = postProcessFBs[postProcessCount]->imageDescription();
-                        postProcessFBs[postProcessCount]->setImageDescription(g_pHyprRenderer->m_renderData.pMonitor->m_imageDescription);
-
-                        {
-                            auto guard = g_pHyprRenderer->bindTempFB(postProcessFBs[postProcessCount]);
-                            GLFB(postProcessFBs[postProcessCount])->clearAfterInvalidation();
-                            g_pHyprRenderer->setProjectionType(RPT_MONITOR);
-                            g_pHyprRenderer->m_renderData.transformDamage = false;
-                            renderTexture(finalTexture, finalBox, {.finalMonitorCM = true});
-                        }
-
-                        finalTexture    = postProcessFBs[postProcessCount++]->getTexture();
-                        finalBox        = CBox{{}, m_renderData.pMonitor->m_transformedSize};
-                        finalCMComplete = true;
-                    } else {
-                        Log::logger->log(Log::ERR, "Failed to acquire a work buffer for final color management");
-                        postProcessFBs[postProcessCount].reset();
+                postProcessFB = g_pHyprRenderer->m_renderData.pMonitor->resources()->getUnusedWorkBuffer();
+                if (postProcessFB) {
+                    {
+                        auto guard = g_pHyprRenderer->bindTempFB(postProcessFB);
+                        GLFB(postProcessFB)->clearAfterInvalidation();
+                        g_pHyprRenderer->setProjectionType(RPT_MONITOR);
+                        g_pHyprRenderer->m_renderData.transformDamage = false;
+                        m_applyFinalShader                            = true;
+                        renderTexture(finalTexture, finalBox, {.finalOutput = true});
+                        m_applyFinalShader = false;
                     }
-                }
 
-                if (!NEEDS_CM || finalCMComplete) {
-                    postProcessFBs[postProcessCount] = g_pHyprRenderer->m_renderData.pMonitor->resources()->getUnusedWorkBuffer();
-                    if (postProcessFBs[postProcessCount]) {
-                        savedDescriptions[postProcessCount] = postProcessFBs[postProcessCount]->imageDescription();
-                        postProcessFBs[postProcessCount]->setImageDescription(g_pHyprRenderer->m_renderData.pMonitor->m_imageDescription);
-
-                        {
-                            auto guard = g_pHyprRenderer->bindTempFB(postProcessFBs[postProcessCount]);
-                            GLFB(postProcessFBs[postProcessCount])->clearAfterInvalidation();
-                            g_pHyprRenderer->setProjectionType(RPT_MONITOR);
-                            g_pHyprRenderer->m_renderData.transformDamage = false;
-                            m_applyFinalShader                            = true;
-                            renderTexture(finalTexture, finalBox, {.finalMonitorCM = true});
-                            m_applyFinalShader = false;
-                        }
-
-                        finalTexture = postProcessFBs[postProcessCount++]->getTexture();
-                        finalBox     = CBox{{}, m_renderData.pMonitor->m_transformedSize};
-                    } else {
-                        Log::logger->log(Log::ERR, "Failed to acquire a work buffer for the final screen shader");
-                        postProcessFBs[postProcessCount].reset();
-                    }
-                }
+                    finalTexture = postProcessFB->getTexture();
+                    finalBox     = CBox{{}, m_renderData.pMonitor->m_transformedSize};
+                } else
+                    Log::logger->log(Log::ERR, "Failed to acquire a work buffer for the final screen shader");
             }
 
             g_pHyprRenderer->bindFB(g_pHyprRenderer->m_renderData.outFB);
@@ -862,10 +808,7 @@ void CHyprOpenGLImpl::end() {
             if (PROFILE)
                 glFinish();
 
-            if (NEEDS_CM && !finalCMComplete)
-                renderTexture(finalTexture, finalBox, {.finalMonitorCM = true});
-            else
-                renderTexturePrimitive(finalTexture, finalBox);
+            renderTexturePrimitive(finalTexture, finalBox);
 
             if (PROFILE) {
                 static uint64_t us = 0, frames = 0;
@@ -877,9 +820,6 @@ void CHyprOpenGLImpl::end() {
                     frames = 0;
                 }
             }
-
-            for (size_t i = 0; i < postProcessCount; ++i)
-                postProcessFBs[i]->setImageDescription(savedDescriptions[i]);
 
             blend(true);
 
@@ -953,9 +893,6 @@ bool CHyprOpenGLImpl::initShaders(const std::string& path) {
         auto shaderLoader = makeUnique<CShaderLoader>(SHADER_INCLUDES, FRAG_SHADERS, path);
 
         shaders->TEXVERTSRC = shaderLoader->process("tex.vert");
-
-        // Colour management needs GLSL ES 3.00 (switch, inverse, transpose, sampler3D)
-        m_cmSupported = false;
 
         g_pShaderLoader = std::move(shaderLoader);
 
@@ -1177,7 +1114,7 @@ void CHyprOpenGLImpl::renderRectWithDamageInternal(const CBox& box, const CHyprC
 
     const auto& glMatrix = g_pHyprRenderer->projectBoxToTarget(newBox);
 
-    auto        shader = useShader(getShaderVariant(SH_FRAG_QUAD, (data.round > 0 ? SH_FEAT_ROUNDING : 0) | globalFeatures()));
+    auto        shader = useShader(getShaderVariant(SH_FRAG_QUAD, data.round > 0 ? SH_FEAT_ROUNDING : 0));
     shader->setUniformMatrix3fv(SHADER_PROJ, 1, GL_TRUE, glMatrix.getMatrix());
 
     // premultiply the color as well as we don't work with straight alpha
@@ -1238,69 +1175,6 @@ void CHyprOpenGLImpl::renderTexture(SP<ITexture> tex, const CBox& box, STextureR
 }
 
 static std::map<std::pair<uint32_t, uint32_t>, std::array<GLfloat, 9>> primariesConversionCache;
-
-void CHyprOpenGLImpl::passCMUniforms(WP<CShader> shader, const NColorManagement::PImageDescription imageDescription,
-                                     const NColorManagement::PImageDescription targetImageDescription, bool modifySDR, float sdrMinLuminance, int sdrMaxLuminance,
-                                     const SCMSettings& settings) {
-    shader->setUniformFloat2(SHADER_SRC_TF_RANGE, settings.srcTFRange.min, settings.srcTFRange.max);
-    shader->setUniformFloat2(SHADER_DST_TF_RANGE, settings.dstTFRange.min, settings.dstTFRange.max);
-    shader->setUniformFloat(SHADER_SRC_REF_LUMINANCE, settings.srcRefLuminance);
-    shader->setUniformFloat(SHADER_DST_REF_LUMINANCE, settings.dstRefLuminance);
-    shader->setUniformFloat(SHADER_MAX_LUMINANCE, settings.maxLuminance);
-    shader->setUniformFloat(SHADER_DST_MAX_LUMINANCE, settings.dstMaxLuminance);
-    shader->setUniformInt(SHADER_TONEMAP_MODE, settings.tonemapMode);
-    shader->setUniformFloat(SHADER_SDR_SATURATION, settings.sdrSaturation);
-    shader->setUniformFloat(SHADER_SDR_BRIGHTNESS, settings.sdrBrightnessMultiplier);
-
-    if (!targetImageDescription->value().icc.present) {
-        const auto cacheKey = std::pair{imageDescription->id(), targetImageDescription->id()};
-        if (!primariesConversionCache.contains(cacheKey)) {
-            const auto&                  mat             = settings.convertMatrix;
-            const std::array<GLfloat, 9> glConvertMatrix = {
-                mat[0][0], mat[1][0], mat[2][0], //
-                mat[0][1], mat[1][1], mat[2][1], //
-                mat[0][2], mat[1][2], mat[2][2], //
-            };
-            primariesConversionCache.emplace(cacheKey, glConvertMatrix);
-        }
-        shader->setUniformMatrix3fv(SHADER_CONVERT_MATRIX, 1, false, primariesConversionCache[cacheKey]);
-
-        const auto                   mat                  = settings.dstPrimaries2XYZ;
-        const std::array<GLfloat, 9> glTargetPrimariesXYZ = {
-            mat[0][0], mat[1][0], mat[2][0], //
-            mat[0][1], mat[1][1], mat[2][1], //
-            mat[0][2], mat[1][2], mat[2][2], //
-        };
-        shader->setUniformMatrix3fv(SHADER_TARGET_PRIMARIES_XYZ, 1, false, glTargetPrimariesXYZ);
-    } else {
-        // TODO: this sucks
-        setActiveTexture(GL_TEXTURE8);
-        targetImageDescription->value().icc.lutTexture->bind();
-
-        shader->setUniformInt(SHADER_LUT_3D, 8);
-        shader->setUniformFloat(SHADER_LUT_SIZE, targetImageDescription->value().icc.lutSize);
-
-        setActiveTexture(GL_TEXTURE0);
-    }
-}
-
-void CHyprOpenGLImpl::passCMUniforms(WP<CShader> shader, const NColorManagement::PImageDescription imageDescription,
-                                     const NColorManagement::PImageDescription targetImageDescription, bool modifySDR, float sdrMinLuminance, int sdrMaxLuminance) {
-    const auto settings = g_pHyprRenderer->getCMSettings(imageDescription, targetImageDescription,
-                                                         g_pHyprRenderer->m_renderData.surface.valid() ? g_pHyprRenderer->m_renderData.surface.lock() : nullptr, modifySDR,
-                                                         sdrMinLuminance, sdrMaxLuminance);
-    passCMUniforms(shader, imageDescription, targetImageDescription, modifySDR, sdrMinLuminance, sdrMaxLuminance, settings);
-}
-
-void CHyprOpenGLImpl::passCMUniforms(WP<CShader> shader, const PImageDescription imageDescription) {
-    passCMUniforms(shader, imageDescription, g_pHyprRenderer->workBufferImageDescription(), true, g_pHyprRenderer->m_renderData.pMonitor->m_sdrMinLuminance,
-                   g_pHyprRenderer->m_renderData.pMonitor->m_sdrMaxLuminance);
-}
-
-void CHyprOpenGLImpl::passCMUniforms(WP<CShader> shader, const PImageDescription imageDescription, const SCMSettings& settings) {
-    passCMUniforms(shader, imageDescription, g_pHyprRenderer->workBufferImageDescription(), true, g_pHyprRenderer->m_renderData.pMonitor->m_sdrMinLuminance,
-                   g_pHyprRenderer->m_renderData.pMonitor->m_sdrMaxLuminance, settings);
-}
 
 WP<CShader> CHyprOpenGLImpl::renderScreenShaderInternal() {
     static const auto PDT            = CConfigValue<Config::INTEGER>("debug:damage_tracking");
@@ -1374,8 +1248,7 @@ WP<CShader> CHyprOpenGLImpl::renderScreenShaderInternal() {
 }
 
 WP<CShader> CHyprOpenGLImpl::renderToFBInternal(SP<ITexture> tex, const STextureRenderData& data, eTextureType texType, const CBox& newBox) {
-    static const auto  PENABLECM = CConfigValue<Config::INTEGER>("render:cm_enabled");
-    static auto        PBLEND    = CConfigValue<Config::INTEGER>("render:use_shader_blur_blend");
+    static auto        PBLEND = CConfigValue<Config::INTEGER>("render:use_shader_blur_blend");
 
     auto&              m_renderData = g_pHyprRenderer->m_renderData;
 
@@ -1389,53 +1262,12 @@ WP<CShader> CHyprOpenGLImpl::renderToFBInternal(SP<ITexture> tex, const STexture
         case TEXTURE_RGBX: shaderFeatures &= ~SH_FEAT_RGBA; break;
 
         // TODO set correct features
-        case TEXTURE_EXTERNAL: shader = getShaderVariant(SH_FRAG_EXT, SH_FEAT_ROUNDING | SH_FEAT_DISCARD | SH_FEAT_TINT | globalFeatures()); break; // might be unused
+        case TEXTURE_EXTERNAL: shader = getShaderVariant(SH_FRAG_EXT, SH_FEAT_ROUNDING | SH_FEAT_DISCARD | SH_FEAT_TINT); break; // might be unused
         default: RASSERT(false, "tex->m_iTarget unsupported!");
     }
 
-    if (data.finalMonitorCM || (g_pHyprRenderer->m_renderData.currentWindow && g_pHyprRenderer->m_renderData.currentWindow->m_ruleApplicator->RGBX().valueOrDefault()))
+    if (data.finalOutput || (g_pHyprRenderer->m_renderData.currentWindow && g_pHyprRenderer->m_renderData.currentWindow->m_ruleApplicator->RGBX().valueOrDefault()))
         shaderFeatures &= ~SH_FEAT_RGBA;
-
-    const auto surface                       = g_pHyprRenderer->m_renderData.surface;
-    const auto WORK_BUFFER_IMAGE_DESCRIPTION = g_pHyprRenderer->m_renderData.pMonitor->workBufferImageDescription();
-
-    // chosenSdrEotf contains the valid eotf for this display
-
-    const auto SOURCE_IMAGE_DESCRIPTION = [&] {
-        if (tex->m_imageDescription)
-            return tex->m_imageDescription;
-
-        // if valid CM surface, use that as a source
-        if (surface.valid() && surface->m_colorManagement.valid())
-            return CImageDescription::from(surface->m_colorManagement->imageDescription());
-
-        if (data.cmBackToSRGB)
-            return tex->m_imageDescription ? tex->m_imageDescription : WORK_BUFFER_IMAGE_DESCRIPTION;
-
-        // otherwise, if we are CM'ing back into source, use chosen, because that's what our work buffer is in
-        // the same applies to the final monitor CM
-        if (data.finalMonitorCM) // NOLINTNEXTLINE
-            return WORK_BUFFER_IMAGE_DESCRIPTION;
-
-        // otherwise, default
-        return getDefaultImageDescription();
-    }();
-
-    const auto TARGET_IMAGE_DESCRIPTION = [&] {
-        if (g_pHyprRenderer->m_renderData.currentFB->imageDescription())
-            return g_pHyprRenderer->m_renderData.currentFB->imageDescription();
-
-        // if we are CM'ing back, use default sRGB
-        if (data.cmBackToSRGB)
-            return getDefaultImageDescription();
-
-        // for final CM, use the target description
-        if (data.finalMonitorCM)
-            return g_pHyprRenderer->m_renderData.pMonitor->m_imageDescription;
-        // otherwise, use chosen, we're drawing into the work buffer
-        // NOLINTNEXTLINE
-        return WORK_BUFFER_IMAGE_DESCRIPTION;
-    }();
 
     if (data.blur && data.blurredBG && (*PBLEND || data.forceBlurBlend))
         shaderFeatures |= SH_FEAT_BLUR;
@@ -1446,19 +1278,8 @@ WP<CShader> CHyprOpenGLImpl::renderToFBInternal(SP<ITexture> tex, const STexture
     if (data.forceBlurBlend)
         shaderFeatures |= SH_FEAT_BLUR_ALPHA_MASK;
 
-    if (data.motionBlur.enabled)
-        shaderFeatures |= SH_FEAT_MOTION_BLUR;
-
     if (data.discardActive)
         shaderFeatures |= SH_FEAT_DISCARD;
-
-    const bool skipCM = !*PENABLECM || !m_cmSupported                   /* CM unsupported or disabled */
-        || g_pHyprRenderer->m_renderData.pMonitor->doesNoShaderCM()     /* no shader needed */
-        || !SOURCE_IMAGE_DESCRIPTION->needsCM(TARGET_IMAGE_DESCRIPTION) /* Source and target have matching image descriptions */
-        ;
-
-    if (g_pHyprRenderer->m_renderData.pMonitor->needsACopyFB())
-        Log::logger->log(Log::TRACE, "CM: render to FB skip={} {} -> {}", skipCM, SOURCE_IMAGE_DESCRIPTION->value(), TARGET_IMAGE_DESCRIPTION->value());
 
     if (data.allowDim && g_pHyprRenderer->m_renderData.currentWindow &&
         (g_pHyprRenderer->m_renderData.currentWindow->presentation().notRespondingTint() > 0 || g_pHyprRenderer->m_renderData.currentWindow->presentation().dimPercent() > 0))
@@ -1467,37 +1288,9 @@ WP<CShader> CHyprOpenGLImpl::renderToFBInternal(SP<ITexture> tex, const STexture
     if (data.round > 0)
         shaderFeatures |= SH_FEAT_ROUNDING;
 
-    if (!skipCM) {
-        const auto settings =
-            g_pHyprRenderer->getCMSettings(SOURCE_IMAGE_DESCRIPTION, TARGET_IMAGE_DESCRIPTION, surface.valid() ? surface.lock() : nullptr, true,
-                                           g_pHyprRenderer->m_renderData.pMonitor->m_sdrMinLuminance, g_pHyprRenderer->m_renderData.pMonitor->m_sdrMaxLuminance, true);
-
-        shaderFeatures |= SH_FEAT_CM;
-
-        if (TARGET_IMAGE_DESCRIPTION->value().icc.present)
-            shaderFeatures |= SH_FEAT_ICC;
-        else {
-            if (settings.needsTonemap) {
-                shaderFeatures |= SH_FEAT_TONEMAP;
-                if (settings.tonemapMode == 3)
-                    shaderFeatures |= SH_FEAT_ALT_TONEMAP;
-            }
-
-            if (!data.finalMonitorCM && settings.needsSDRmod)
-                shaderFeatures |= SH_FEAT_SDR_MOD;
-        }
-
-        if (!shader)
-            shader = getShaderVariant(SH_FRAG_SURFACE, shaderFeatures | globalFeatures(), settings.sourceTF, settings.targetTF);
-        shader = useShader(shader);
-
-        passCMUniforms(shader, SOURCE_IMAGE_DESCRIPTION, TARGET_IMAGE_DESCRIPTION, true, g_pHyprRenderer->m_renderData.pMonitor->m_sdrMinLuminance,
-                       g_pHyprRenderer->m_renderData.pMonitor->m_sdrMaxLuminance, settings);
-    } else {
-        if (!shader)
-            shader = getShaderVariant(SH_FRAG_SURFACE, shaderFeatures | globalFeatures());
-        shader = useShader(shader);
-    }
+    if (!shader)
+        shader = getShaderVariant(SH_FRAG_SURFACE, shaderFeatures);
+    shader = useShader(shader);
 
     shader->setUniformFloat(SHADER_ALPHA, alpha);
 
@@ -1536,21 +1329,6 @@ WP<CShader> CHyprOpenGLImpl::renderToFBInternal(SP<ITexture> tex, const STexture
     shader->setUniformFloat2(SHADER_FULL_SIZE, FULLSIZE.x, FULLSIZE.y);
     shader->setUniformFloat(SHADER_RADIUS, data.round);
     shader->setUniformFloat(SHADER_ROUNDING_POWER, data.roundingPower);
-
-    if (data.motionBlur.enabled) {
-        CBox motionPrev   = data.motionBlur.previous;
-        CBox motionCurr   = data.motionBlur.current;
-        CBox motionSource = data.motionBlur.source;
-        m_renderData.renderModif.applyToBox(motionPrev);
-        m_renderData.renderModif.applyToBox(motionCurr);
-
-        shader->setUniformFloat4(SHADER_MOTION_PREV_BOX, motionPrev.x, motionPrev.y, motionPrev.w, motionPrev.h);
-        shader->setUniformFloat4(SHADER_MOTION_CURR_BOX, motionCurr.x, motionCurr.y, motionCurr.w, motionCurr.h);
-        shader->setUniformFloat4(SHADER_MOTION_SOURCE_BOX, motionSource.x, motionSource.y, motionSource.w, motionSource.h);
-        shader->setUniformFloat2(SHADER_MOTION_SOURCE_TEX_ORIGIN, data.motionBlur.sourceTexOrigin.x, data.motionBlur.sourceTexOrigin.y);
-        shader->setUniformFloat2(SHADER_MOTION_SOURCE_TEX_SIZE, data.motionBlur.sourceTexSize.x, data.motionBlur.sourceTexSize.y);
-        shader->setUniformInt(SHADER_MOTION_SAMPLES, data.motionBlur.samples);
-    }
 
     if (data.allowDim && g_pHyprRenderer->m_renderData.currentWindow) {
         if (g_pHyprRenderer->m_renderData.currentWindow->presentation().notRespondingTint() > 0) {
@@ -1801,7 +1579,7 @@ void CHyprOpenGLImpl::renderTextureMatte(SP<ITexture> tex, const CBox& box, SP<I
     // get transform
     const auto& glMatrix = g_pHyprRenderer->projectBoxToTarget(newBox);
 
-    auto        shader = useShader(getShaderVariant(SH_FRAG_MATTE, globalFeatures()));
+    auto        shader = useShader(getShaderVariant(SH_FRAG_MATTE));
     shader->setUniformMatrix3fv(SHADER_PROJ, 1, GL_TRUE, glMatrix.getMatrix());
     shader->setUniformInt(SHADER_TEX, 0);
     shader->setUniformInt(SHADER_ALPHA_MATTE, 1);
@@ -1952,29 +1730,6 @@ void CHyprOpenGLImpl::renderTextureWithBlurInternal(SP<ITexture> tex, const CBox
     scissor(nullptr);
 }
 
-static SShaderVariant getDecoVariant() {
-    const bool IS_ICC   = g_pHyprRenderer->workBufferImageDescription()->value().icc.present;
-    const auto settings = g_pHyprRenderer->getCMSettings(g_pHyprRenderer->workBufferImageDescription(), getDefaultImageDescription(), nullptr, true,
-                                                         g_pHyprRenderer->m_renderData.pMonitor->m_sdrMinLuminance, g_pHyprRenderer->m_renderData.pMonitor->m_sdrMaxLuminance);
-    const auto uniformSettings =
-        g_pHyprRenderer->getCMSettings(getDefaultImageDescription(), g_pHyprRenderer->workBufferImageDescription(), nullptr, true,
-                                       g_pHyprRenderer->m_renderData.pMonitor->m_sdrMinLuminance, g_pHyprRenderer->m_renderData.pMonitor->m_sdrMaxLuminance);
-
-    ShaderFeatureFlags features = SH_FEAT_ROUNDING | SH_FEAT_CM | globalFeatures();
-    if (IS_ICC)
-        features |= SH_FEAT_ICC;
-    else {
-        if (settings.needsTonemap) {
-            features |= SH_FEAT_TONEMAP;
-            if (settings.tonemapMode == 3)
-                features |= SH_FEAT_ALT_TONEMAP;
-        }
-        if (settings.needsSDRmod)
-            features |= SH_FEAT_SDR_MOD;
-    }
-    return {.features = features, .sourceTF = uniformSettings.sourceTF, .targetTF = uniformSettings.targetTF};
-}
-
 void CHyprOpenGLImpl::renderBorder(const CBox& box, const Config::CGradientValueData& grad, SBorderRenderData data) {
     auto& m_renderData = g_pHyprRenderer->m_renderData;
     RASSERT((box.width > 0 && box.height > 0), "Tried to render rect with width/height < 0!");
@@ -2008,14 +1763,7 @@ void CHyprOpenGLImpl::renderBorder(const CBox& box, const Config::CGradientValue
     const auto  BLEND = m_blend;
     blend(true);
 
-    WP<CShader> shader;
-
-    const bool  skipCM = !m_cmSupported || !g_pHyprRenderer->workBufferImageDescription()->needsCM(getDefaultImageDescription());
-    if (!skipCM) {
-        shader = useShader(getShaderVariant(SH_FRAG_BORDER1, getDecoVariant()));
-        passCMUniforms(shader, getDefaultImageDescription());
-    } else
-        shader = useShader(getShaderVariant(SH_FRAG_BORDER1, SH_FEAT_ROUNDING | globalFeatures()));
+    auto shader = useShader(getShaderVariant(SH_FRAG_BORDER1, SH_FEAT_ROUNDING));
 
     shader->setUniformMatrix3fv(SHADER_PROJ, 1, GL_TRUE, glMatrix.getMatrix());
     shader->setUniform4fv(SHADER_GRADIENT, grad.m_colorsOkLabA.size() / 4, grad.m_colorsOkLabA);
@@ -2090,13 +1838,7 @@ void CHyprOpenGLImpl::renderBorder(const CBox& box, const Config::CGradientValue
     const auto  BLEND = m_blend;
     blend(true);
 
-    WP<CShader> shader;
-    const bool  skipCM = !m_cmSupported || !g_pHyprRenderer->workBufferImageDescription()->needsCM(getDefaultImageDescription());
-    if (!skipCM) {
-        shader = useShader(getShaderVariant(SH_FRAG_BORDER1, getDecoVariant()));
-        passCMUniforms(shader, getDefaultImageDescription());
-    } else
-        shader = useShader(getShaderVariant(SH_FRAG_BORDER1, SH_FEAT_ROUNDING | globalFeatures()));
+    auto shader = useShader(getShaderVariant(SH_FRAG_BORDER1, SH_FEAT_ROUNDING));
 
     shader->setUniformMatrix3fv(SHADER_PROJ, 1, GL_TRUE, glMatrix.getMatrix());
     shader->setUniform4fv(SHADER_GRADIENT, grad1.m_colorsOkLabA.size() / 4, grad1.m_colorsOkLabA);
@@ -2167,9 +1909,7 @@ void CHyprOpenGLImpl::renderRoundedShadow(const CBox& box, int round, float roun
 
     blend(true);
 
-    const auto TF      = m_renderData.currentFB->imageDescription()->value().transferFunction;
-    const bool needsCM = TF != CM_TRANSFER_FUNCTION_EXT_LINEAR;
-    auto       shader  = useShader(getShaderVariant(SH_FRAG_SHADOW, (needsCM ? SH_FEAT_CM : 0) | globalFeatures(), TF));
+    auto shader = useShader(getShaderVariant(SH_FRAG_SHADOW));
 
     shader->setUniformMatrix3fv(SHADER_PROJ, 1, GL_TRUE, glMatrix.getMatrix());
 
@@ -2282,7 +2022,7 @@ void CHyprOpenGLImpl::renderInnerGlow(const CBox& box, int round, float rounding
 
     blend(true);
 
-    auto shader = useShader(getShaderVariant(SH_FRAG_INNER_GLOW, globalFeatures()));
+    auto shader = useShader(getShaderVariant(SH_FRAG_INNER_GLOW));
 
     shader->setUniformMatrix3fv(SHADER_PROJ, 1, GL_TRUE, glMatrix.getMatrix());
 
@@ -2340,16 +2080,13 @@ void CHyprOpenGLImpl::renderInnerGlow(const CBox& box, int round, float rounding
 }
 
 bool CHyprOpenGLImpl::saveBufferForMirror(const CBox& box) {
-    const auto TEX = g_pHyprRenderer->m_renderData.pMonitor->resources()->m_mirrorTex ? g_pHyprRenderer->m_renderData.pMonitor->resources()->m_mirrorTex :
-                                                                                        g_pHyprRenderer->m_renderData.currentFB->getTexture();
+    const auto TEX = g_pHyprRenderer->m_renderData.currentFB->getTexture();
     if (!TEX) {
         Log::logger->log(Log::ERR, "Invalid source texture for mirror");
         return false;
     }
     auto fb    = g_pHyprRenderer->m_renderData.pMonitor->resources()->mirrorFB();
     auto guard = g_pHyprRenderer->bindTempFB(fb);
-
-    Log::logger->log(Log::TRACE, "CM: saveBufferForMirror {} -> {}", TEX->m_imageDescription->value(), g_pHyprRenderer->m_renderData.currentFB->imageDescription()->value());
 
     blend(false);
 
@@ -2498,12 +2235,8 @@ bool CHyprOpenGLImpl::explicitSyncSupported() {
     return m_exts.EGL_ANDROID_native_fence_sync_ext;
 }
 
-bool CHyprOpenGLImpl::fp16Supported() {
-    return m_fp16Supported;
-}
-
-WP<CShader> CHyprOpenGLImpl::getShaderVariant(ePreparedFragmentShader frag, ShaderFeatureFlags features, eTransferFunction sourceTF, eTransferFunction targetTF) {
-    return getShaderVariant(frag, SShaderVariant{.features = features, .sourceTF = sourceTF, .targetTF = targetTF});
+WP<CShader> CHyprOpenGLImpl::getShaderVariant(ePreparedFragmentShader frag, ShaderFeatureFlags features) {
+    return getShaderVariant(frag, SShaderVariant{.features = features});
 }
 
 WP<CShader> CHyprOpenGLImpl::getShaderVariant(ePreparedFragmentShader frag, const SShaderVariant& variant) {
@@ -2513,7 +2246,7 @@ WP<CShader> CHyprOpenGLImpl::getShaderVariant(ePreparedFragmentShader frag, cons
     if (it == variants.end()) {
         auto shader = makeShared<CShader>();
 
-        Log::logger->log(Log::INFO, "compiling feature set {} (TFs {} -> {}) for {}", variant.features, sc<int>(variant.sourceTF), sc<int>(variant.targetTF), FRAG_SHADERS[frag]);
+        Log::logger->log(Log::INFO, "compiling feature set {} for {}", variant.features, FRAG_SHADERS[frag]);
 
         const auto fragSrc = g_pShaderLoader->getVariantSource(frag, variant);
 

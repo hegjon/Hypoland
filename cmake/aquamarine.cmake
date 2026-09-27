@@ -1,7 +1,7 @@
 # Builds the embedded aquamarine (subprojects/aquamarine) as a static library.
 #
 # The system aquamarine requires OpenGL ES 3.0 for its DRM renderer, so Hypoland
-# carries its own copy with the GLES2 fallback and never links the system one.
+# carries its own copy, which uses GLES2 only, and never links the system one.
 # aquamarine's own CMakeLists.txt assumes it is the top-level project, which is
 # why the target is defined here instead of using add_subdirectory().
 

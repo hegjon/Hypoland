@@ -18,18 +18,6 @@ enum eWrapMode : uint8_t {
     WRAP_REPEAT,
 };
 
-struct SMotionBlurData {
-    bool     enabled         = false;
-    CBox     previous        = {};
-    CBox     current         = {};
-    CBox     source          = {};
-    Vector2D sourceTexOrigin = {};
-    Vector2D sourceTexSize;
-    int      samples = 1;
-
-    CBox     extents() const;
-};
-
 class CTexPassElement : public IPassElement {
   public:
     struct SRenderData {
@@ -49,7 +37,6 @@ class CTexPassElement : public IPassElement {
         std::optional<float>   ignoreAlpha;
         std::optional<bool>    blockBlurOptimization;
         std::optional<bool>    liveBlurOverride;
-        bool                   cmBackToSRGB = false;
 
         bool                   discardActive = false;
         bool                   allowCustomUV = false;
@@ -67,7 +54,6 @@ class CTexPassElement : public IPassElement {
 
         SP<Render::ITexture>   blurredBG;
         SP<Render::ITexture>   blurAlphaMatte;
-        SMotionBlurData        motionBlur;
         bool                   blurShapeInvalid = false;
     };
 

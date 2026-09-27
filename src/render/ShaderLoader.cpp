@@ -140,14 +140,6 @@ std::string CShaderLoader::process(const std::string& filename, const std::map<s
 }
 
 std::string CShaderLoader::getVariantSource(ePreparedFragmentShader frag, SShaderVariant variant) {
-    // none of these can be expressed in GLSL ES 1.00, the shaders have no code for them
-    variant.features &= ~(SH_FEAT_CM | SH_FEAT_TONEMAP | SH_FEAT_ALT_TONEMAP | SH_FEAT_SDR_MOD | SH_FEAT_ICC | SH_FEAT_MIRROR | SH_FEAT_MOTION_BLUR);
-
-    // without CM the transfer functions are unused, keep them at the default so we don't cache
-    // several variants of identical source
-    variant.sourceTF = SHADER_DEFAULT_TF;
-    variant.targetTF = SHADER_DEFAULT_TF;
-
     if (!m_fragVariants[frag].contains(variant)) {
         ASSERT(m_fragFiles[frag].length());
         m_overrideDefines             = getDefines(variant);

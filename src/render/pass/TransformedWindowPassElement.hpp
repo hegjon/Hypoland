@@ -16,7 +16,6 @@ class CTransformedWindowPassElement : public IPassElement {
         int                     blurRound         = 0;
         float                   blurRoundingPower = 2.F;
         CBox                    transformedBox;
-        SMotionBlurData         motionBlur;
         bool                    standalone        = false;
         bool                    renderingSnapshot = false;
     };

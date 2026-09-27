@@ -546,47 +546,6 @@ void IElementRenderer::drawTexMatte(WP<CTextureMatteElement> element, const CReg
         draw(element, damage);
 }
 
-static CBox motionBlurSourceBox(const SMotionBlurData& motionBlur, const CBox& outputBox, double padding) {
-    if (!motionBlur.enabled || motionBlur.samples < 1)
-        return outputBox.intersection(motionBlur.current);
-
-    CBox required;
-    bool hasRequired = false;
-    for (int i = 0; i < motionBlur.samples; ++i) {
-        const double t         = sc<double>(i) / motionBlur.samples;
-        const CBox   sampleBox = {
-            motionBlur.current.x + (motionBlur.previous.x - motionBlur.current.x) * t,
-            motionBlur.current.y + (motionBlur.previous.y - motionBlur.current.y) * t,
-            motionBlur.current.w + (motionBlur.previous.w - motionBlur.current.w) * t,
-            motionBlur.current.h + (motionBlur.previous.h - motionBlur.current.h) * t,
-        };
-        const CBox visibleSample = outputBox.intersection(sampleBox);
-        if (visibleSample.empty() || sampleBox.w <= 0.0 || sampleBox.h <= 0.0)
-            continue;
-
-        const Vector2D scale        = motionBlur.current.size() / sampleBox.size();
-        CBox           sourceSample = {
-            motionBlur.current.pos() + (visibleSample.pos() - sampleBox.pos()) * scale,
-            visibleSample.size() * scale,
-        };
-        sourceSample.expand(padding);
-
-        if (!hasRequired) {
-            required    = sourceSample;
-            hasRequired = true;
-            continue;
-        }
-
-        const double x1 = std::min(required.x, sourceSample.x);
-        const double y1 = std::min(required.y, sourceSample.y);
-        const double x2 = std::max(required.x + required.w, sourceSample.x + sourceSample.w);
-        const double y2 = std::max(required.y + required.h, sourceSample.y + sourceSample.h);
-        required        = {x1, y1, x2 - x1, y2 - y1};
-    }
-
-    return hasRequired ? required.intersection(motionBlur.current) : CBox{};
-}
-
 static bool transformPlanFits(const SWindowTransformPlan& plan, double scale, bool hasMatte) {
     static const auto LIMITS = [] {
         GLint textureSize = 0;
@@ -637,14 +596,13 @@ void IElementRenderer::drawTransformedWindow(WP<CTransformedWindowPassElement> e
     bool            applyTransformers = PWINDOW && !element->m_data.standalone && !element->m_data.renderingSnapshot;
     const CBox      MONITORBOX        = CBox{{}, pMonitor->m_size};
 
-    SMotionBlurData motionBlur         = applyTransformers ? element->m_data.motionBlur : SMotionBlurData{};
-    const CBox      visualBox          = applyTransformers ? (motionBlur.enabled ? motionBlur.extents() : element->m_data.transformedBox) : element->m_data.currentBox;
+    const CBox      visualBox          = applyTransformers ? element->m_data.transformedBox : element->m_data.currentBox;
     const bool      HASRENDERMODIFIERS = renderData.renderModif.enabled && !renderData.renderModif.modifs.empty();
     CBox            visibleOutput      = HASRENDERMODIFIERS ? visualBox : visualBox.intersection(MONITORBOX);
     if (visibleOutput.empty())
         return;
 
-    CBox                 transformerOutput = motionBlur.enabled ? motionBlurSourceBox(motionBlur, visibleOutput, 1.0 / pMonitor->m_scale) : visibleOutput;
+    CBox                 transformerOutput = visibleOutput;
 
     SWindowTransformPlan plan;
     if (applyTransformers)
@@ -671,7 +629,6 @@ void IElementRenderer::drawTransformedWindow(WP<CTransformedWindowPassElement> e
 
     if (plan.sourceBox.empty() || !transformPlanFits(plan, pMonitor->m_scale, element->m_data.blur)) {
         applyTransformers = false;
-        motionBlur        = {};
         visibleOutput     = HASRENDERMODIFIERS ? element->m_data.currentBox : element->m_data.currentBox.intersection(MONITORBOX);
         if (visibleOutput.empty())
             return;
@@ -694,7 +651,6 @@ void IElementRenderer::drawTransformedWindow(WP<CTransformedWindowPassElement> e
         matteFB.reset();
 
         applyTransformers = false;
-        motionBlur        = {};
         plan              = {};
         plan.sourceBox    = MONITORBOX;
         plan.outputBox    = MONITORBOX;
@@ -794,25 +750,11 @@ void IElementRenderer::drawTransformedWindow(WP<CTransformedWindowPassElement> e
     if (!last.framebuffer || !last.framebuffer->getTexture())
         return;
 
-    const CBox EXPECTEDOUTPUT = plan.stages.empty() ? SOURCECANVAS : pixelBoxForLogical(plan.stages.back().outputBox.copy().expand(CANVASPADDING), pMonitor->m_scale);
-    if (!last.success || last.box != EXPECTEDOUTPUT)
-        motionBlur = {};
-
     CBox outputBox = last.box;
-    if (motionBlur.enabled) {
-        motionBlur.previous.scale(pMonitor->m_scale);
-        motionBlur.current.scale(pMonitor->m_scale);
-        motionBlur.source          = motionBlur.current;
-        motionBlur.sourceTexOrigin = last.box.pos();
-        motionBlur.sourceTexSize   = last.framebuffer->getTexture()->m_size;
-        outputBox                  = pixelBoxForLogical(visibleOutput, pMonitor->m_scale);
-    }
-
     CTexPassElement::SRenderData data;
-    data.tex        = last.framebuffer->getTexture();
-    data.box        = outputBox;
-    data.a          = 1.F;
-    data.motionBlur = motionBlur;
+    data.tex = last.framebuffer->getTexture();
+    data.box = outputBox;
+    data.a   = 1.F;
 
     CRegion outputRegion{outputBox};
     renderData.renderModif.applyToRegion(outputRegion);

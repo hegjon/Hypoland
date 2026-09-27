@@ -142,7 +142,6 @@ void CGLElementRenderer::draw(WP<CTexPassElement> element, const CRegion& damage
             .allowCustomUV  = m_data.allowCustomUV,
             .wrapX          = m_data.wrapX,
             .wrapY          = m_data.wrapY,
-            .cmBackToSRGB   = m_data.cmBackToSRGB,
             .discardMode    = m_data.ignoreAlpha.has_value() ? sc<uint32_t>(DISCARD_ALPHA) : m_data.discardMode,
             .discardOpacity = m_data.ignoreAlpha.has_value() ? *m_data.ignoreAlpha : m_data.discardOpacity,
             .clipRegion     = m_data.clipRegion,
@@ -150,7 +149,6 @@ void CGLElementRenderer::draw(WP<CTexPassElement> element, const CRegion& damage
 
             .primarySurfaceUVTopLeft     = g_pHyprRenderer->m_renderData.primarySurfaceUVTopLeft,
             .primarySurfaceUVBottomRight = g_pHyprRenderer->m_renderData.primarySurfaceUVBottomRight,
-            .motionBlur                  = m_data.motionBlur,
         });
 };
 

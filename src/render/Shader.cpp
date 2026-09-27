@@ -132,30 +132,11 @@ void CShader::getUniformLocations() {
     m_uniformLocations[SHADER_TEX_TYPE]    = getUniform("texType");
 
     // shader has #include "CM.glsl"
-    m_uniformLocations[SHADER_SRC_TF_RANGE]         = getUniform("srcTFRange");
-    m_uniformLocations[SHADER_DST_TF_RANGE]         = getUniform("dstTFRange");
-    m_uniformLocations[SHADER_TARGET_PRIMARIES_XYZ] = getUniform("targetPrimariesXYZ");
-    m_uniformLocations[SHADER_MAX_LUMINANCE]        = getUniform("maxLuminance");
-    m_uniformLocations[SHADER_SRC_REF_LUMINANCE]    = getUniform("srcRefLuminance");
-    m_uniformLocations[SHADER_DST_MAX_LUMINANCE]    = getUniform("dstMaxLuminance");
-    m_uniformLocations[SHADER_DST_REF_LUMINANCE]    = getUniform("dstRefLuminance");
-    m_uniformLocations[SHADER_SDR_SATURATION]       = getUniform("sdrSaturation");
-    m_uniformLocations[SHADER_SDR_BRIGHTNESS]       = getUniform("sdrBrightnessMultiplier");
-    m_uniformLocations[SHADER_CONVERT_MATRIX]       = getUniform("convertMatrix");
-    m_uniformLocations[SHADER_LUT_3D]               = getUniform("iccLut3D");
-    m_uniformLocations[SHADER_LUT_SIZE]             = getUniform("iccLutSize");
-    m_uniformLocations[SHADER_TONEMAP_MODE]         = getUniform("tonemapMode");
     //
     m_uniformLocations[SHADER_TEX]                      = getUniform("tex");
     m_uniformLocations[SHADER_BLURRED_BG]               = getUniform("blurredBG");
     m_uniformLocations[SHADER_UV_SIZE]                  = getUniform("uvSize");
     m_uniformLocations[SHADER_UV_OFFSET]                = getUniform("uvOffset");
-    m_uniformLocations[SHADER_MOTION_PREV_BOX]          = getUniform("motionPrevBox");
-    m_uniformLocations[SHADER_MOTION_CURR_BOX]          = getUniform("motionCurrBox");
-    m_uniformLocations[SHADER_MOTION_SOURCE_BOX]        = getUniform("motionSourceBox");
-    m_uniformLocations[SHADER_MOTION_SOURCE_TEX_ORIGIN] = getUniform("motionSourceTexOrigin");
-    m_uniformLocations[SHADER_MOTION_SOURCE_TEX_SIZE]   = getUniform("motionSourceTexSize");
-    m_uniformLocations[SHADER_MOTION_SAMPLES]           = getUniform("motionSamples");
     m_uniformLocations[SHADER_BLUR_ALPHA_MATTE]         = getUniform("blurAlphaMatte");
     m_uniformLocations[SHADER_BLUR_ALPHA]               = getUniform("blurAlpha");
     m_uniformLocations[SHADER_ALPHA]                    = getUniform("alpha");

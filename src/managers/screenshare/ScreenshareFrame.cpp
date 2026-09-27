@@ -2,7 +2,6 @@
 #include "../../pointer/PointerManager.hpp"
 #include "../input/InputManager.hpp"
 #include "../permissions/DynamicPermissionManager.hpp"
-#include "../../protocols/ColorManagement.hpp"
 #include "../../Compositor.hpp"
 #include "../../render/Renderer.hpp"
 #include "../../render/OpenGL.hpp"
@@ -193,14 +192,6 @@ void CScreenshareFrame::renderMonitor() {
     if (!TEXTURE->m_imageDescription)
         Log::logger->log(Log::ERR, "CM: FIXME no source image description for screenshare");
 
-    if (!g_pHyprRenderer->m_renderData.currentFB->imageDescription())
-        Log::logger->log(Log::ERR, "CM: FIXME no target image description for screenshare");
-
-    if (TEXTURE->m_imageDescription && g_pHyprRenderer->m_renderData.currentFB->imageDescription())
-        Log::logger->log(Log::TRACE, "CM: screenshot renderMonitor {} -> {}", TEXTURE->m_imageDescription->value(),
-                         g_pHyprRenderer->m_renderData.currentFB->imageDescription()->value());
-
-    const bool IS_CM_AWARE               = PROTO::colorManagement && PROTO::colorManagement->isClientCMAware(m_session->m_client);
     g_pHyprRenderer->m_renderData.fbSize = m_bufferSize;
     g_pHyprRenderer->setProjectionType(Render::RPT_EXPORT);
     g_pHyprRenderer->m_renderData.transformDamage = false;
@@ -215,9 +206,8 @@ void CScreenshareFrame::renderMonitor() {
     g_pHyprRenderer->startRenderPass();
     g_pHyprRenderer->draw(
         CTexPassElement::SRenderData{
-            .tex          = TEXTURE,
-            .box          = monbox,
-            .cmBackToSRGB = !IS_CM_AWARE,
+            .tex = TEXTURE,
+            .box = monbox,
         },
         {0, 0, m_bufferSize.x, m_bufferSize.y});
     g_pHyprRenderer->m_renderData.renderModif.enabled = OLD;

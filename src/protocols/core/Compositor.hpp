@@ -32,7 +32,6 @@ class CViewportResource;
 class CDRMSyncobjSurfaceResource;
 class CFifoResource;
 class CCommitTimerResource;
-class CColorManagementSurface;
 class CContentType;
 
 class CWLCallbackResource {
@@ -116,12 +115,10 @@ class CWLSurfaceResource {
     WP<CDRMSyncobjSurfaceResource>         m_syncobj;     // may not be present
     WP<CFifoResource>                      m_fifo;        // may not be present
     WP<CCommitTimerResource>               m_commitTimer; // may not be present
-    WP<CColorManagementSurface>            m_colorManagement;
     WP<CContentType>                       m_contentType;
 
     void                                   breadthfirst(std::function<void(SP<CWLSurfaceResource>, const Vector2D&, void*)> fn, void* data);
     SP<CWLSurfaceResource>                 findFirstPreorder(std::function<bool(SP<CWLSurfaceResource>)> fn);
-    SP<CWLSurfaceResource>                 findWithCM();
     void                                   presentFeedback(const Time::steady_tp& when, PHLMONITOR pMonitor, bool discarded = false);
     void                                   scheduleState(WP<SSurfaceState> state);
     void                                   drainSyncFds(WP<SSurfaceState> state, eLockReason reason);

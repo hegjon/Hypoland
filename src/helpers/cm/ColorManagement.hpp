@@ -254,9 +254,6 @@ namespace NColorManagement {
         // Matrix data from ICC
         struct SICCData {
             bool                        present = false;
-            size_t                      lutSize = 33;
-            std::vector<float>          lutDataPacked;
-            SP<Render::ITexture>        lutTexture;
             std::optional<SVCGTTable16> vcgt;
         } icc;
 
@@ -381,8 +378,6 @@ namespace NColorManagement {
 
     using PImageDescription = WP<const CImageDescription>;
 
-    RGBAColor         convertColor(RGBAColor color, PImageDescription srcDesc, PImageDescription dstDesc);
-    CHyprColor        convertColor(const CHyprColor& color, PImageDescription srcDesc, PImageDescription dstDesc);
 
     PImageDescription getDefaultImageDescription();
 

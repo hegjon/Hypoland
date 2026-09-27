@@ -149,88 +149,6 @@ struct CmsTransformDeleter {
 using UniqueProfile   = std::unique_ptr<std::remove_pointer_t<cmsHPROFILE>, CmsProfileDeleter>;
 using UniqueTransform = std::unique_ptr<std::remove_pointer_t<cmsHTRANSFORM>, CmsTransformDeleter>;
 
-static UniqueProfile createLinearSRGBProfile() {
-    cmsCIExyYTRIPLE prim{};
-    // sRGB / Rec.709 primaries
-    prim.Red.x   = 0.6400;
-    prim.Red.y   = 0.3300;
-    prim.Red.Y   = 1.0;
-    prim.Green.x = 0.3000;
-    prim.Green.y = 0.6000;
-    prim.Green.Y = 1.0;
-    prim.Blue.x  = 0.1500;
-    prim.Blue.y  = 0.0600;
-    prim.Blue.Y  = 1.0;
-
-    cmsCIExyY wp{};
-    wp.x = 0.3127;
-    wp.y = 0.3290;
-    wp.Y = 1.0; // D65
-
-    cmsToneCurve* lin       = cmsBuildGamma(nullptr, 1.0);
-    cmsToneCurve* curves[3] = {lin, lin, lin};
-
-    cmsHPROFILE   p = cmsCreateRGBProfile(&wp, &prim, curves);
-
-    cmsFreeToneCurve(lin);
-    return UniqueProfile{p};
-}
-
-static std::expected<void, std::string> buildIcc3DLut(cmsHPROFILE profile, SImageDescription& image) {
-    UniqueProfile src = createLinearSRGBProfile();
-    if (!src)
-        return std::unexpected("Failed to create linear sRGB profile");
-
-    // Rendering intent: RELATIVE_COLORIMETRIC is common for displays; add BPC to be safe.
-    const int             intent = INTENT_RELATIVE_COLORIMETRIC;
-    const cmsUInt32Number flags  = cmsFLAGS_BLACKPOINTCOMPENSATION | cmsFLAGS_HIGHRESPRECALC; // good quality precalc in LCMS
-
-    // float->float transform (linear input, encoded output in dst device space)
-    UniqueTransform xform{cmsCreateTransform(src.get(), TYPE_RGB_FLT, profile, TYPE_RGB_FLT, intent, flags)};
-    if (!xform)
-        return std::unexpected("Failed to create ICC transform");
-
-    Log::logger->log(Log::DEBUG, "Building a {}³ 3D LUT", image.icc.lutSize);
-
-    image.icc.present = true;
-    image.icc.lutDataPacked.resize(image.icc.lutSize * image.icc.lutSize * image.icc.lutSize * 3);
-
-    auto idx = [&image](int r, int g, int b) -> size_t {
-        //
-        return ((size_t)b * image.icc.lutSize * image.icc.lutSize + (size_t)g * image.icc.lutSize + (size_t)r) * 3;
-    };
-
-    for (size_t bz = 0; bz < image.icc.lutSize; ++bz) {
-        for (size_t gy = 0; gy < image.icc.lutSize; ++gy) {
-            for (size_t rx = 0; rx < image.icc.lutSize; ++rx) {
-                float in[3] = {
-                    rx / float(image.icc.lutSize - 1),
-                    gy / float(image.icc.lutSize - 1),
-                    bz / float(image.icc.lutSize - 1),
-                };
-                float outRGB[3];
-                cmsDoTransform(xform.get(), in, outRGB, 1);
-
-                outRGB[0] = std::clamp(outRGB[0], 0.F, 1.F);
-                outRGB[1] = std::clamp(outRGB[1], 0.F, 1.F);
-                outRGB[2] = std::clamp(outRGB[2], 0.F, 1.F);
-
-                const size_t o                 = idx(rx, gy, bz);
-                image.icc.lutDataPacked[o + 0] = outRGB[0];
-                image.icc.lutDataPacked[o + 1] = outRGB[1];
-                image.icc.lutDataPacked[o + 2] = outRGB[2];
-            }
-        }
-    }
-
-    Log::logger->log(Log::DEBUG, "3D LUT constructed, size {}", image.icc.lutDataPacked.size());
-
-    // upload
-    image.icc.lutTexture = g_pHyprRenderer->createTexture(image.icc.lutDataPacked, image.icc.lutSize);
-
-    return {};
-}
-
 static constexpr cmsCIExyY buildPrimary(UniqueTransform& xform, std::array<float, 3> rgb) {
     float xyz_data[3];
     cmsDoTransform(xform.get(), rgb.data(), xyz_data, 1);
@@ -297,8 +215,8 @@ std::expected<SImageDescription, std::string> SImageDescription::fromICC(const s
     Log::logger->log(Log::DEBUG, "============= Begin ICC load =============");
     Log::logger->log(Log::DEBUG, "ICC size: {} bytes", image.rawICC.size());
 
-    if (const auto RET = buildIcc3DLut(prof, image); !RET)
-        return std::unexpected(RET.error());
+    // Only the VCGT gamma ramps of the profile are applied, through KMS. The 3D LUT needs GLES3.
+    image.icc.present = true;
 
     if (const auto RET = buildPrimaries(prof, image); !RET)
         return std::unexpected(RET.error());

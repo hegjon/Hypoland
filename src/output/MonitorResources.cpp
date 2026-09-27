@@ -37,8 +37,6 @@ void CMonitorResources::setImageDescription(NColorManagement::PImageDescription 
         res.buffer->setImageDescription(imageDescription);
     if (m_monitorMirrorFB)
         m_monitorMirrorFB->setImageDescription(getMirrorTexImageDescription());
-    if (m_mirrorTex)
-        m_mirrorTex->m_imageDescription = getMirrorTexImageDescription();
     invalidateMirrorFB();
 }
 
@@ -208,19 +206,4 @@ NColorManagement::PImageDescription CMonitorResources::getMirrorTexImageDescript
 
 Vector2D CMonitorResources::mirrorFBDamageSize() const {
     return m_monitor->m_transformedSize;
-}
-
-void CMonitorResources::enableMirror() {
-    if (m_mirrorTex)
-        return;
-    m_mirrorTex = g_pHyprRenderer->createTexture();
-    m_mirrorTex->allocate({m_size.x, m_size.y}, m_monitor->m_activeMonitorRule.m_enable10bit ? DRM_FORMAT_XRGB2101010 : DRM_FORMAT_XRGB8888);
-    m_mirrorTex->m_imageDescription = getMirrorTexImageDescription();
-    m_monitor->m_blurFBDirty        = true;
-}
-
-void CMonitorResources::disableMirror() {
-    if (m_mirrorTex)
-        m_monitor->m_blurFBDirty = true;
-    m_mirrorTex.reset();
 }

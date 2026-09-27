@@ -60,7 +60,6 @@
 #include "../protocols/core/Subcompositor.hpp"
 #include "../protocols/core/Output.hpp"
 #include "../protocols/core/Shm.hpp"
-#include "../protocols/ColorManagement.hpp"
 #include "../protocols/ContentType.hpp"
 #include "../protocols/XDGTag.hpp"
 #include "../protocols/XDGBell.hpp"
@@ -123,10 +122,6 @@ void CProtocolManager::onMonitorModeChange(PHLMONITOR pMonitor) {
         p.first->second->m_self = p.first->second;
     }
 
-    if (PROTO::colorManagement && g_pCompositor->shouldChangePreferredImageDescription()) {
-        Log::logger->log(Log::ERR, "FIXME: color management protocol is enabled, need a preferred image description id");
-        PROTO::colorManagement->onImagePreferredChanged(0);
-    }
 }
 
 CProtocolManager::CProtocolManager() {
@@ -320,7 +315,6 @@ CProtocolManager::~CProtocolManager() {
     PROTO::inputCapture.reset();
     PROTO::hyprlandSurface.reset();
     PROTO::contentType.reset();
-    PROTO::colorManagement.reset();
     PROTO::xdgTag.reset();
     PROTO::xdgBell.reset();
     PROTO::hotkey.reset();
@@ -393,7 +387,6 @@ bool CProtocolManager::isGlobalPrivileged(const wl_global* global) {
         PROTO::sync     ? PROTO::sync->getGlobal()      : nullptr,
         PROTO::mesaDRM  ? PROTO::mesaDRM->getGlobal()   : nullptr,
         PROTO::linuxDma ? PROTO::linuxDma->getGlobal()  : nullptr,
-	PROTO::colorManagement ? PROTO::colorManagement->getGlobal() : nullptr,
     };
     // clang-format on
 

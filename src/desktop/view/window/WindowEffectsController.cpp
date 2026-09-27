@@ -6,7 +6,6 @@
 #include "Window.hpp"
 #include "../../../managers/input/InputManager.hpp"
 #include "../../../render/Renderer.hpp"
-#include "../../../render/transformer/MotionBlurTransformer.hpp"
 #include "../../../render/transformer/TransformerList.hpp"
 #include "../../../render/transformer/WobbleTransformer.hpp"
 #include "../../../output/Monitor.hpp"
@@ -19,75 +18,8 @@ CWindowEffectsController::CWindowEffectsController(CWindow& window) : m_window(w
 
 CWindowEffectsController::~CWindowEffectsController() = default;
 
-Render::CMotionBlurTransformer* CWindowEffectsController::motionBlurTransformer() {
-    return m_transformers->get<Render::CMotionBlurTransformer>();
-}
-
-const Render::CMotionBlurTransformer* CWindowEffectsController::motionBlurTransformer() const {
-    return m_transformers->get<Render::CMotionBlurTransformer>();
-}
-
 Render::CWobbleTransformer* CWindowEffectsController::wobbleTransformer() {
     return m_transformers->get<Render::CWobbleTransformer>();
-}
-
-std::optional<MotionBlur::SState> CWindowEffectsController::motionBlurState(bool allowStale) const {
-    const auto MOTIONBLUR = motionBlurTransformer();
-    if (!MOTIONBLUR)
-        return std::nullopt;
-
-    return MOTIONBLUR->state(allowStale);
-}
-
-void CWindowEffectsController::damageMotionBlur(bool allowStale) const {
-    const auto STATE = motionBlurState(allowStale);
-    if (!STATE)
-        return;
-
-    CBox damage = STATE->extents();
-    damage.expand(4.F);
-    g_pHyprRenderer->damageBox(damage);
-}
-
-void CWindowEffectsController::recordMotionBlur(const CBox& previous, const CBox& current) {
-    if (previous == current || !Render::CMotionBlurTransformer::shouldEnable(m_window.m_self.lock())) {
-        resetMotionBlur();
-        return;
-    }
-
-    constexpr double MIN_EDGE_DELTA_PX = 2.0;
-
-    const auto       PMONITOR = m_window.m_monitor.lock();
-    const double     SCALE    = PMONITOR ? PMONITOR->m_scale : 1.0;
-    const double     DELTA    = std::max({std::abs(previous.x - current.x), std::abs(previous.y - current.y), std::abs(previous.x + previous.w - current.x - current.w),
-                                          std::abs(previous.y + previous.h - current.y - current.h)}) *
-        SCALE;
-
-    if (DELTA <= MIN_EDGE_DELTA_PX) {
-        resetMotionBlur();
-        return;
-    }
-
-    damageMotionBlur(true);
-
-    auto MOTIONBLUR = motionBlurTransformer();
-    if (!MOTIONBLUR)
-        MOTIONBLUR = m_transformers->emplace<Render::CMotionBlurTransformer>(m_window.m_self);
-
-    if (!MOTIONBLUR)
-        return;
-
-    MOTIONBLUR->record(previous, current);
-    damageMotionBlur();
-}
-
-void CWindowEffectsController::resetMotionBlur() {
-    damageMotionBlur(true);
-
-    if (auto MOTIONBLUR = motionBlurTransformer())
-        MOTIONBLUR->reset();
-
-    m_transformers->removeInactive();
 }
 
 void CWindowEffectsController::resetWobble() {
@@ -98,13 +30,10 @@ void CWindowEffectsController::resetWobble() {
 }
 
 void CWindowEffectsController::reset() {
-    resetMotionBlur();
     resetWobble();
 }
 
 void CWindowEffectsController::onPositionUpdate(const CBox& previous, const CBox& current, eWindowUpdateSource source) {
-    recordMotionBlur(previous, current);
-
     if (previous == current)
         return;
 
@@ -155,10 +84,6 @@ CBox CWindowEffectsController::transformBoxForDamage(const CBox& currentBox) con
 
 void CWindowEffectsController::preWindowRender(CSurfacePassElement::SRenderData* renderData) const {
     m_transformers->preWindowRender(renderData);
-}
-
-void CWindowEffectsController::amendTransformedRenderData(const CBox& currentBox, SMotionBlurData* motionBlurData) const {
-    m_transformers->amendTransformedRenderData(currentBox, motionBlurData);
 }
 
 const UP<Render::CWindowTransformerList>& CWindowEffectsController::transformers() const {

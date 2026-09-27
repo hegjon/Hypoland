@@ -5,7 +5,6 @@
 #include "../../../render/transformer/Transformer.hpp"
 
 namespace Render {
-    class CMotionBlurTransformer;
     class CWobbleTransformer;
     class CWindowTransformerList;
 }
@@ -25,9 +24,6 @@ namespace Desktop::View {
         CWindowEffectsController&                 operator=(CWindowEffectsController&&)      = delete;
 
         void                                      onPositionUpdate(const CBox& previous, const CBox& current, eWindowUpdateSource source);
-        std::optional<MotionBlur::SState>         motionBlurState(bool allowStale = false) const;
-        void                                      damageMotionBlur(bool allowStale = false) const;
-        void                                      resetMotionBlur();
         void                                      resetWobble();
         void                                      reset();
         bool                                      tickWobble();
@@ -37,13 +33,9 @@ namespace Desktop::View {
         CBox                                      transformedExtents(const CBox& currentBox) const;
         CBox                                      transformBoxForDamage(const CBox& currentBox) const;
         void                                      preWindowRender(CSurfacePassElement::SRenderData* renderData) const;
-        void                                      amendTransformedRenderData(const CBox& currentBox, SMotionBlurData* motionBlurData) const;
         const UP<Render::CWindowTransformerList>& transformers() const;
 
       private:
-        void                                  recordMotionBlur(const CBox& previous, const CBox& current);
-        Render::CMotionBlurTransformer*       motionBlurTransformer();
-        const Render::CMotionBlurTransformer* motionBlurTransformer() const;
         Render::CWobbleTransformer*           wobbleTransformer();
 
         CWindow&                              m_window;

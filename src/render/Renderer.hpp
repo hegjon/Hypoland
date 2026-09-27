@@ -174,7 +174,6 @@ namespace Render {
         virtual SP<ITexture>         createTexture(const Aquamarine::SDMABUFAttrs&, bool opaque = false)                                                                       = 0;
         virtual SP<ITexture>         createTexture(const int width, const int height, unsigned char* const)                                                                    = 0;
         virtual SP<ITexture>         createTexture(cairo_surface_t* cairo)                                                                                                     = 0;
-        virtual SP<ITexture>         createTexture(std::span<const float> lut3D, size_t N)                                                                                     = 0;
         virtual SP<ITexture>         createTexture(const SP<Aquamarine::IBuffer> buffer, bool keepDataCopy = false);
         virtual SP<ITexture>         renderText(const std::string& text, CHyprColor col, int pt, bool italic = false, const std::string& fontFamily = "", int maxWidth = 0,
                                                 int weight = 400);
@@ -182,7 +181,6 @@ namespace Render {
         SP<ITexture>                 loadAsset(const std::string& filename);
         virtual bool                 shouldUseNewBlurOptimizations(PHLLS pLayer, PHLWINDOW pWindow);
         virtual bool                 explicitSyncSupported()                                                                                                     = 0;
-        virtual bool                 fp16Supported()                                                                                                             = 0;
         virtual std::vector<SDRMFormat> getDRMFormats()                                                                                                          = 0;
         virtual std::vector<uint64_t>   getDRMFormatModifiers(DRMFormat format)                                                                                  = 0;
         virtual SP<IFramebuffer>        createFB(const std::string& name = "")                                                                                   = 0;
@@ -215,10 +213,6 @@ namespace Render {
         void                     scheduleFrameForAnimatedBlur(const CRegion& damage, bool usesPrecomputedBlur);
         void                     preBlurForCurrentMonitor(const CRegion& fakeDamage);
 
-        SCMSettings              getCMSettings(const NColorManagement::PImageDescription imageDescription, const NColorManagement::PImageDescription targetImageDescription,
-                                               SP<CWLSurfaceResource> surface = nullptr, bool modifySDR = false, float sdrMinLuminance = -1.0f, int sdrMaxLuminance = -1,
-                                               bool shouldUseSurface = false);
-        void                     clearCMSettingsCache();
         virtual bool             reloadShaders(const std::string& path = "") = 0;
 
       protected:
@@ -244,16 +238,6 @@ namespace Render {
 
         SP<ITexture>         getBackground(PHLMONITOR pMonitor);
         virtual SP<ITexture> getBlurTexture(PHLMONITORREF pMonitor);
-
-        struct SCMSettingsCacheEntry {
-            uint64_t    srcDescId = 0, dstDescId = 0;
-            void*       surfacePtr      = nullptr; // read-only!!
-            bool        modifySDR       = false;
-            float       sdrMinLuminance = -1.F;
-            int         sdrMaxLuminance = -1;
-            SCMSettings settings;
-        };
-        std::vector<SCMSettingsCacheEntry> m_cmSettingsCache;
 
         SP<ITexture>                       m_lockDeadTexture;
         SP<ITexture>                       m_lockDead2Texture;

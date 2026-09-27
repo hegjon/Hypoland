@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../../desktop/DesktopTypes.hpp"
-#include "../../helpers/MotionBlur.hpp"
 #include "../Framebuffer.hpp"
 #include "../pass/SurfacePassElement.hpp"
 
@@ -66,6 +65,5 @@ namespace Render {
         virtual void preWindowRender(CSurfacePassElement::SRenderData* pRenderData);
 
         // called by Hyprland before the transformed window fb is rendered back to the main fb.
-        virtual void amendTransformedRenderData(const CBox& currentBox, SMotionBlurData* pMotionBlurData);
     };
 }

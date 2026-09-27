@@ -5,7 +5,6 @@
 #include "../output/Monitor.hpp"
 #include "../render/Renderer.hpp"
 #include "../config/shared/monitor/MonitorRuleManager.hpp"
-#include "../protocols/ColorManagement.hpp"
 #include "../output/MonitorFrameScheduler.hpp"
 #include "../Compositor.hpp"
 #include "../managers/input/InputManager.hpp"
@@ -137,11 +136,6 @@ void CMonitorStateTracker::add(PHLMONITOR mon) {
 
     g_pHyprRenderer->damageMonitor(mon);
     mon->m_frameScheduler->onFrame();
-
-    if (PROTO::colorManagement && g_pCompositor->shouldChangePreferredImageDescription()) {
-        Log::logger->log(Log::ERR, "FIXME: color management protocol is enabled, need a preferred image description id");
-        PROTO::colorManagement->onImagePreferredChanged(0);
-    }
 }
 
 void CMonitorStateTracker::add(SP<Aquamarine::IOutput> output) {

@@ -106,28 +106,4 @@ namespace Render {
         bool                   noSimplify                 = false;
         bool                   renderingTransformedSource = false;
     };
-
-    struct STFRange {
-        float min = 0;
-        float max = 80;
-    };
-
-    struct SCMSettings {
-        NColorManagement::eTransferFunction  sourceTF = NColorManagement::CM_TRANSFER_FUNCTION_GAMMA22;
-        NColorManagement::eTransferFunction  targetTF = NColorManagement::CM_TRANSFER_FUNCTION_GAMMA22;
-        STFRange                             srcTFRange;
-        STFRange                             dstTFRange;
-        float                                srcRefLuminance = 80;
-        float                                dstRefLuminance = 80;
-        std::array<std::array<double, 3>, 3> convertMatrix;
-
-        bool                                 needsTonemap    = false;
-        int                                  tonemapMode     = 1; // 1 - default, 2 - clamp, 3 - limited
-        float                                maxLuminance    = 80;
-        float                                dstMaxLuminance = 80;
-        std::array<std::array<double, 3>, 3> dstPrimaries2XYZ;
-        bool                                 needsSDRmod             = false;
-        float                                sdrSaturation           = 1.0;
-        float                                sdrBrightnessMultiplier = 1.0;
-    };
 }

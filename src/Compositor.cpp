@@ -42,7 +42,6 @@
 #include "helpers/fs/FsUtils.hpp"
 #include "helpers/env/Env.hpp"
 #include "protocols/SecurityContext.hpp"
-#include "protocols/ColorManagement.hpp"
 #include "render/Renderer.hpp"
 #include "xwayland/XWayland.hpp"
 #include "helpers/ByteOperations.hpp"
@@ -972,40 +971,14 @@ void CCompositor::openSafeModeBox() {
 }
 
 PImageDescription CCompositor::getPreferredImageDescription() {
-    if (!PROTO::colorManagement) {
-        Log::logger->log(Log::ERR, "FIXME: color management protocol is not enabled, returning empty image description");
-        return getDefaultImageDescription();
-    }
-    Log::logger->log(Log::WARN, "FIXME: color management protocol is enabled, determine correct preferred image description");
-    // should determine some common settings to avoid unnecessary transformations while keeping maximum displayable precision
-    return State::monitorState()->monitors().size() == 1 ? State::monitorState()->monitors()[0]->m_imageDescription :
-                                                           CImageDescription::from(SImageDescription{.primaries = NColorPrimaries::BT709});
+    return getDefaultImageDescription();
 }
 
 PImageDescription CCompositor::getHDRImageDescription() {
-    if (!PROTO::colorManagement) {
-        Log::logger->log(Log::ERR, "FIXME: color management protocol is not enabled, returning empty image description");
-        return getDefaultImageDescription();
-    }
-
-    return State::monitorState()->monitors().size() == 1 && State::monitorState()->monitors()[0]->m_output &&
-            State::monitorState()->monitors()[0]->m_output->parsedEDID.hdrMetadata.has_value() ?
-        CImageDescription::from(SImageDescription{.transferFunction    = NColorManagement::CM_TRANSFER_FUNCTION_ST2084_PQ,
-                                                  .primariesNameSet    = true,
-                                                  .primariesNamed      = NColorManagement::CM_PRIMARIES_BT2020,
-                                                  .primaries           = NColorManagement::getPrimaries(NColorManagement::CM_PRIMARIES_BT2020),
-                                                  .masteringPrimaries  = State::monitorState()->monitors()[0]->getMasteringPrimaries(),
-                                                  .luminances          = {.min       = State::monitorState()->monitors()[0]->minLuminance(HDR_MIN_LUMINANCE),
-                                                                          .max       = State::monitorState()->monitors()[0]->maxLuminance(HDR_MAX_LUMINANCE),
-                                                                          .reference = HDR_REF_LUMINANCE},
-                                                  .masteringLuminances = State::monitorState()->monitors()[0]->getMasteringLuminances(),
-                                                  .maxCLL              = State::monitorState()->monitors()[0]->maxCLL(),
-                                                  .maxFALL             = State::monitorState()->monitors()[0]->maxFALL()}) :
-        DEFAULT_HDR_IMAGE_DESCRIPTION;
+    return getDefaultImageDescription();
 }
 
 bool CCompositor::shouldChangePreferredImageDescription() {
-    Log::logger->log(Log::WARN, "FIXME: color management protocol is enabled and outputs changed, check preferred image description changes");
     return false;
 }
 

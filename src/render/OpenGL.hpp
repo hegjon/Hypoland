@@ -178,8 +178,7 @@ namespace Render::GL {
             bool                   allowDim      = true;
             bool                   noAA          = false; // unused
             uint8_t                wrapX = WRAP_CLAMP_TO_EDGE, wrapY = WRAP_CLAMP_TO_EDGE;
-            bool                   cmBackToSRGB   = false;
-            bool                   finalMonitorCM = false;
+            bool                   finalOutput    = false; // the work buffer on its way to the output, always opaque
 
             uint8_t                discardMode    = DISCARD_OPAQUE;
             float                  discardOpacity = 0.f;
@@ -190,7 +189,6 @@ namespace Render::GL {
             Vector2D               primarySurfaceUVTopLeft     = Vector2D(-1, -1);
             Vector2D               primarySurfaceUVBottomRight = Vector2D(-1, -1);
 
-            SMotionBlurData        motionBlur;
         };
 
         struct SBorderRenderData {
@@ -253,10 +251,7 @@ namespace Render::GL {
         WP<CShader>                               useShader(WP<CShader> prog);
 
         bool                                      explicitSyncSupported();
-        bool                                      fp16Supported();
-        WP<CShader>                               getShaderVariant(Render::ePreparedFragmentShader frag, Render::ShaderFeatureFlags features = 0,
-                                                                   NColorManagement::eTransferFunction sourceTF = Render::SHADER_DEFAULT_TF,
-                                                                   NColorManagement::eTransferFunction targetTF = Render::SHADER_DEFAULT_TF);
+        WP<CShader>                               getShaderVariant(Render::ePreparedFragmentShader frag, Render::ShaderFeatureFlags features = 0);
         WP<CShader>                               getShaderVariant(Render::ePreparedFragmentShader frag, const Render::SShaderVariant& variant);
 
         bool                                      m_shadersInitialized = false;
@@ -327,7 +322,6 @@ namespace Render::GL {
 
         std::vector<SDRMFormat> m_drmFormats;
         bool                    m_hasModifiers  = false;
-        bool                    m_fp16Supported = false;
 
         int                     m_drmFD = -1;
         std::string             m_extensions;
@@ -336,7 +330,6 @@ namespace Render::GL {
         bool                    m_applyFinalShader     = false;
         bool                    m_blend                = false;
         bool                    m_offloadedFramebuffer = false;
-        bool                    m_cmSupported          = true;
 
         SP<CShader>             m_finalScreenShader;
         GLuint                  m_currentProgram;
@@ -354,12 +347,6 @@ namespace Render::GL {
         //
         std::optional<std::vector<uint64_t>> getModsForFormat(EGLint format);
 
-        void        passCMUniforms(WP<CShader>, const NColorManagement::PImageDescription imageDescription, const NColorManagement::PImageDescription targetImageDescription,
-                                   bool modifySDR, float sdrMinLuminance, int sdrMaxLuminance, const SCMSettings& settings);
-        void        passCMUniforms(WP<CShader>, const NColorManagement::PImageDescription imageDescription, const NColorManagement::PImageDescription targetImageDescription,
-                                   bool modifySDR = false, float sdrMinLuminance = -1.0f, int sdrMaxLuminance = -1);
-        void        passCMUniforms(WP<CShader>, const NColorManagement::PImageDescription imageDescription);
-        void        passCMUniforms(WP<CShader>, const NColorManagement::PImageDescription imageDescription, const SCMSettings& settings);
         void        renderRectInternal(const CBox&, const CHyprColor&, const SRectRenderData& data);
         void        renderRectWithBlurInternal(const CBox&, const CHyprColor&, const SRectRenderData& data);
         void        renderRectWithDamageInternal(const CBox&, const CHyprColor&, const SRectRenderData& data);

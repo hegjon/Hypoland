@@ -10,16 +10,6 @@ enum eShaderUniform : uint8_t {
     SHADER_COLOR_SRGB,
     SHADER_ALPHA_MATTE,
     SHADER_TEX_TYPE,
-    SHADER_SRC_TF_RANGE,
-    SHADER_DST_TF_RANGE,
-    SHADER_TARGET_PRIMARIES_XYZ,
-    SHADER_MAX_LUMINANCE,
-    SHADER_SRC_REF_LUMINANCE,
-    SHADER_DST_MAX_LUMINANCE,
-    SHADER_DST_REF_LUMINANCE,
-    SHADER_SDR_SATURATION,
-    SHADER_SDR_BRIGHTNESS,
-    SHADER_CONVERT_MATRIX,
     SHADER_TEX,
     SHADER_ALPHA,
     SHADER_POS_ATTRIB,
@@ -77,20 +67,11 @@ enum eShaderUniform : uint8_t {
     SHADER_POINTER_INACTIVE_TIMEOUT,
     SHADER_POINTER_LAST_ACTIVE,
     SHADER_POINTER_SIZE,
-    SHADER_LUT_3D,
-    SHADER_LUT_SIZE,
     SHADER_BLURRED_BG,
     SHADER_UV_SIZE,
     SHADER_UV_OFFSET,
-    SHADER_MOTION_PREV_BOX,
-    SHADER_MOTION_CURR_BOX,
-    SHADER_MOTION_SOURCE_BOX,
-    SHADER_MOTION_SOURCE_TEX_ORIGIN,
-    SHADER_MOTION_SOURCE_TEX_SIZE,
-    SHADER_MOTION_SAMPLES,
     SHADER_BLUR_ALPHA_MATTE,
     SHADER_BLUR_ALPHA,
-    SHADER_TONEMAP_MODE,
     SHADER_GLASS_REFRACTION,
     SHADER_GLASS_SIZE,
     SHADER_GLASS_ROUGHNESS,
@@ -140,20 +121,13 @@ class CShader {
         std::array<GLfloat, 9> value     = {};
     };
 
-    struct SUniformMatrix4Data {
-        GLsizei                count     = 0;
-        GLboolean              transpose = false;
-        std::array<GLfloat, 8> value     = {};
-    };
-
     struct SUniformVData {
         GLsizei            count = 0;
         std::vector<float> value;
     };
 
     //
-    std::array<std::variant<std::monostate, GLint, GLfloat, std::array<GLfloat, 2>, std::array<GLfloat, 3>, std::array<GLfloat, 4>, SUniformMatrix3Data, SUniformMatrix4Data,
-                            SUniformVData>,
+    std::array<std::variant<std::monostate, GLint, GLfloat, std::array<GLfloat, 2>, std::array<GLfloat, 3>, std::array<GLfloat, 4>, SUniformMatrix3Data, SUniformVData>,
                SHADER_LAST>
         uniformStatus;
     //

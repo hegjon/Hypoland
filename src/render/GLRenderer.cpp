@@ -269,17 +269,8 @@ SP<ITexture> CHyprGLRenderer::createTexture(cairo_surface_t* cairo) {
     return tex;
 }
 
-SP<ITexture> CHyprGLRenderer::createTexture(std::span<const float> lut3D, size_t N) {
-    g_pHyprOpenGL->makeEGLCurrent();
-    return makeShared<CGLTexture>(lut3D, N);
-}
-
 bool CHyprGLRenderer::explicitSyncSupported() {
     return g_pHyprOpenGL->explicitSyncSupported();
-}
-
-bool CHyprGLRenderer::fp16Supported() {
-    return g_pHyprOpenGL->fp16Supported();
 }
 
 std::vector<SDRMFormat> CHyprGLRenderer::getDRMFormats() {

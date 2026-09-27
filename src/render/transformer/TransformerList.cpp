@@ -73,13 +73,6 @@ void CWindowTransformerList::preWindowRender(CSurfacePassElement::SRenderData* p
     }
 }
 
-void CWindowTransformerList::amendTransformedRenderData(const CBox& currentBox, SMotionBlurData* pMotionBlurData) const {
-    for (auto const& transformer : m_transformers) {
-        if (transformer->active())
-            transformer->amendTransformedRenderData(currentBox, pMotionBlurData);
-    }
-}
-
 SWindowTransformBuffer CWindowTransformerList::transform(const SWindowTransformBuffer& in, const SWindowTransformPlan& plan, const SWindowTransformContext& context) const {
     SWindowTransformBuffer last  = in;
     size_t                 stage = 0;

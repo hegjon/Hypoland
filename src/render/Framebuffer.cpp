@@ -32,26 +32,8 @@ SP<ITexture> IFramebuffer::getTexture() {
     return m_tex;
 }
 
-SP<ITexture> IFramebuffer::getMirrorTexture() {
-    return m_mirrorTex;
-}
-
 SP<ITexture> IFramebuffer::getStencilTex() {
     return m_stencilTex;
-}
-
-void IFramebuffer::enableMirror(SP<ITexture> tex) {
-    if (!tex || tex == m_mirrorTex)
-        return;
-    m_mirrorTex   = tex;
-    m_fbAllocated = internalAlloc(m_size.x, m_size.y, m_drmFormat);
-}
-
-void IFramebuffer::disableMirror() {
-    if (m_mirrorTex) {
-        m_mirrorTex.reset();
-        m_fbAllocated = internalAlloc(m_size.x, m_size.y, m_drmFormat);
-    }
 }
 
 NColorManagement::PImageDescription IFramebuffer::imageDescription() {

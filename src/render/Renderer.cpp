@@ -50,7 +50,6 @@
 #include "pass/SurfacePassElement.hpp"
 #include "pass/BackdropScopePassElement.hpp"
 #include "../debug/log/Logger.hpp"
-#include "../protocols/ColorManagement.hpp"
 #include "../protocols/types/ContentType.hpp"
 #include "AsyncResourceGatherer.hpp"
 #include "ElementRenderer.hpp"
@@ -731,12 +730,7 @@ void IHyprRenderer::renderWindow(PHLWINDOW pWindow, PHLMONITOR pMonitor, const T
             CBox currentBox = pWindow->getFullWindowBoundingBox();
             currentBox.translate(((pWindow->m_state & WINDOW_STATE_PINNED) ? Vector2D{} : PWORKSPACE->m_renderOffset->value()) + pWindow->presentation().floatingOffset() -
                                  pMonitor->m_position);
-            CBox            transformedBox = pWindow->effects().transformedExtents(currentBox);
-
-            SMotionBlurData windowMotionBlur;
-            if (!standalone && !m_bRenderingSnapshot) {
-                pWindow->effects().amendTransformedRenderData(transformedBox, &windowMotionBlur);
-            }
+            CBox transformedBox = pWindow->effects().transformedExtents(currentBox);
 
             CBox blurBox = {renderdata.pos.x - pMonitor->m_position.x, renderdata.pos.y - pMonitor->m_position.y, renderdata.w, renderdata.h};
             blurBox.scale(pMonitor->m_scale).round();
@@ -752,7 +746,6 @@ void IHyprRenderer::renderWindow(PHLWINDOW pWindow, PHLMONITOR pMonitor, const T
                 .blurRound         = renderdata.dontRound ? 0 : std::max(renderdata.rounding - 1, 0),
                 .blurRoundingPower = renderdata.roundingPower,
                 .transformedBox    = transformedBox,
-                .motionBlur        = windowMotionBlur,
                 .standalone        = standalone,
                 .renderingSnapshot = m_bRenderingSnapshot,
             }));
@@ -1751,7 +1744,6 @@ void IHyprRenderer::renderSessionLockMissing(PHLMONITOR pMonitor) {
 bool IHyprRenderer::beginRender(PHLMONITOR pMonitor, CRegion& damage, eRenderMode mode, SP<IHLBuffer> buffer, SP<IFramebuffer> fb, bool simple) {
     m_renderPass.clear();
     m_backdropCaptures.clear();
-    clearCMSettingsCache();
     m_renderMode          = mode;
     m_renderData.pMonitor = pMonitor;
 
@@ -1932,112 +1924,6 @@ void IHyprRenderer::preBlurForCurrentMonitor(const CRegion& fakeDamage) {
             .damage = fakeDamage,
         },
         fakeDamage); // .noAA = true
-}
-
-static bool isSDR2HDR(const NColorManagement::SImageDescription& imageDescription, const NColorManagement::SImageDescription& targetImageDescription) {
-    // might be too strict
-    return (imageDescription.transferFunction == NColorManagement::CM_TRANSFER_FUNCTION_SRGB ||
-            imageDescription.transferFunction == NColorManagement::CM_TRANSFER_FUNCTION_GAMMA22) &&
-        (targetImageDescription.transferFunction == NColorManagement::CM_TRANSFER_FUNCTION_ST2084_PQ ||
-         targetImageDescription.transferFunction == NColorManagement::CM_TRANSFER_FUNCTION_HLG ||
-         (targetImageDescription.transferFunction == NColorManagement::CM_TRANSFER_FUNCTION_EXT_LINEAR &&
-          g_pHyprRenderer->m_renderData.pMonitor->m_imageDescription->value().transferFunction == NColorManagement::CM_TRANSFER_FUNCTION_ST2084_PQ));
-}
-
-static bool isHDR2SDR(const NColorManagement::SImageDescription& imageDescription, const NColorManagement::SImageDescription& targetImageDescription) {
-    // might be too strict
-    return (imageDescription.transferFunction == NColorManagement::CM_TRANSFER_FUNCTION_ST2084_PQ ||
-            imageDescription.transferFunction == NColorManagement::CM_TRANSFER_FUNCTION_HLG) &&
-        (targetImageDescription.transferFunction == NColorManagement::CM_TRANSFER_FUNCTION_SRGB ||
-         targetImageDescription.transferFunction == NColorManagement::CM_TRANSFER_FUNCTION_GAMMA22);
-}
-
-void IHyprRenderer::clearCMSettingsCache() {
-    m_cmSettingsCache.clear();
-}
-
-SCMSettings IHyprRenderer::getCMSettings(const NColorManagement::PImageDescription imageDescription, const NColorManagement::PImageDescription targetImageDescription,
-                                         SP<CWLSurfaceResource> surface, bool modifySDR, float sdrMinLuminance, int sdrMaxLuminance, bool shouldUseSurface) {
-    const auto srcId = imageDescription->id();
-    const auto dstId = targetImageDescription->id();
-    void*      sPtr  = shouldUseSurface ? m_renderData.surface.get() : nullptr;
-
-    for (auto const& entry : m_cmSettingsCache) {
-        if (entry.srcDescId == srcId && entry.dstDescId == dstId && entry.surfacePtr == sPtr && entry.modifySDR == modifySDR && entry.sdrMinLuminance == sdrMinLuminance &&
-            entry.sdrMaxLuminance == sdrMaxLuminance)
-            return entry.settings;
-    }
-
-    const auto                          sdrEOTF = NTransferFunction::fromConfig();
-    NColorManagement::eTransferFunction srcTF;
-
-    const int                           tonemapMode = shouldUseSurface && m_renderData.currentWindow ? m_renderData.currentWindow->m_ruleApplicator->tonemap().valueOr(1) : 1;
-
-    if (shouldUseSurface && m_renderData.surface.valid() &&
-        (imageDescription->value().transferFunction == CM_TRANSFER_FUNCTION_GAMMA22 || imageDescription->value().transferFunction == CM_TRANSFER_FUNCTION_SRGB)) {
-        if (m_renderData.surface->m_colorManagement.valid()) {
-            if (sdrEOTF == NTransferFunction::TF_FORCED_GAMMA22 && imageDescription->value().transferFunction == NColorManagement::eTransferFunction::CM_TRANSFER_FUNCTION_SRGB)
-                srcTF = NColorManagement::eTransferFunction::CM_TRANSFER_FUNCTION_GAMMA22;
-            else
-                srcTF = imageDescription->value().transferFunction;
-        } else if (sdrEOTF == NTransferFunction::TF_SRGB)
-            srcTF = NColorManagement::eTransferFunction::CM_TRANSFER_FUNCTION_SRGB;
-        else if (sdrEOTF == NTransferFunction::TF_GAMMA22 || sdrEOTF == NTransferFunction::TF_FORCED_GAMMA22)
-            srcTF = NColorManagement::eTransferFunction::CM_TRANSFER_FUNCTION_GAMMA22;
-        else
-            srcTF = imageDescription->value().transferFunction;
-    } else
-        srcTF = imageDescription->value().transferFunction;
-
-    const bool  needsSDRmod     = modifySDR && isSDR2HDR(imageDescription->value(), targetImageDescription->value());
-    const bool  needsHDRmod     = !needsSDRmod && isHDR2SDR(imageDescription->value(), targetImageDescription->value());
-    const float maxLuminance    = needsHDRmod ?
-        imageDescription->value().getTFMaxLuminance(-1) :
-        (imageDescription->value().luminances.max > 0 ? imageDescription->value().luminances.max : imageDescription->value().luminances.reference);
-    const auto  dstMaxLuminance = targetImageDescription->value().luminances.max > 0 ? targetImageDescription->value().luminances.max : 10000;
-
-    auto        matrix = imageDescription->getPrimaries()->convertMatrix(targetImageDescription->getPrimaries());
-    auto        toXYZ  = targetImageDescription->getPrimaries()->value().toXYZ();
-
-    const bool  needsMod = needsSDRmod &&
-        ((m_renderData.pMonitor->m_sdrSaturation > 0 && m_renderData.pMonitor->m_sdrSaturation != 1.0f) ||
-         (m_renderData.pMonitor->m_sdrBrightness > 0 && m_renderData.pMonitor->m_sdrBrightness != 1.0f));
-
-    const bool needsTonemap = maxLuminance >= dstMaxLuminance * 1.01;
-
-    auto       result = SCMSettings{
-        .sourceTF        = srcTF,
-        .targetTF        = targetImageDescription->value().transferFunction,
-        .srcTFRange      = {.min = imageDescription->value().getTFMinLuminance(needsSDRmod ? sdrMinLuminance : -1),
-                            .max = imageDescription->value().getTFMaxLuminance(needsSDRmod ? sdrMaxLuminance : -1)},
-        .dstTFRange      = {.min = targetImageDescription->value().getTFMinLuminance(needsSDRmod ? sdrMinLuminance : -1),
-                            .max = targetImageDescription->value().getTFMaxLuminance(needsSDRmod ? sdrMaxLuminance : -1)},
-        .srcRefLuminance = imageDescription->value().luminances.reference,
-        .dstRefLuminance = targetImageDescription->value().luminances.reference,
-        .convertMatrix   = matrix.mat(),
-
-        .needsTonemap            = tonemapMode != 0 && needsTonemap,
-        .tonemapMode             = tonemapMode,
-        .maxLuminance            = needsTonemap && tonemapMode == 2 ? dstMaxLuminance :
-                                                                      maxLuminance * targetImageDescription->value().luminances.reference / imageDescription->value().luminances.reference,
-        .dstMaxLuminance         = dstMaxLuminance,
-        .dstPrimaries2XYZ        = toXYZ.mat(),
-        .needsSDRmod             = needsMod,
-        .sdrSaturation           = needsSDRmod && m_renderData.pMonitor->m_sdrSaturation > 0 ? m_renderData.pMonitor->m_sdrSaturation : 1.0f,
-        .sdrBrightnessMultiplier = needsSDRmod && m_renderData.pMonitor->m_sdrBrightness > 0 ? m_renderData.pMonitor->m_sdrBrightness : 1.0f,
-    };
-
-    m_cmSettingsCache.push_back({
-        .srcDescId       = srcId,
-        .dstDescId       = dstId,
-        .surfacePtr      = sPtr,
-        .modifySDR       = modifySDR,
-        .sdrMinLuminance = sdrMinLuminance,
-        .sdrMaxLuminance = sdrMaxLuminance,
-        .settings        = result,
-    });
-
-    return result;
 }
 
 void IHyprRenderer::renderMirrored() {
@@ -2404,35 +2290,8 @@ void IHyprRenderer::handleFullscreenSettings(PHLMONITOR pMonitor) {
         // HDR scRGB - monitor settings
         // HDR PQ surface & DS is active - surface settings
 
+        // no surface can carry an image description, the HDR state only follows the monitor settings
         bool hdrIsHandled = false;
-        if (FULLSCREEN_WINDOW) {
-            const auto ROOT_SURF = FULLSCREEN_WINDOW->wlSurface()->resource();
-            const auto SURF      = ROOT_SURF->findWithCM();
-
-            // we have a surface with image description
-            if (SURF && SURF->m_colorManagement.valid() && SURF->m_colorManagement->hasImageDescription()) {
-                const bool surfaceIsHDR = SURF->m_colorManagement->isHDR();
-                wantHDR                 = *PAUTOHDR && surfaceIsHDR;
-                if (FULLSCREEN_WINDOW && FULLSCREEN_WINDOW->m_ruleApplicator->noAutoHDR().valueOrDefault())
-                    wantHDR = configuredHDR;
-                if (surfaceIsHDR && !SURF->m_colorManagement->isWindowsScRGB() && !pMonitor->m_lastScanout.expired()) {
-                    // DS HDR
-                    bool needsHdrMetadataUpdate =
-                        SURF->m_colorManagement->needsHdrMetadataUpdate() || pMonitor->m_previousFSWindow != FULLSCREEN_WINDOW || pMonitor->m_needsHDRupdate;
-                    if (SURF->m_colorManagement->needsHdrMetadataUpdate()) {
-                        Log::logger->log(Log::INFO, "[CM] Recreating HDR metadata for surface");
-                        SURF->m_colorManagement->setHDRMetadata(createHDRMetadata(SURF->m_colorManagement->imageDescription(), pMonitor));
-                    }
-                    if (needsHdrMetadataUpdate) {
-                        Log::logger->log(Log::INFO, "[CM] Updating HDR metadata from surface");
-                        pMonitor->m_output->state->setHDRMetadata(SURF->m_colorManagement->hdrMetadata());
-                        pMonitor->m_hdrMetadataFromSurface = true;
-                    }
-                    hdrIsHandled               = true;
-                    pMonitor->m_needsHDRupdate = false;
-                }
-            }
-        }
 
         // Do it here instead of disabling the block above to allow hdr -> hdr metadata changes in fullscreen
         if (!*PAUTOHDR && !pMonitor->m_lastScanout)
@@ -3421,54 +3280,7 @@ SP<ITexture> IHyprRenderer::renderSplash(const std::function<SP<ITexture>(const 
     return tex;
 }
 
-using ColorConversionKey = std::tuple<float, float, float, float, uint64_t>;
-
-struct SColorConversionKeyHash {
-    size_t operator()(const ColorConversionKey& key) const {
-        size_t hash = 0;
-
-        // fold each tuple element to a order sensitive hash the constant is
-        // the 64-bit golden-ratio value used to
-        // distribute bits and reduce collisions between adjacent fields.
-        const auto hashCombine = [&hash](const auto& value) { hash ^= std::hash<std::decay_t<decltype(value)>>{}(value) + 0x9e3779b97f4a7c15ULL + (hash << 6) + (hash >> 2); };
-
-        hashCombine(std::get<0>(key));
-        hashCombine(std::get<1>(key));
-        hashCombine(std::get<2>(key));
-        hashCombine(std::get<3>(key));
-        hashCombine(std::get<4>(key));
-
-        return hash;
-    }
-};
-
-constexpr const size_t MAX_COLOR_CONVERSION_CACHE_SIZE = 4096;
-
-static auto            colorConversionCache = []() {
-    std::unordered_map<ColorConversionKey, CHyprColor, SColorConversionKeyHash> cache;
-    cache.reserve(MAX_COLOR_CONVERSION_CACHE_SIZE);
-    return cache;
-}();
-
-//
 CHyprColor IHyprRenderer::getConvertedColor(const CHyprColor& color) {
-    const auto DESCR = m_renderData.currentFB ? m_renderData.currentFB->imageDescription() : workBufferImageDescription();
-
-    if (!DESCR) {
-        Log::logger->log(Log::ERR, "getConvertedColor: failed to get image description");
-        return color;
-    }
-
-    if (colorConversionCache.size() >= MAX_COLOR_CONVERSION_CACHE_SIZE)
-        colorConversionCache.clear();
-
-    const ColorConversionKey key = {color.r, color.g, color.b, color.a, DESCR->id()};
-
-    if (const auto IT = colorConversionCache.find(key); IT != colorConversionCache.end())
-        return IT->second;
-
-    const auto converted = convertColor(color, DEFAULT_SRGB_IMAGE_DESCRIPTION, DESCR);
-    colorConversionCache.emplace(key, converted);
-
-    return converted;
+    // there is no color management, colors are sRGB and stay that way
+    return color;
 }

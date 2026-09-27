@@ -94,10 +94,6 @@ CGLTexture::CGLTexture(const Aquamarine::SDMABUFAttrs& attrs, void* image, bool 
     unbind();
 }
 
-CGLTexture::CGLTexture(std::span<const float> lut3D, size_t N) : ITexture(lut3D, N) {
-    // 3D textures are GLES3, ICC LUTs are never sampled by the renderer
-}
-
 void CGLTexture::update(uint32_t drmFormat, uint8_t* pixels, uint32_t stride, const CRegion& damage) {
     if (damage.empty())
         return;

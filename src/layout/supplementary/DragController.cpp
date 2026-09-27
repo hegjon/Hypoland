@@ -299,7 +299,6 @@ bool CDragStateController::dragEnd() {
     }
 
     if (const auto W = draggingTarget->window(); W) {
-        W->effects().resetMotionBlur();
         W->presentation().clearFloatingOffset();
     }
 

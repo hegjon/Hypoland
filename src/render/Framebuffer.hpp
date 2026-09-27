@@ -24,10 +24,7 @@ namespace Render {
 
         bool                                isAllocated();
         SP<ITexture>                        getTexture();
-        SP<ITexture>                        getMirrorTexture();
         SP<ITexture>                        getStencilTex();
-        void                                enableMirror(SP<ITexture> tex);
-        void                                disableMirror();
         NColorManagement::PImageDescription imageDescription();
         void                                setImageDescription(NColorManagement::PImageDescription desc);
 
@@ -40,7 +37,6 @@ namespace Render {
         virtual bool                        internalAlloc(int w, int h, DRMFormat format = DRM_FORMAT_ARGB8888) = 0;
 
         SP<ITexture>                        m_tex;
-        SP<ITexture>                        m_mirrorTex;
         bool                                m_fbAllocated = false;
 
         SP<ITexture>                        m_stencilTex;

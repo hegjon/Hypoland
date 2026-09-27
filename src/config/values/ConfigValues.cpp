@@ -328,7 +328,7 @@ std::vector<SP<IValue>> Values::getConfigValues() {
          * motion_blur:
          */
 
-        MS<Bool>("decoration:motion_blur:enabled", "enable motion blur for moving and resizing windows", false, {.refresh = Supplementary::REFRESH_WINDOW_STATES}),
+        MS<Bool>("decoration:motion_blur:enabled", "no-op, motion blur is not available with GLES2", false, {.refresh = Supplementary::REFRESH_WINDOW_STATES}),
         MS<Int>("decoration:motion_blur:samples", "amount of samples used for motion blur", 7, {.min = 1, .max = 64, .refresh = Supplementary::REFRESH_WINDOW_STATES}),
         MS<Bool>("decoration:wobble:enabled", "enable wobble deformation for moving and resizing windows", false, {.refresh = Supplementary::REFRESH_WINDOW_STATES}),
         MS<Int>("decoration:wobble:mesh", "amount of wobble mesh vertices per edge", 12, {.min = 2, .max = 32, .refresh = Supplementary::REFRESH_WINDOW_STATES}),
@@ -662,7 +662,7 @@ std::vector<SP<IValue>> Values::getConfigValues() {
         MS<Bool>("render:icc_vcgt_enabled", "Enable sending VCGT ramps to KMS with ICC profiles", true),
         MS<Bool>("render:use_shader_blur_blend", "Use experimental blurred bg blending", false),
         MS<Int>("render:use_fp16", "Use experimental internal FP16 buffer.", 2, {.min = 0, .max = 2, .map = OptionMap{{"disable", 0}, {"enable", 1}, {"auto", 2}}}),
-        MS<Int>("render:keep_unmodified_copy", "Keep umodified SDR frame copy for sreensharing.", 2,
+        MS<Int>("render:keep_unmodified_copy", "no-op, there is no second color attachment with GLES2", 2,
                 {.min = 0, .max = 2, .map = OptionMap{{"disable", 0}, {"enable", 1}, {"auto", 2}}}),
         MS<Int>("render:non_shader_cm_interop", "non_shader_cm interaction with ctm proto (hyprsunset and similar).", 2,
                 {.min = 0, .max = 2, .map = OptionMap{{"disable", 0}, {"enable", 1}, {"auto", 2}}}),

@@ -14,7 +14,6 @@ namespace Render {
         TEXTURE_INVALID = -1, // Invalid
         TEXTURE_RGBA    = 0,  // 4 channels
         TEXTURE_RGBX,         // discard A
-        TEXTURE_3D_LUT,       // 3D LUT
         TEXTURE_EXTERNAL,     // EGLImage
     };
 
@@ -56,7 +55,6 @@ namespace Render {
       protected:
         ITexture() = default;
         ITexture(uint32_t drmFormat, uint8_t* pixels, uint32_t stride, const Vector2D& size, bool keepDataCopy = false, bool opaque = false);
-        ITexture(std::span<const float> lut3D, size_t N);
 
         bool                 m_keepDataCopy = false;
         std::vector<uint8_t> m_dataCopy;

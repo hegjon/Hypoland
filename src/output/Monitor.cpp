@@ -6,7 +6,6 @@
 #include "SharedDefs.hpp"
 #include "../helpers/TransferFunction.hpp"
 #include "../helpers/math/Math.hpp"
-#include "../protocols/ColorManagement.hpp"
 #include "../Compositor.hpp"
 #include "../config/ConfigValue.hpp"
 #include "../config/shared/monitor/MonitorRuleManager.hpp"
@@ -650,8 +649,6 @@ void CMonitor::applyCMType(NCMType::eCMType cmType, NTransferFunction::eTF cmSdr
         });
 
     if (oldImageDescription != m_imageDescription) {
-        if (PROTO::colorManagement)
-            PROTO::colorManagement->onMonitorImageDescriptionChanged(m_self);
         m_blurFBDirty = true;
         // the output's colour transform changed, so everything already composited is stale
         g_pHyprRenderer->damageMonitor(m_self.lock());
@@ -668,14 +665,12 @@ bool CMonitor::applyMonitorRuleSoft(Config::CMonitorRule&& pMonitorRule) {
     if (m_activeMonitorRule.m_iccFile.empty()) {
         // only apply explicit cm settings if we have no icc file
 
-        m_cmType = m_activeMonitorRule.m_cmType;
-        switch (m_cmType) {
-            case NCMType::CM_AUTO: m_cmType = m_enabled10bit && supportsWideColor() ? NCMType::CM_WIDE : NCMType::CM_SRGB; break;
-            case NCMType::CM_EDID: m_cmType = m_output->parsedEDID.chromaticityCoords.has_value() ? NCMType::CM_EDID : NCMType::CM_SRGB; break;
-            case NCMType::CM_HDR:
-            case NCMType::CM_HDR_EDID: m_cmType = supportsHDR() ? m_cmType : NCMType::CM_SRGB; break;
-            default: break;
-        }
+        // The renderer cannot convert colors, so every output is sRGB. The cm setting of the monitor
+        // rule is accepted and ignored.
+        if (m_activeMonitorRule.m_cmType != NCMType::CM_AUTO && m_activeMonitorRule.m_cmType != NCMType::CM_SRGB)
+            Log::logger->log(Log::WARN, "Monitor {}: the cm setting is ignored, color management is not available with GLES2", m_name);
+
+        m_cmType = NCMType::CM_SRGB;
 
         m_sdrEotf = m_activeMonitorRule.m_sdrEotf;
 
@@ -2117,17 +2112,9 @@ uint16_t CMonitor::isDSBlocked(bool full) {
             return reasons;
     }
 
-    const bool surfaceIsHDR   = PSURFACE->m_colorManagement.valid() && PSURFACE->m_colorManagement->isHDR();
-    const bool surfaceIsScRGB = surfaceIsHDR && PSURFACE->m_colorManagement->isWindowsScRGB();
-
-    if (surfaceIsScRGB)
-        reasons |= DS_BLOCK_CM; // block scRGB
-    else if (*PNONSHADER != CM_NS_IGNORE) {
-        if (!surfaceIsHDR && needsCM() && !canNoShaderCM(true))
-            reasons |= DS_BLOCK_CM; // block SDR that needs CM while non-shader CM isn't available
-        else if (surfaceIsHDR && !inHDR())
-            reasons |= DS_BLOCK_CM; // block HDR while monitor isn't in HDR mode
-    }
+    // no surface can carry an image description, only the output side can need CM
+    if (*PNONSHADER != CM_NS_IGNORE && needsCM() && !canNoShaderCM(true))
+        reasons |= DS_BLOCK_CM; // block SDR that needs CM while non-shader CM isn't available
 
     return reasons;
 }
@@ -2504,9 +2491,7 @@ std::optional<NColorManagement::PImageDescription> CMonitor::getFSImageDescripti
     if (!FS_WINDOW)
         return {};
 
-    const auto ROOT_SURF = FS_WINDOW->wlSurface()->resource();
-    const auto SURF      = ROOT_SURF->findWithCM();
-    return SURF ? NColorManagement::CImageDescription::from(SURF->m_colorManagement->imageDescription()) : getDefaultImageDescription();
+    return getDefaultImageDescription();
 }
 
 NColorManagement::SPCPRimaries CMonitor::getMasteringPrimaries() {
@@ -2758,82 +2743,13 @@ bool CMonitor::needsACopyFB() {
     return !m_mirrors.empty() || Screenshare::mgr()->outputNeedsCopyFB(m_self.lock());
 }
 
-bool CMonitor::needsUnmodifiedCopy() {
-    static const auto PKEEP = CConfigValue<Hyprlang::INT>("render:keep_unmodified_copy");
-    if (*PKEEP == 1)
-        return true;
-
-    const bool HAS_MODS = m_sdrMinLuminance != SDR_MIN_LUMINANCE || m_sdrMaxLuminance != SDR_MAX_LUMINANCE || (m_sdrBrightness > 0 && m_sdrBrightness != 1.0) ||
-        (m_sdrSaturation > 0 && m_sdrSaturation != 1.0);
-
-    if (!HAS_MODS)
-        return false;
-
-    // TODO handle some FP16 cases
-    if (m_imageDescription->value().transferFunction != CM_TRANSFER_FUNCTION_ST2084_PQ && m_imageDescription->value().transferFunction != CM_TRANSFER_FUNCTION_HLG)
-        return false;
-
-    return *PKEEP == 2 ? true : needsACopyFB();
-}
-
-bool CMonitor::useFP16() {
-    static const auto PFP16 = CConfigValue<Hyprlang::INT>("render:use_fp16");
-
-    auto              isSRGB = [this] {
-        if (m_imageDescription->value().transferFunction != CM_TRANSFER_FUNCTION_SRGB && m_imageDescription->value().transferFunction != CM_TRANSFER_FUNCTION_GAMMA22)
-            return false;
-
-        if (m_imageDescription->value().primariesNamed != CM_PRIMARIES_SRGB)
-            return false;
-
-        return true;
-    };
-
-    // Auto: use FP16 if the monitor is not sRGB or is 10 bit
-    bool        shouldUse  = g_pHyprRenderer->fp16Supported() && (*PFP16 == 1 || (*PFP16 == 2 && (!isSRGB() || m_enabled10bit)));
-    static bool usedBefore = shouldUse;
-    if (usedBefore != shouldUse) {
-        usedBefore    = shouldUse;
-        m_blurFBDirty = true;
-    }
-    return shouldUse;
-}
-
 PImageDescription CMonitor::workBufferImageDescription() {
-    static const auto PFP16TF = CConfigValue<Hyprlang::INT>("render:fp16_sdr_tf");
-
-    if (!useFP16() && !m_imageDescription->value().icc.present)
-        return m_imageDescription;
-
-    const auto& value = m_imageDescription->value();
-
-    const bool  isHDRLikeTF =
-        value.transferFunction == CM_TRANSFER_FUNCTION_ST2084_PQ || value.transferFunction == CM_TRANSFER_FUNCTION_HLG || value.transferFunction == CM_TRANSFER_FUNCTION_EXT_LINEAR;
-
-    const auto& cached = m_cachedInternalDescription->value();
-
-    // HDR
-    if (isHDRLikeTF || *PFP16TF != 0) {
-        if (cached.transferFunction != LINEAR_IMAGE_DESCRIPTION->value().transferFunction || cached.luminances != value.luminances)
-            m_cachedInternalDescription = LINEAR_IMAGE_DESCRIPTION->with(value.luminances);
-        return m_cachedInternalDescription;
-    }
-
-    // SDR
-    if (cached.transferFunction != chooseTF(m_sdrEotf))
-        m_cachedInternalDescription = CImageDescription::from(SImageDescription{
-            .transferFunction = chooseTF(m_sdrEotf),
-            .primariesNameSet = true,
-            // render:keep_unmodified_copy and other conditions that trigger MRT for screen sharing expect a work buffer with sRGB primaries
-            .primariesNamed = NColorManagement::CM_PRIMARIES_SRGB,
-            .primaries      = NColorPrimaries::BT709,
-        });
-
-    return m_cachedInternalDescription;
+    // the work buffer is 8 bit and in the color space of the output
+    return m_imageDescription;
 }
 
 WP<CMonitorResources> CMonitor::resources() {
-    const auto DRM_FORMAT = useFP16() ? DRM_FORMAT_ABGR16161616F : m_output->state->state().drmFormat;
+    const auto DRM_FORMAT = m_output->state->state().drmFormat;
     const auto DESC       = workBufferImageDescription();
 
     if (!m_resources || m_resources->m_drmFormat != DRM_FORMAT || m_resources->m_size != m_transformedSize)
