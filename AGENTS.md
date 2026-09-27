@@ -24,10 +24,13 @@ Hypoland's renderer and shaders are GLES 2.0 / GLSL ES 1.00 only; that port is d
 - Repo lives in `/home/jonny/Work/hypoland`. The default branch is `master`.
 - Remotes: `origin` = github.com/hegjon/Hypoland (the user's fork, renamed from hegjon/Hyprland),
   `upstream` = hyprwm/Hyprland, `aquamarine` = github.com/hegjon/aquamarine.
-- History: `master` is based on `origin/gles2-legacy-renderer` (the user's commit on upstream main, v0.56.0+141),
+- History: `master` is based on the user's commit `5fafec87` on upstream main (v0.56.0+141, formerly the branch
+  `gles2-legacy-renderer`),
   which added a GLES2 path chosen at runtime. Hypoland has since removed the GLES3 path and the runtime switch,
   so `m_legacyGLES` and `GLES2ShaderCompat` no longer exist.
-- `master` is pushed to `origin`. The default branch on GitHub is still `main` (plain upstream Hyprland).
+- `master` is pushed to `origin`, is the default branch on GitHub and is the only branch there. The 34 branches
+  the fork had before (copies of upstream branches, `main`, `gles2-legacy-renderer`) were deleted on 2026-09-27;
+  their names and commits are listed in `docs/baseline/removed-branches.txt`.
   Commit and push only when the user asks.
 - aquamarine is embedded: `subprojects/aquamarine` is a squashed `git subtree` of
   `hegjon/aquamarine` branch `gles2-support` (remote `aquamarine`). It is built as a static library by
@@ -223,7 +226,6 @@ Known issues:
 ## Next steps
 
 Open decisions for the user:
-- Make `master` the default branch on GitHub.
 - Pick the logo: the current potato or the pre-2000 test in `assets/logo/retro/`.
 - Install the Arch package on the X200 (replaces the system `hyprland`).
 
