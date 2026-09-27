@@ -232,7 +232,18 @@ Findings:
   update ago, plus the damage it missed. Chromium 26.8% -> 12.8% CPU, fast terminal scrolling 14.8% -> 11.3%.
 - Fixed: the event loop read the clock once per timer when rescheduling and when timers fire; it reads it once
   per pass now. Workspace switching 14.9% -> 12.7%.
-- Not done: aquamarine re-reads the CRTC mode on every commit (about 0.3% of a core at 60 fps); caching it would
+- Checked on 2026-09-27, not worth optimizing:
+  - `read_hpet` / `clock_gettime` look big in perf (up to 14% while animating), but that is sampling skid on the
+    slow uncached HPET read. A call costs 1.5 us and the compositor makes about 270 per second while animating,
+    about 0.04% of a core.
+  - The shm upload (`glTexSubImage2D`, crocus copies through a GTT mapping) runs at the memory bus limit:
+    1.64 ms for a full 1280x800 frame with glibc memcpy. SSE2 non-temporal stores are the same through the GTT,
+    `rep movsb` is slower, and the best case (own WC mapped linear buffer) is 1.45 ms. Hand-written copies or
+    inline assembly would not help.
+  - `CEGLSync::create` is where Mesa's threaded context runs the whole frame (draws and batch submit). A frame
+    with one 60 fps client is only 2 draws and 16 ioctls, all needed except the mode re-read below.
+- Open: aquamarine re-reads the CRTC mode (`getCurrentMode()`, 2 ioctls) on every commit, about 2% of the
+  compositor's CPU at 60 fps.
 
 Memory (X200, idle Omarchy session 60 s after start, `heaptrack` and `/proc/<pid>/smaps`):
 - Fixed: aquamarine created a second EGL context for the primary GPU, which is only needed when a secondary GPU
@@ -248,7 +259,6 @@ Memory (X200, idle Omarchy session 60 s after start, `heaptrack` and `/proc/<pid
   14 MiB of clean file pages.
 - The "started without start-hypoland" notification loads fontconfig and pango (about 1.5 MiB heap) on the X200
   loop, a normal start does not.
-  need to handle VT switches.
 
 Fixed upstream bugs that showed on this hardware:
 - `IHyprRenderer::renderText(STextResourceData&&)` queued the text on the hyprgraphics worker and blocked in
