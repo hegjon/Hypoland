@@ -15,6 +15,8 @@ using namespace Hyprutils::String;
 using namespace Hyprutils::Memory;
 
 #include <fcntl.h>
+#include <pthread.h>
+#include <sys/prctl.h>
 #include <iostream>
 #include <iterator>
 #include <vector>
@@ -52,7 +54,21 @@ static void reapZombieChildrenAutomatically() {
     sigaction(SIGCHLD, &act, nullptr);
 }
 
+// With transparent huge pages set to "always" the kernel backs the heap with 2 MiB pages, and a partly used
+// one counts in full. The compositor's heap is small and fragmented, so it only costs memory here.
+// The setting is inherited over fork and exec, clients get the system default back.
+static void disableTransparentHugePages() {
+#ifdef PR_SET_THP_DISABLE
+    if (prctl(PR_SET_THP_DISABLE, 1, 0, 0, 0) != 0)
+        return;
+
+    pthread_atfork(nullptr, nullptr, [] { prctl(PR_SET_THP_DISABLE, 0, 0, 0, 0); });
+#endif
+}
+
 int main(int argc, char** argv) {
+
+    disableTransparentHugePages();
 
     if (!getenv("XDG_RUNTIME_DIR"))
         throwError("XDG_RUNTIME_DIR is not set!");
