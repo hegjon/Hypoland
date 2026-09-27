@@ -143,44 +143,42 @@ void CRenderPass::planBackdropScopes() {
 
 // HYPOLAND_PROFILE_PASS=1: measure the GPU time of every pass element with glFinish() and log the
 // totals per element type. This slows rendering down, it is a tool to find expensive passes on old GPUs.
-namespace {
-    struct SPassProfileEntry {
-        uint64_t us    = 0;
-        uint64_t draws = 0;
-        uint64_t area  = 0;
-    };
+struct SPassProfileEntry {
+    uint64_t us    = 0;
+    uint64_t draws = 0;
+    uint64_t area  = 0;
+};
 
-    struct SPassProfile {
-        std::map<std::string, SPassProfileEntry> entries;
-        uint64_t                                 frames = 0;
-    };
+struct SPassProfile {
+    std::map<std::string, SPassProfileEntry> entries;
+    uint64_t                                 frames = 0;
+};
 
-    bool passProfilingEnabled() {
-        static const bool ENABLED = Env::envEnabled("HYPOLAND_PROFILE_PASS");
-        return ENABLED;
+static bool passProfilingEnabled() {
+    static const bool ENABLED = Env::envEnabled("HYPOLAND_PROFILE_PASS");
+    return ENABLED;
+}
+
+static uint64_t regionArea(const CRegion& rg) {
+    uint64_t area = 0;
+    rg.forEachRect([&area](const auto& RECT) { area += sc<uint64_t>(RECT.x2 - RECT.x1) * sc<uint64_t>(RECT.y2 - RECT.y1); });
+    return area;
+}
+
+static void logPassProfile(SPassProfile& profile) {
+    uint64_t total = 0;
+    for (const auto& [name, e] : profile.entries) {
+        total += e.us;
     }
 
-    uint64_t regionArea(const CRegion& rg) {
-        uint64_t area = 0;
-        rg.forEachRect([&area](const auto& RECT) { area += sc<uint64_t>(RECT.x2 - RECT.x1) * sc<uint64_t>(RECT.y2 - RECT.y1); });
-        return area;
+    // stderr: the compositor log is usually disabled
+    std::println(stderr, "[pass profile] {} frames, {:.2f} ms per frame", profile.frames, total / 1000.0 / profile.frames);
+    for (const auto& [name, e] : profile.entries) {
+        std::println(stderr, "[pass profile]   {:<36} {:>6.2f} ms/frame  {:>5.1f} draws/frame  {:>8} px/frame", name, e.us / 1000.0 / profile.frames,
+                     sc<double>(e.draws) / profile.frames, e.area / profile.frames);
     }
 
-    void logPassProfile(SPassProfile& profile) {
-        uint64_t total = 0;
-        for (const auto& [name, e] : profile.entries) {
-            total += e.us;
-        }
-
-        // stderr: the compositor log is usually disabled
-        std::println(stderr, "[pass profile] {} frames, {:.2f} ms per frame", profile.frames, total / 1000.0 / profile.frames);
-        for (const auto& [name, e] : profile.entries) {
-            std::println(stderr, "[pass profile]   {:<36} {:>6.2f} ms/frame  {:>5.1f} draws/frame  {:>8} px/frame", name, e.us / 1000.0 / profile.frames,
-                         sc<double>(e.draws) / profile.frames, e.area / profile.frames);
-        }
-
-        profile = {};
-    }
+    profile = {};
 }
 
 CRegion CRenderPass::render(const CRegion& damage_) {
