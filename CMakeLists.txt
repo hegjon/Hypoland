@@ -639,7 +639,7 @@ set(CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS
 # binary and symlink
 install(TARGETS Hyprland)
 
-# Hyprland and hyprland are kept as symlinks, so existing session files and scripts keep working
+# hypoland, Hyprland and hyprland are kept as symlinks, so existing session files and scripts keep working
 foreach(BIN_ALIAS hypoland Hyprland hyprland)
   install(
     CODE "execute_process( \

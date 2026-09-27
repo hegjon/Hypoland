@@ -17,11 +17,19 @@ Hypoland is an independent project. It is not affiliated with or endorsed by Hyp
 - The renderer runs on OpenGL ES 2.0, with shaders in GLSL ES 1.00.
 - [aquamarine](https://github.com/hyprwm/aquamarine) is embedded (`subprojects/aquamarine`) and linked
   statically. Its DRM renderer uses OpenGL ES 2.0 only. The system aquamarine is not used.
-- The binaries are named `Hypoland` and `start-hypoland`. `Hyprland`, `hyprland` and `start-hyprland`
-  are installed as symlinks.
+- The binaries are named `Hypoland` and `start-hypoland`. `hypoland`, `Hyprland`, `hyprland` and
+  `start-hyprland` are installed as symlinks.
 - Color management, HDR, motion blur and the plugin manager are removed. Their config options stay
   registered and are ignored, so existing configs keep loading.
-- Blur, shadows and animations are off by default.
+- The logo background and splash text are removed, `misc:disable_hyprland_logo` and
+  `misc:disable_splash_rendering` are ignored.
+
+### Changed defaults
+
+- Blur, shadows and animations are off.
+- `cursor:enable_hyprcursor` is off, XCursor themes are used.
+- `quirks:skip_non_kms_dmabuf_formats` is off. Gen4 display planes have no formats with alpha, so with the
+  Hyprland default no client gets an EGL config with alpha and transparent surfaces turn black.
 
 ## Compatibility
 
@@ -48,6 +56,17 @@ cmake --build build -j$(nproc)
 ```
 
 Build for baseline `x86-64` when the target machine is older than the build machine, do not use `-march=native`.
+
+### Arch Linux package
+
+`packaging/arch/PKGBUILD` builds a package from the working tree:
+
+```sh
+cd packaging/arch
+makepkg -f
+```
+
+The package provides and conflicts with `hyprland`, so installing it replaces the system Hyprland.
 
 ## Credits
 
