@@ -63,8 +63,8 @@ Hypoland's renderer and shaders are GLES 2.0 / GLSL ES 1.00 only; that port is d
   hyprgraphics 0.5.1), so a desktop build links cleanly on the X200. Keep them in sync. The system aquamarine
   is not used.
 - Logo: `assets/logo/` (a potato: `hypoland.svg`, `hypoland-mono.svg`, `header.svg`, PNG exports).
-  The README uses the pre-2000 style banner `assets/logo/retro/header-retro.svg` (pixel potato and bitmap
-  lettering whose O is a small potato hanging below the baseline, since hypo- means "under"), generated with
+  The README uses the pre-2000 style banner `assets/logo/retro/header-retro.svg` (bitmap lettering
+  whose O is a pixel potato hanging below the baseline, since hypo- means "under"), generated with
   `scripts/logo/retro.py scripts/logo/potato-mask.txt assets/logo/retro`. The Hyprland banner and screenshots
   were removed from `assets/`.
 - Baseline failure of stock Hyprland 0.56.2 is saved in `docs/baseline/stock-hyprland-0.56.2-crash.txt`:
