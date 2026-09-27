@@ -15,8 +15,6 @@ struct lua_State;
 
 namespace Config {
 
-    using PLUGIN_LUA_FN = int (*)(lua_State*);
-
     struct SConfigOptionReply {
         // <type>* const*
         void* const*          dataptr   = nullptr;
@@ -62,11 +60,6 @@ namespace Config {
         virtual std::string                      getErrors() = 0;
 
         virtual std::expected<void, std::string> generateDefaultConfig(const std::filesystem::path&, bool safeMode = false) = 0;
-
-        virtual void                             handlePluginLoads() = 0;
-
-        virtual std::expected<void, std::string> registerPluginValue(void* handle, SP<Config::Values::IValue> value) = 0;
-        virtual void                             onPluginUnload(void* handle)                                        = 0;
 
         virtual std::vector<std::string>         deprecationNotices() const = 0;
     };

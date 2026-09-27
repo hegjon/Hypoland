@@ -536,22 +536,14 @@ static int hlEnv(lua_State* L) {
     return 0;
 }
 
+// Hypoland has no plugin system. Keep the function so configs that load plugins still work.
 static int hlPluginLoad(lua_State* L) {
-    auto*            mgr = sc<CConfigManager*>(lua_touserdata(L, lua_upvalueindex(1)));
+    static bool warned = false;
+    if (!warned) {
+        warned = true;
+        Log::logger->log(Log::WARN, "hl.plugin.load: plugins are not supported by Hypoland, ignoring");
+    }
 
-    CLuaConfigString pathParser("");
-    lua_pushvalue(L, 1);
-    auto pathErr = pathParser.parse(L);
-    lua_pop(L, 1);
-    if (pathErr.errorCode != PARSE_ERROR_OK)
-        return Internal::configError(L, std::format("hl.plugin.load: first argument (path) must be a string: {}", pathErr.message));
-
-    const auto& path = pathParser.parsed();
-
-    if (path.empty())
-        return Internal::configError(L, "hl.plugin.load: path must not be empty");
-
-    mgr->m_registeredPlugins.emplace_back(path);
     return 0;
 }
 
@@ -1403,7 +1395,7 @@ void Internal::registerConfigRuleBindings(lua_State* L, CConfigManager* mgr) {
     Internal::setMgrFn(L, mgr, "permission", hlPermission);
 
     lua_newtable(L);
-    Internal::setMgrFn(L, mgr, "load", hlPluginLoad);
+    Internal::setFn(L, "load", hlPluginLoad);
     lua_setfield(L, -2, "plugin");
 
     Internal::setFn(L, "gesture", hlGesture);

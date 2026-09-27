@@ -261,9 +261,6 @@ TEST_CASE(swallow) {
     OK(getFromSocket("/dispatch hl.dsp.window.toggle_swallow()"));
     OK(getFromSocket("/dispatch hl.dsp.window.toggle_swallow()"));
 
-    // A transfer must not carry an old echo suppression into a later genuine client request.
-    OK(getFromSocket("/eval hl.plugin.test.expect_no_maximize_echo()"));
-
     OK(getFromSocket("/dispatch hl.dsp.window.fullscreen_state({ internal = 2, client = 2, action = 'set', layout_aware = false })"));
     OK(getFromSocket("/dispatch hl.dsp.window.fullscreen_state({ internal = 0, client = 0, action = 'set', layout_aware = false })"));
     {

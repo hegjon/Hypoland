@@ -8,8 +8,8 @@
 #include <filesystem>
 #include "../../helpers/MiscFunctions.hpp"
 
-#include "../../plugins/PluginSystem.hpp"
 #include "SignalSafe.hpp"
+#include "../../version.h"
 
 #if defined(__DragonFly__) || defined(__FreeBSD__) || defined(__NetBSD__)
 #include <sys/sysctl.h>
@@ -121,27 +121,6 @@ void CrashReporter::createAndSaveCrash(int sig) {
     finalCrashReport += "no xwayland\n";
 #endif
     finalCrashReport += "\n";
-
-    if (g_pPluginSystem && g_pPluginSystem->pluginCount() > 0) {
-        finalCrashReport += "Hyprland seems to be running with plugins. This crash might not be Hyprland's fault.\nPlugins:\n";
-
-        const size_t          count = g_pPluginSystem->pluginCount();
-        std::vector<CPlugin*> plugins(count);
-        g_pPluginSystem->sigGetPlugins(plugins.data(), count);
-
-        for (size_t i = 0; i < count; i++) {
-            auto p = plugins[i];
-            finalCrashReport += '\t';
-            finalCrashReport += p->m_name;
-            finalCrashReport += " (";
-            finalCrashReport += p->m_author;
-            finalCrashReport += ") ";
-            finalCrashReport += p->m_version;
-            finalCrashReport += '\n';
-        }
-
-        finalCrashReport += "\n\n";
-    }
 
     finalCrashReport += "System info:\n";
 

@@ -3,6 +3,7 @@
 #include "render/decorations/DecorationPositioner.hpp"
 #include "config/supplementary/executor/Executor.hpp"
 #include "debug/log/Logger.hpp"
+#include "version.h"
 #include "desktop/DesktopTypes.hpp"
 #include "desktop/state/FocusState.hpp"
 #include "desktop/history/WindowHistoryTracker.hpp"
@@ -58,7 +59,6 @@
 #include "managers/ProtocolManager.hpp"
 #include "managers/WelcomeManager.hpp"
 #include "render/AsyncResourceGatherer.hpp"
-#include "plugins/PluginSystem.hpp"
 #include "errorOverlay/Overlay.hpp"
 #include "notification/NotificationOverlay.hpp"
 #include "debug/Overlay.hpp"
@@ -585,10 +585,6 @@ void CCompositor::cleanup() {
 
     cleanEnvironment();
 
-    // unload all remaining plugins while the compositor is
-    // still in a normal working state.
-    g_pPluginSystem->unloadAllPlugins();
-
     State::workspaceState()->clear();
     Desktop::windowState()->clear();
     Desktop::layerState()->clear();
@@ -613,7 +609,6 @@ void CCompositor::cleanup() {
     g_pDynamicPermissionManager.reset();
     g_pDecorationPositioner.reset();
     Pointer::Cursor::mgr().reset();
-    g_pPluginSystem.reset();
     Notification::overlay().reset();
     Debug::overlay().reset();
     IPC::Socket2::sock().reset();
@@ -739,10 +734,6 @@ void CCompositor::initManagers(eManagersInitStage stage) {
 
             Log::logger->log(Log::DEBUG, "Creating the NotificationOverlay!");
             Notification::overlay();
-
-            Log::logger->log(Log::DEBUG, "Creating the PluginSystem!");
-            g_pPluginSystem = makeUnique<CPluginSystem>();
-            Config::mgr()->handlePluginLoads();
 
             Log::logger->log(Log::DEBUG, "Creating the DecorationPositioner!");
             g_pDecorationPositioner = makeUnique<CDecorationPositioner>();

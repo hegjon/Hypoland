@@ -96,9 +96,6 @@ build() {
 package() {
   DESTDIR="$pkgdir" cmake --install "$srcdir/build"
 
-  # plugins are not supported, so no headers and no pkg-config file
-  rm -rf "$pkgdir/usr/include" "$pkgdir/usr/share/pkgconfig"
-
   install -Dm644 "$_root/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
   install -Dm644 "$_root/subprojects/aquamarine/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE.aquamarine"
 }

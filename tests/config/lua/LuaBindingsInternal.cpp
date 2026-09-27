@@ -4,6 +4,7 @@
 #include <Compositor.hpp>
 
 #include <config/lua/types/LuaConfigInt.hpp>
+#include <config/lua/types/LuaConfigUtils.hpp>
 #include <config/values/types/IntValue.hpp>
 
 #include <gtest/gtest.h>
@@ -41,6 +42,10 @@ namespace Config::Lua {
         static lua_State* luaState(CConfigManager& mgr) {
             return mgr.m_lua;
         }
+
+        static void registerValue(CConfigManager& mgr, SP<Config::Values::IValue> value) {
+            mgr.m_configValues.emplace(mgr.luaConfigValueName(value->name()), fromGenericValue(value));
+        }
     };
 }
 
@@ -63,11 +68,6 @@ namespace {
       private:
         lua_State* m_lua = nullptr;
     };
-
-    int testPluginFn(lua_State* L) {
-        lua_pushstring(L, "pong");
-        return 1;
-    }
 
     class CTempDir {
       public:
@@ -300,7 +300,11 @@ TEST(ConfigLuaBindingsInternal, pluginBindingIsTableWithLoadFunction) {
     EXPECT_TRUE(lua_isfunction(L, -1));
     lua_pop(L, 1);
 
-    lua_pop(L, 2);
+    lua_pop(L, 1);
+    lua_setglobal(L, "hl");
+
+    // plugins are not supported, loading one is ignored instead of failing the config
+    ASSERT_EQ(luaL_dostring(L, R"(hl.plugin.load("/tmp/plugin.so"))"), LUA_OK) << lua_tostring(L, -1);
 }
 
 TEST(ConfigLuaBindingsInternal, getMonitorsReadsOptionsFromArguments) {
@@ -336,11 +340,9 @@ TEST(ConfigLuaBindingsInternal, deprecationNoticesOnlyIncludeUsedDeprecatedValue
     Internal::registerConfigRuleBindings(lua, &mgr);
     lua_setglobal(lua, "hl");
 
-    const auto HANDLE = reinterpret_cast<void*>(0x1BADB002);
-    ASSERT_TRUE(mgr.registerPluginValue(HANDLE, makeShared<Config::Values::CIntValue>("test:ordinary", "", 0)).has_value());
-    ASSERT_TRUE(
-        mgr.registerPluginValue(HANDLE, makeShared<Config::Values::CIntValue>("test:deprecated", "", 0, Config::Values::SIntValueOptions{.deprecationNotice = "use replacement"}))
-            .has_value());
+    CConfigManagerPluginLuaTestAccessor::registerValue(mgr, makeShared<Config::Values::CIntValue>("test:ordinary", "", 0));
+    CConfigManagerPluginLuaTestAccessor::registerValue(
+        mgr, makeShared<Config::Values::CIntValue>("test:deprecated", "", 0, Config::Values::SIntValueOptions{.deprecationNotice = "use replacement"}));
 
     EXPECT_TRUE(mgr.deprecationNotices().empty());
 
@@ -352,52 +354,6 @@ TEST(ConfigLuaBindingsInternal, deprecationNoticesOnlyIncludeUsedDeprecatedValue
     const auto notices = mgr.deprecationNotices();
     ASSERT_EQ(notices.size(), 1);
     EXPECT_EQ(notices.front(), "test.deprecated: use replacement");
-}
-
-TEST(ConfigLuaBindingsInternal, pluginLuaFnIsUnloadedWithoutDanglingCall) {
-    CLuaState  S;
-    const auto L = S.get();
-
-    auto       PREVCOMPOSITOR = std::move(g_pCompositor);
-    g_pCompositor             = makeUnique<CCompositor>(true);
-
-    CConfigManager mgr;
-    CConfigManagerPluginLuaTestAccessor::initializeLuaState(mgr, L);
-
-    lua_newtable(L);
-    Internal::registerConfigRuleBindings(L, &mgr);
-    lua_setglobal(L, "hl");
-
-    const auto HANDLE = reinterpret_cast<void*>(0x1BADB002);
-
-    const auto regResult = mgr.registerPluginLuaFunction(HANDLE, "demo", "ping", testPluginFn);
-    ASSERT_TRUE(regResult.has_value()) << regResult.error();
-
-    ASSERT_EQ(luaL_dostring(L, R"(
-        local f = hl.plugin.demo.ping
-        assert(type(f) == "function")
-        captured = f
-        local v = f()
-        assert(v == "pong")
-    )"),
-              LUA_OK);
-
-    mgr.onPluginUnload(HANDLE);
-
-    ASSERT_EQ(luaL_dostring(L, R"(
-        assert(hl.plugin.demo == nil)
-    )"),
-              LUA_OK);
-
-    ASSERT_EQ(luaL_dostring(L, R"(
-        local ok, err = pcall(captured)
-        assert(ok == false)
-        assert(type(err) == "string")
-        assert(string.find(err, "no longer available", 1, true) ~= nil)
-    )"),
-              LUA_OK);
-
-    g_pCompositor = std::move(PREVCOMPOSITOR);
 }
 
 TEST(ConfigLuaRequire, absolutePathLoadsAndTracksFile) {

@@ -10,7 +10,6 @@
 #include "../../../devices/IKeyboard.hpp"
 #include "../../../managers/eventLoop/EventLoopManager.hpp"
 #include "../../../managers/SessionLockManager.hpp"
-#include "../../../plugins/PluginSystem.hpp"
 #include "keybinds/Manager.hpp"
 #include "keybinds/Resolver.hpp"
 
@@ -274,30 +273,9 @@ static int hlVersion(lua_State* L) {
     return 1;
 }
 
+// Hypoland has no plugin system, no plugin is ever loaded.
 static int hlGetPlugins(lua_State* L) {
-    if (!g_pPluginSystem) {
-        lua_newtable(L);
-        return 1;
-    }
-
-    const auto PLUGINS = g_pPluginSystem->getAllPlugins();
-
-    lua_createtable(L, PLUGINS.size(), 0);
-
-    int i = 1;
-    for (const auto& plugin : PLUGINS) {
-        lua_createtable(L, 0, 4);
-        lua_pushstring(L, plugin->m_name.c_str());
-        lua_setfield(L, -2, "name");
-        lua_pushstring(L, plugin->m_author.c_str());
-        lua_setfield(L, -2, "author");
-        lua_pushstring(L, plugin->m_version.c_str());
-        lua_setfield(L, -2, "version");
-        lua_pushstring(L, plugin->m_description.c_str());
-        lua_setfield(L, -2, "description");
-        lua_rawseti(L, -2, i++);
-    }
-
+    lua_newtable(L);
     return 1;
 }
 

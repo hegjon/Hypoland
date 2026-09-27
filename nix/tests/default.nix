@@ -87,7 +87,7 @@ in
 
       # Run hyprtester testing framework/suite
       print("Running hyprtester")
-      exit_status, _out = machine.execute("su - alice -c 'hyprtester -b ${hyprland}/bin/Hyprland -c /etc/test.lua -p ${hyprland}/lib/hyprtestplugin.so 2>&1 | tee /tmp/testerlog; exit ''${PIPESTATUS[0]}'")
+      exit_status, _out = machine.execute("su - alice -c 'hyprtester -b ${hyprland}/bin/Hyprland -c /etc/test.lua 2>&1 | tee /tmp/testerlog; exit ''${PIPESTATUS[0]}'")
       print(f"Hyprtester exited with {exit_status}")
 
       # Print logs for visibility in CI

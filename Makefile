@@ -30,29 +30,6 @@ install:
 uninstall:
 	xargs rm < ./build/install_manifest.txt
 
-pluginenv:
-	@echo -en "$(MAKE) pluginenv has been deprecated.\nPlease run $(MAKE) all && sudo $(MAKE) installheaders\n"
-	@exit 1
-
-installheaders:
-	@if [ ! -f ./src/version.h ]; then echo -en "You need to run $(MAKE) all first.\n" && exit 1; fi
-
-	# remove previous headers
-	rm -fr ${PREFIX}/include/hyprland
-	mkdir -p ${PREFIX}/include/hyprland
-	mkdir -p ${PREFIX}/include/hyprland/protocols
-	mkdir -p ${PREFIX}/share/pkgconfig
-
-	cmake --build ./build --config Release --target generate-protocol-headers
-
-	find src -type f \( -name '*.hpp' -o -name '*.h' -o -name '*.inc' \) -print0 | cpio --quiet -0dump ${PREFIX}/include/hyprland
-	cp ./protocols/*.h* ${PREFIX}/include/hyprland/protocols
-	cp ./build/hyprland.pc ${PREFIX}/share/pkgconfig
-	if [ -d /usr/share/pkgconfig ]; then cp ./build/hyprland.pc /usr/share/pkgconfig 2>/dev/null || true; fi
-
-	chmod -R 755 ${PREFIX}/include/hyprland
-	chmod 755 ${PREFIX}/share/pkgconfig
-
 man:
 	pandoc ./docs/Hyprland.1.rst \
 		--standalone \
@@ -110,4 +87,4 @@ format-fix:
 
 test:
 	$(MAKE) debug
-	./build/hyprtester/hyprtester -c hyprtester/test.lua -b ./build/Hypoland -p hyprtester/plugin/hyprtestplugin.so $(TESTS)
+	./build/hyprtester/hyprtester -c hyprtester/test.lua -b ./build/Hypoland $(TESTS)

@@ -33,46 +33,6 @@ static std::string getLayerLine(const std::string& layers, const std::string& ta
     return layers.substr(start, end - start);
 }
 
-TEST_CASE(plugin_layerrules) {
-
-    EXPECT(spawnLayer("rule-layer"), true);
-
-    OK(getFromSocket("/eval hl.plugin.test.add_layer_rule()"));
-    OK(getFromSocket("/reload"));
-
-    OK(getFromSocket("/eval hl.layer_rule({ match = { namespace = 'rule-layer' }, plugin_rule = 'effect' })"));
-
-    EXPECT(spawnLayer("rule-layer"), true);
-
-    EXPECT(spawnLayer("norule-layer"), true);
-
-    OK(getFromSocket("/eval hl.plugin.test.check_layer_rule()"));
-}
-
-TEST_CASE(layerPointerFocusPreservedOnKeyboardRefocus) {
-    static constexpr const char* LAYER_NAMESPACE = "pointer-focus-layer";
-
-    OK(getFromSocket("/eval hl.config({ input = { follow_mouse = 0 } })"));
-
-    OK(getFromSocket("/dispatch hl.dsp.focus({ workspace = '1' })"));
-    SPAWN_KITTY("pointer_focus_ws1");
-
-    OK(getFromSocket("/dispatch hl.dsp.focus({ workspace = '2' })"));
-    SPAWN_KITTY("pointer_focus_ws2");
-
-    OK(getFromSocket("/dispatch hl.dsp.focus({ workspace = '1' })"));
-    OK(getFromSocket("/dispatch hl.dsp.focus({ window = 'class:pointer_focus_ws1' })"));
-
-    ASSERT(spawnLayer(LAYER_NAMESPACE, {"--edge=top", "--layer=top", "--lines=48px", "--focus-policy=not-allowed"}), true);
-
-    OK(getFromSocket(std::format("/eval hl.plugin.test.set_pointer_focus_layer('{}')", LAYER_NAMESPACE)));
-    OK(getFromSocket(std::format("/eval hl.plugin.test.check_pointer_focus_layer('{}')", LAYER_NAMESPACE)));
-
-    OK(getFromSocket("/dispatch hl.dsp.focus({ workspace = '2' })"));
-    ASSERT_CONTAINS(getFromSocket("/activewindow"), "class: pointer_focus_ws2\n");
-    OK(getFromSocket(std::format("/eval hl.plugin.test.check_pointer_focus_layer('{}')", LAYER_NAMESPACE)));
-}
-
 TEST_CASE(layerVisibilityOnFs) {
 
     // For default handled fullscreen
@@ -121,19 +81,4 @@ TEST_CASE(layerVisibilityOnFs) {
         EXPECT_CONTAINS(str, "a: 1")
         EXPECT_CONTAINS(getFromSocket("/activewindow"), "fullscreen: 0");
     }
-}
-
-TEST_CASE(windowRefocusRestoresKeyboardFocusAfterSurfaceFocusCleared) {
-    static constexpr const char* WINDOW_CLASS = "keyboard_refocus_target";
-
-    OK(getFromSocket("/dispatch hl.dsp.focus({ workspace = '1' })"));
-    SPAWN_KITTY(WINDOW_CLASS);
-    OK(getFromSocket(std::format("/dispatch hl.dsp.focus({{ window = 'class:{}' }})", WINDOW_CLASS)));
-    ASSERT_CONTAINS(getFromSocket("/activewindow"), std::format("class: {}\n", WINDOW_CLASS));
-    OK(getFromSocket(std::format("/eval hl.plugin.test.check_keyboard_focus_window('{}')", WINDOW_CLASS)));
-
-    OK(getFromSocket("/eval hl.plugin.test.clear_surface_focus()"));
-    OK(getFromSocket(std::format("/eval hl.plugin.test.window_soft_focus('{}')", WINDOW_CLASS)));
-
-    OK(getFromSocket(std::format("/eval hl.plugin.test.check_keyboard_focus_window('{}')", WINDOW_CLASS)));
 }

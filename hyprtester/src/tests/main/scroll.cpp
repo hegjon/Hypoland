@@ -737,12 +737,10 @@ TEST_CASE(scroll_LAYOUT_HANDLED_floatingWindowHiding) {
         If this floating window is unFSed, all floating windows that were ontop of the tiled FS window as well as the floating window that was just FS-unFSed must still show ontop of the tiled FS window
         If we scroll onto another tiled FS window, hide them all. Scrolling back onto the prev tiled FS window doesn't cause them to reappear
 
-
         Considerations for the test:
             allowedOverFullscreen is used for floating windows' visibility. It's not always set for tiled ones, and don't implact their visibility.
 
             `visible` combines the mapped, input, and alpha state.
-
 
     */
 
@@ -3093,35 +3091,6 @@ TEST_CASE(layoutRuleExpand) {
     if (sizeAfterX < sizeSingleX - 200)
         FAIL_TEST("Expected the width of window of class \"b\" to take up all remaining space {}, got {}.", sizeSingleX - 200, sizeAfterX);
 }
-TEST_CASE(scrollTapeOnClickOutOfWindow) {
-    /*
-     * Do not move tape on click in the direction, but out of the window  
-     */
-
-    OK(getFromSocket("r/eval hl.config({ general = { layout = 'scrolling' } })"));
-    OK(getFromSocket("r/eval hl.config({ general = { gaps_out = 100 } })"));
-    OK(getFromSocket("r/eval hl.config({ scrolling = { follow_min_visible = 1.0, column_width = 0.6 } })"));
-    OK(getFromSocket("r/eval hl.config({ input = { follow_mouse = 1 } })"));
-
-    SPAWN_KITTY("A"); // A should be at x negative
-    SPAWN_KITTY("B");
-
-    OK(getFromSocket("/eval hl.plugin.test.window_soft_focus('A')"));     // soft focus A
-    OK(getFromSocket("/dispatch hl.dsp.cursor.move({ x = 0, y = 20 })")); // move cursor to the gap zone
-
-    OK(getFromSocket("/eval hl.plugin.test.click(272, 1)"));
-    OK(getFromSocket("/eval hl.plugin.test.click(272, 0)"));
-
-    const auto active = getFromSocket("/activewindow");
-    ASSERT_CONTAINS(active, "class: A");
-
-    const auto posA  = Tests::getAttribute(active, "at");
-    const auto posAx = std::stoi(posA.substr(0, posA.find(',')));
-
-    if (posAx >= 0)
-        FAIL_TEST("Expected the x coordinate of window of class \"A\" to be < 0, got {}.", posAx);
-}
-
 TEST_CASE(properFocusBehvaior) {
     // test that focus history does not fuck with proper workspace preference
 

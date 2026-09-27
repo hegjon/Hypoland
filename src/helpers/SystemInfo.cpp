@@ -2,8 +2,6 @@
 
 #include "../Compositor.hpp"
 #include "../version.h"
-#include "../plugins/PluginAPI.hpp"
-#include "../plugins/PluginSystem.hpp"
 #include "../render/OpenGL.hpp"
 #include "GLES2Compat.hpp"
 #include "../config/ConfigManager.hpp"
@@ -26,6 +24,22 @@ using namespace IPC::Socket1;
 static void trimTrailingComma(std::string& str) {
     if (!str.empty() && str.back() == ',')
         str.pop_back();
+}
+
+// The ABI string plugins were checked against. Hypoland has no plugins, it is kept because `hyprctl version` prints it.
+static const char* abiHash() {
+    static auto stripPatch = [](const char* ver) -> std::string {
+        std::string_view v = ver;
+        if (!v.contains('.'))
+            return std::string{v};
+
+        return std::string{v.substr(0, v.find_last_of('.'))};
+    };
+
+    static const std::string ver = std::format("{}_aq_{}_hu_{}_hg_{}_hc_{}_hlg_{}", GIT_COMMIT_HASH, stripPatch(AQUAMARINE_VERSION), stripPatch(HYPRUTILS_VERSION),
+                                               stripPatch(HYPRGRAPHICS_VERSION), stripPatch(HYPRCURSOR_VERSION), stripPatch(HYPRLANG_VERSION));
+
+    return ver.c_str();
 }
 
 std::string SystemInfo::getStatus(eOutputFormat fmt) {
@@ -80,7 +94,7 @@ std::string SystemInfo::getVersion(eOutputFormat fmt) {
         result += getBuiltSystemLibraryNames();
         result += "\n";
         result += "Version ABI string: ";
-        result += __hyprland_api_get_hash();
+        result += abiHash();
         result += "\n";
 
 #if (!ISDEBUG && !defined(NO_XWAYLAND) && !defined(BUILT_WITH_NIX))
@@ -124,7 +138,7 @@ std::string SystemInfo::getVersion(eOutputFormat fmt) {
             GIT_BRANCH, GIT_COMMIT_HASH, HYPRLAND_VERSION, (GIT_DIRTY == std::string_view{"dirty"} ? "true" : "false"), escapeJSONStrings(commitMsg), GIT_COMMIT_DATE, GIT_TAG,
             GIT_COMMITS, AQUAMARINE_VERSION, HYPRLANG_VERSION, HYPRUTILS_VERSION, HYPRCURSOR_VERSION, HYPRGRAPHICS_VERSION, getSystemLibraryVersion("aquamarine"),
             getSystemLibraryVersion("hyprlang"), getSystemLibraryVersion("hyprutils"), getSystemLibraryVersion("hyprcursor"), getSystemLibraryVersion("hyprgraphics"),
-            __hyprland_api_get_hash());
+            abiHash());
 
 #if ISDEBUG
         result += "\"debug\",";
@@ -223,13 +237,8 @@ std::string SystemInfo::getSystemInfo() {
     } else
         result += "os-release: error\n\n";
 
+    // Hypoland has no plugin system, keep the section for tools that parse it
     result += "plugins:\n";
-    if (g_pPluginSystem) {
-        for (auto const& pl : g_pPluginSystem->getAllPlugins()) {
-            result += std::format("  {} by {} ver {}\n", pl->m_name, pl->m_author, pl->m_version);
-        }
-    } else
-        result += "\tunknown: not runtime\n";
 
     if (g_pHyprOpenGL) {
         result += std::format("\nExplicit sync: {}", g_pHyprOpenGL->m_exts.EGL_ANDROID_native_fence_sync_ext ? "supported" : "missing");

@@ -14,11 +14,6 @@ pkg_check_modules(hyprtester_deps REQUIRED IMPORTED_TARGET hyprutils>=0.5.0)
 file(GLOB_RECURSE SRCFILES CONFIGURE_DEPENDS "src/*.cpp")
 
 add_executable(hyprtester ${SRCFILES})
-add_custom_command(
-  TARGET hyprtester
-  POST_BUILD
-  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/plugin/build.sh "${LUA_INCLUDE_DIRS}"
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/plugin)
 
 target_link_libraries(hyprtester PUBLIC PkgConfig::hyprtester_deps)
 
@@ -29,9 +24,6 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/test.lua
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lua-require
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/hypr)
-
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/plugin/hyprtestplugin.so
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
 file(WRITE ${CMAKE_CURRENT_SOURCE_DIR}/src/tests/clients/build.hpp
   "#include <string>\n"
@@ -100,13 +92,8 @@ endfunction()
 protocolnew("staging/pointer-warp" "pointer-warp-v1" false)
 protocolnew("staging/fractional-scale" "fractional-scale-v1" false)
 protocolnew("stable/xdg-shell" "xdg-shell" false)
-protocolnew("unstable/keyboard-shortcuts-inhibit" "keyboard-shortcuts-inhibit-unstable-v1" false)
 
 clientNew("pointer-warp" PROTOS "pointer-warp-v1" "xdg-shell")
 clientNew("surface-scale-transform" PROTOS "fractional-scale-v1" "xdg-shell")
-clientNew("pointer-scroll" PROTOS "xdg-shell")
 clientNew("child-window" PROTOS "xdg-shell")
-clientNew("xdg-interactive" PROTOS "xdg-shell")
-clientNew("shortcut-inhibitor" PROTOS "xdg-shell" "keyboard-shortcuts-inhibit-unstable-v1")
-clientNew("keyboard-modifiers" PROTOS "xdg-shell")
 clientNew("fullscreen-with-monitor" PROTOS "xdg-shell")

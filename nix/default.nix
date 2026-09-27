@@ -45,7 +45,6 @@
   re2,
   sdbus-cpp_2,
   systemd,
-  udis86-hyprland,
   wayland,
   wayland-protocols,
   wayland-scanner,
@@ -117,7 +116,6 @@ customStdenv.mkDerivation (finalAttrs: {
             ../assets/hyprland-portals.conf
             ../assets/install
             ../hyprctl
-            ../hyprland.pc.in
             ../LICENSE
             ../meta
             ../protocols
@@ -142,7 +140,6 @@ customStdenv.mkDerivation (finalAttrs: {
     sed -i "s#/usr#$out#" src/render/OpenGL.cpp
 
     # Remove extra @PREFIX@ to fix some paths
-    sed -i "s#@PREFIX@/##g" hyprland.pc.in
     sed -i "s#@PREFIX@/##g" example/hyprland.desktop.in
   '';
 
@@ -202,7 +199,6 @@ customStdenv.mkDerivation (finalAttrs: {
       pciutils
       re2
       sdbus-cpp_2
-      udis86-hyprland
       wayland
       wayland-protocols
       wayland-scanner
@@ -260,12 +256,8 @@ customStdenv.mkDerivation (finalAttrs: {
 
     ${optionalString withTests ''
       install hyprtester/pointer-warp -t $out/bin
-      install hyprtester/pointer-scroll -t $out/bin
-      install hyprtester/shortcut-inhibitor -t $out/bin
-      install hyprtester/keyboard-modifiers -t $out/bin
       install hyprtester/fullscreen-with-monitor -t $out/bin
       install hyprtester/surface-scale-transform -t $out/bin
-      install hyprtester/xdg-interactive -t $out/bin
       install hyprland_gtests -t $out/bin
       install hyprtester/child-window -t $out/bin
     ''}

@@ -63,7 +63,6 @@ using namespace Hyprutils::String;
 #include "../../managers/input/InputManager.hpp"
 #include "../../managers/XWaylandManager.hpp"
 #include "../../managers/fullscreen/FullscreenController.hpp"
-#include "../../plugins/PluginSystem.hpp"
 #include "../../animation/AnimationManager.hpp"
 #include "../../notification/NotificationOverlay.hpp"
 #include "../../render/Renderer.hpp"
@@ -1734,6 +1733,7 @@ static std::string dispatchOutput(eHyprCtlOutputFormat format, std::string reque
     return "ok";
 }
 
+// Hypoland has no plugin system. The command stays so its answers keep the upstream format.
 static SResponse dispatchPlugin(const SRequest& request) {
     CVarList vars(request.command, 0, ' ');
 
@@ -1742,74 +1742,17 @@ static SResponse dispatchPlugin(const SRequest& request) {
 
     const auto OPERATION = vars[1];
 
-    if (OPERATION == "load") {
+    if (OPERATION == "load" || OPERATION == "unload") {
         if (vars.size() < 3)
             return "not enough args";
 
-        const std::string PATH    = vars[2];
-        auto              promise = CPromise<std::string>::make([PATH, pid = request.pid](SP<CPromiseResolver<std::string>> resolver) {
-            g_pPluginSystem->loadPlugin(PATH, SPECIAL_PID_TYPE_NONE, pid)->then([resolver](SP<CPromiseResult<CPlugin*>> result) {
-                if (result->hasError()) {
-                    resolver->reject(result->error());
-                    return;
-                }
-
-                resolver->resolve("ok");
-            });
-        });
-
-        return promise;
-    } else if (OPERATION == "unload") {
-        if (vars.size() < 3)
-            return "not enough args";
-
-        const std::string PATH   = vars[2];
-        const auto        PLUGIN = g_pPluginSystem->getPluginByPath(PATH);
-
-        if (!PLUGIN)
-            return "plugin not loaded";
-
-        g_pPluginSystem->unloadPlugin(PLUGIN);
-    } else if (OPERATION == "list") {
-        const auto  PLUGINS = g_pPluginSystem->getAllPlugins();
-        std::string result  = "";
-
-        if (request.format == eHyprCtlOutputFormat::FORMAT_JSON) {
-            result += "[";
-
-            if (PLUGINS.empty())
-                return "[]";
-
-            for (auto const& p : PLUGINS) {
-                result += std::format(
-                    R"#(
-{{
-    "name": "{}",
-    "author": "{}",
-    "handle": "{:x}",
-    "version": "{}",
-    "description": "{}"
-}},)#",
-                    escapeJSONStrings(p->m_name), escapeJSONStrings(p->m_author), rc<uintptr_t>(p->m_handle), escapeJSONStrings(p->m_version), escapeJSONStrings(p->m_description));
-            }
-            trimTrailingComma(result);
-            result += "]";
-        } else {
-            if (PLUGINS.empty())
-                return "no plugins loaded";
-
-            for (auto const& p : PLUGINS) {
-                result += std::format("\nPlugin {} by {}:\n\tHandle: {:x}\n\tVersion: {}\n\tDescription: {}\n", p->m_name, p->m_author, rc<uintptr_t>(p->m_handle), p->m_version,
-                                      p->m_description);
-            }
-        }
-
-        return result;
-    } else {
-        return "unknown opt";
+        return "plugins are not supported by Hypoland";
     }
 
-    return "ok";
+    if (OPERATION == "list")
+        return request.format == eHyprCtlOutputFormat::FORMAT_JSON ? "[]" : "no plugins loaded";
+
+    return "unknown opt";
 }
 
 static std::string dispatchNotify(eHyprCtlOutputFormat format, std::string request) {

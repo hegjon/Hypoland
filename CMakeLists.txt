@@ -36,22 +36,6 @@ endif()
 find_package(PkgConfig REQUIRED)
 find_package(Python3 COMPONENTS Interpreter QUIET)
 
-# Try to find canihavesomecoffee's udis86 using pkgconfig vmd/udis86 does not
-# provide a .pc file and won't be detected this way
-pkg_check_modules(udis_dep IMPORTED_TARGET udis86>=1.7.2)
-
-# Find non-pkgconfig udis86, otherwise fallback to subproject
-if(NOT udis_dep_FOUND)
-  find_library(udis_nopc udis86)
-  if(NOT("${udis_nopc}" MATCHES "udis_nopc-NOTFOUND"))
-    message(STATUS "Found udis86 at ${udis_nopc}")
-  else()
-    add_subdirectory("subprojects/udis86")
-    include_directories("subprojects/udis86")
-    message(STATUS "udis86 dependency not found, falling back to subproject")
-  endif()
-endif()
-
 find_library(librt rt)
 if("${librt}" MATCHES "librt-NOTFOUND")
   unset(LIBRT)
@@ -114,10 +98,9 @@ add_compile_options(
   -frtti
   -fmacro-prefix-map=${CMAKE_SOURCE_DIR}/=)
 
-# disable lto as it may break plugins
+# disable lto, the embedded aquamarine relies on weakened symbols
 add_compile_options(-fno-lto)
 
-set(CMAKE_EXECUTABLE_ENABLE_EXPORTS TRUE)
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
 message(STATUS "Checking deps...")
@@ -404,13 +387,8 @@ else()
     IMPORTED_TARGET
     ${XWAYLAND_DEPENDENCIES})
 
-  string(JOIN ", " PKGCONFIG_XWAYLAND_DEPENDENCIES ${XWAYLAND_DEPENDENCIES})
-  string(PREPEND PKGCONFIG_XWAYLAND_DEPENDENCIES ", ")
-
   target_link_libraries(hyprland_lib PUBLIC PkgConfig::xdeps)
 endif()
-
-configure_file(hyprland.pc.in hyprland.pc @ONLY)
 
 if(NO_SYSTEMD)
   message(STATUS "SYSTEMD support is disabled...")
@@ -461,15 +439,8 @@ target_link_libraries(
   Hyprland
   ${LIBRT}
   hyprland_lib)
-if(udis_dep_FOUND)
-  target_link_libraries(hyprland_lib PUBLIC PkgConfig::udis_dep)
-elseif(NOT("${udis_nopc}" MATCHES "udis_nopc-NOTFOUND"))
-  target_link_libraries(hyprland_lib PUBLIC ${udis_nopc})
-else()
-  target_link_libraries(hyprland_lib PUBLIC libudis86)
-endif()
 
-# used by `make installheaders`, to ensure the headers are generated
+# collects the generated protocol headers
 add_custom_target(generate-protocol-headers)
 
 if(Python3_Interpreter_FOUND)
@@ -680,28 +651,6 @@ install(FILES ${CMAKE_SOURCE_DIR}/assets/hyprland-portals.conf
 # man pages
 file(GLOB_RECURSE MANPAGES "docs/*.1")
 install(FILES ${MANPAGES} DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
-
-# pkgconfig entry
-install(FILES ${CMAKE_BINARY_DIR}/hyprland.pc
-        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
-
-# protocol headers
-set(HEADERS_PROTO "${CMAKE_CURRENT_SOURCE_DIR}/protocols")
-install(
-  DIRECTORY ${HEADERS_PROTO}
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/hyprland
-  FILES_MATCHING
-  PATTERN "*.h*")
-
-# hyprland headers
-set(HEADERS_SRC "${CMAKE_CURRENT_SOURCE_DIR}/src")
-install(
-  DIRECTORY ${HEADERS_SRC}
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/hyprland
-  FILES_MATCHING
-  PATTERN "*.h"
-  PATTERN "*.hpp"
-  PATTERN "*.inc")
 
 if(BUILD_TESTING OR WITH_TESTS)
   message(STATUS "Building tests")

@@ -9,7 +9,6 @@ compile_commands.json
 CTestTestfile.cmake
 CPackConfig.cmake
 CPackSourceConfig.cmake
-hyprland.pc
 _deps
 
 build/

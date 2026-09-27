@@ -355,18 +355,6 @@ TEST_CASE(windowMaximizeSize) {
     }
 }
 
-TEST_CASE(floatingFocusOnFullscreen) {
-    SPAWN_KITTY("kitty_A");
-    OK(getFromSocket("/dispatch hl.dsp.window.float({ action = 'toggle' })"));
-
-    SPAWN_KITTY("kitty_B");
-    OK(getFromSocket("/dispatch hl.dsp.window.fullscreen({ mode = 'maximized' })"));
-
-    OK(getFromSocket("/dispatch hl.dsp.window.cycle_next()"));
-
-    OK(getFromSocket("/eval hl.plugin.test.floating_focus_on_fullscreen()"));
-}
-
 TEST_CASE(groupFallbackFocus) {
     SPAWN_KITTY("kitty_A");
 
@@ -392,40 +380,6 @@ TEST_CASE(groupFallbackFocus) {
         auto str = getFromSocket("/activewindow");
         EXPECT(str.contains("class: kitty_B"), true);
     }
-}
-
-TEST_CASE(bringActiveToTopMouseMovement) {
-    OK(getFromSocket("/eval hl.config({ input = { follow_mouse = 2 } })"));
-    OK(getFromSocket("/eval hl.config({ input = { float_switch_override_focus = 0 } })"));
-
-    SPAWN_KITTY("a");
-    OK(getFromSocket("/dispatch hl.dsp.window.float({ action = 'set' })"));
-    OK(getFromSocket("/dispatch hl.dsp.window.move({ x = 500, y = 300 })"));
-    OK(getFromSocket("/dispatch hl.dsp.window.resize({ x = 400, y = 400 })"));
-
-    SPAWN_KITTY("b");
-    OK(getFromSocket("/dispatch hl.dsp.window.float({ action = 'set' })"));
-    OK(getFromSocket("/dispatch hl.dsp.window.move({ x = 500, y = 300 })"));
-    OK(getFromSocket("/dispatch hl.dsp.window.resize({ x = 400, y = 400 })"));
-
-    auto getTopWindow = []() -> std::string {
-        auto clients = getFromSocket("/clients");
-        return (clients.rfind("class: a") > clients.rfind("class: b")) ? "a" : "b";
-    };
-
-    ASSERT(getTopWindow(), std::string("b"));
-    OK(getFromSocket("/dispatch hl.dsp.cursor.move({ x = 700, y = 500 })"));
-
-    OK(getFromSocket("/dispatch hl.dsp.focus({ window = 'class:a' })"));
-    ASSERT_CONTAINS(getFromSocket("/activewindow"), "class: a");
-
-    OK(getFromSocket("/dispatch hl.dsp.window.bring_to_top()"));
-    ASSERT(getTopWindow(), std::string("a"));
-
-    OK(getFromSocket("/eval hl.plugin.test.click(272, 1)"));
-    OK(getFromSocket("/eval hl.plugin.test.click(272, 0)"));
-
-    ASSERT(getTopWindow(), std::string("a"));
 }
 
 TEST_CASE(initialFloatSize) {
@@ -1069,28 +1023,6 @@ TEST_CASE(windows) {
 
     OK(getFromSocket("/reload"));
     Tests::killAllWindows();
-
-    OK(getFromSocket("/eval hl.plugin.test.add_window_rule()"));
-    OK(getFromSocket("/reload"));
-
-    OK(getFromSocket("/eval hl.window_rule({ match = { class = 'plugin_kitty' }, plugin_rule = 'effect' })"));
-
-    SPAWN_KITTY("plugin_kitty");
-
-    OK(getFromSocket("/eval hl.plugin.test.check_window_rule()"));
-
-    OK(getFromSocket("/reload"));
-    Tests::killAllWindows();
-
-    OK(getFromSocket("/eval hl.plugin.test.add_window_rule()"));
-    OK(getFromSocket("/reload"));
-
-    OK(getFromSocket("/eval hl.window_rule({ name = 'test-plugin-rule', match = { class = 'plugin_kitty' } })"));
-    OK(getFromSocket("/eval hl.window_rule({ name = 'test-plugin-rule', plugin_rule = 'effect' })"));
-
-    SPAWN_KITTY("plugin_kitty");
-
-    OK(getFromSocket("/eval hl.plugin.test.check_window_rule()"));
 }
 
 TEST_CASE(cycle_nextTiled) {
@@ -1359,54 +1291,6 @@ TEST_CASE(monitorrule) {
     const auto SILENT_SRC_ID = Tests::getAttribute(getFromSocket("/clients"), "monitor");
     ASSERT_CONTAINS(MONALL, std::format("HEADLESS-3 (ID {}", SILENT_SRC_ID));
     EXPECT_CONTAINS(getFromSocket("/activeworkspace"), "HEADLESS-2");
-}
-
-TEST_CASE(mouseResize) {
-#define RESET_WINDOW()                                                                                                                                                             \
-    OK(getFromSocket("r/reload"));                                                                                                                                                 \
-    OK(getFromSocket("r/eval hl.unbind('mouse:273')"));                                                                                                                            \
-    OK(getFromSocket("/dispatch hl.dsp.window.resize({ x = 640, y = 400, window = 'class:kitty' })"));                                                                             \
-    OK(getFromSocket("/dispatch hl.dsp.window.move({ x = 0, y = 0, window = 'class:kitty' })"));                                                                                   \
-    OK(getFromSocket("/dispatch hl.dsp.cursor.move({ x = 640, y = 400 })"));                                                                                                       \
-    EXPECT_CONTAINS(getFromSocket("/clients"), "size: 640,400");                                                                                                                   \
-    EXPECT_CONTAINS(getFromSocket("/clients"), "at: 0,0");
-
-    OK(getFromSocket("/eval hl.window_rule({ match = { class = 'kitty' }, float = true })"));
-    SPAWN_KITTY("kitty");
-    ASSERT(Tests::windowCount(), 1);
-    OK(getFromSocket("/dispatch hl.dsp.focus({ window = 'class:kitty' })"));
-
-    RESET_WINDOW();
-    OK(getFromSocket("r/eval hl.bind('mouse:273', hl.dsp.window.resize(), { mouse = true })"));
-    OK(getFromSocket("/eval hl.plugin.test.click(273, 1)"));
-
-    // Position setting works immediately, but updating window sizes interactively doesn't.
-    for (size_t i = 0; i < 50; i++) {
-        OK(getFromSocket("/dispatch hl.dsp.cursor.move({ x = 700, y = 200 })"));
-        if (getFromSocket("/clients").contains("size: 700,200")) {
-            break;
-        }
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    }
-    OK(getFromSocket("/eval hl.plugin.test.click(273, 0)"));
-    EXPECT_CONTAINS(getFromSocket("/clients"), "size: 700,200");
-
-    RESET_WINDOW();
-    OK(getFromSocket("r/eval hl.bind('mouse:273', hl.dsp.window.resize({ keep_aspect_ratio = true }), { mouse = true })"));
-    OK(getFromSocket("/eval hl.plugin.test.click(273, 1)"));
-    OK(getFromSocket("/dispatch hl.dsp.cursor.move({ x = 1280, y = 100 })"));
-    OK(getFromSocket("/eval hl.plugin.test.click(273, 0)"));
-    EXPECT_CONTAINS(getFromSocket("/clients"), "size: 1280,800");
-
-    RESET_WINDOW();
-    OK(getFromSocket("/eval hl.window_rule({ match = { class = 'kitty' }, keep_aspect_ratio = true })"));
-    OK(getFromSocket("r/eval hl.bind('mouse:273', hl.dsp.window.resize({ keep_aspect_ratio = false }), { mouse = true })"));
-    OK(getFromSocket("/eval hl.plugin.test.click(273, 1)"));
-    OK(getFromSocket("/dispatch hl.dsp.cursor.move({ x = 700, y = 200 })"));
-    OK(getFromSocket("/eval hl.plugin.test.click(273, 0)"));
-    EXPECT_CONTAINS(getFromSocket("/clients"), "size: 700,200");
-#undef RESET_WINDOW
 }
 
 TEST_CASE(getFullscreenHandler) {

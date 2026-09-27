@@ -70,10 +70,6 @@ pch:
   - changed-files:
       - any-glob-to-any-file: "src/pch/**"
 
-plugins:
-  - changed-files:
-      - any-glob-to-any-file: "src/plugins/**"
-
 render:
   - changed-files:
       - any-glob-to-any-file: "src/render/**"

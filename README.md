@@ -21,6 +21,9 @@ Hypoland is an independent project. It is not affiliated with or endorsed by Hyp
   `start-hyprland` are installed as symlinks.
 - Color management, HDR, motion blur and the plugin manager are removed. Their config options stay
   registered and are ignored, so existing configs keep loading.
+- Plugins are not supported. Hyprland plugins are built against the exact Hyprland source they load into, and
+  Hypoland's renderer is GLES2 only. `hl.plugin.load()` is ignored with a warning, `hyprctl plugin list`
+  reports no plugins and `hyprctl plugin load` fails. No headers or `hyprland.pc` are installed.
 - The logo background and splash text are removed, `misc:disable_hyprland_logo` and
   `misc:disable_splash_rendering` are ignored.
 

@@ -107,7 +107,13 @@ Optional, default off: animations (keep short slides only, no fades), animated/g
 rounded corners (radius 0 must skip the shader path), dim inactive, inactive opacity, fractional scaling.
 
 CPU/RAM: drop the plugin system and hyprpm; default to XCursor over hyprcursor SVG; keep Xwayland optional.
-Done so far: hyprpm is removed and hyprcursor is off by default. The plugin system is still compiled.
+Done so far: hyprpm is removed and hyprcursor is off by default. The plugin system is removed (2026-09-27): plugins
+must be built against the exact Hyprland source they load into and most draw with GLES3 era renderer code, so
+keeping up was not worth it. `hl.plugin.load()` warns once and does nothing, `hl.get_loaded_plugins()` is empty,
+`hyprctl plugin list` answers `no plugins loaded` / `[]`, `plugin load` / `unload` fail, and `hyprctl version`
+still prints the ABI hash. No symbols are exported, udis86 is gone and no headers or `hyprland.pc` are installed.
+The binary shrank from 21.3 to 18.5 MB. hyprtester lost the test plugin that injected input, so the tests that
+needed it (keybinds, gestures, drag, snap and the input clients) are removed.
 
 Keep (they help): damage tracking, direct scanout, hardware cursor planes.
 
@@ -277,7 +283,7 @@ Open decisions for the user:
 - Install the Arch package on the X200 (replaces the system `hyprland`).
 
 Work that is left from the plan above:
-- Remove screen shaders and the plugin system.
+- Remove screen shaders.
 - Translated strings in `src/i18n/` and the man page still say Hyprland.
 - The X200 loop starts `Hypoland` directly, so the "started without start-hypoland" notification shows.
 

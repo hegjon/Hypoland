@@ -38,9 +38,6 @@ namespace Config::Lua {
 
         void                                   clearEvents();
 
-        std::expected<void, std::string>       addCustomEvent(SP<Event::CEventBus::CCustomEvent> event);
-        std::expected<void, std::string>       removeCustomEvent(const std::string& name);
-
         static std::unordered_set<std::string> knownEvents();
 
       private:
@@ -57,7 +54,6 @@ namespace Config::Lua {
         uint64_t                                               m_nextHandle    = 1;
         size_t                                                 m_dispatchDepth = 0;
         std::vector<CHyprSignalListener>                       m_listeners;
-        std::unordered_map<std::string, CHyprSignalListener>   m_pluginListeners;
 
         static constexpr size_t                                MAX_DISPATCH_DEPTH = 32;
 
