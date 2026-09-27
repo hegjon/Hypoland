@@ -195,6 +195,11 @@ Tools:
   sharing, which makes the compositor use the work buffer copy path instead of direct rendering. The read takes
   about 80 ms and the compositor draws into that buffer again a few frames later, so an animating client can
   show up half drawn in the capture; freeze it (`pkill -STOP`) for exact results.
+- `./bench-x200.sh <label>` measures a change on the normal build: memory 60 s after the start and after the
+  workloads, CPU time of the five workloads of `profile-x200.sh`, three rounds, into
+  `test-results/bench-<time>-<label>/values.txt`. `./bench-x200.sh --compare <dir> <dir>` prints the difference.
+  It runs with the `performance` governor, so its CPU numbers are lower than the ones below (GPU client 3.7%
+  instead of 7-10%). The brief for unattended optimization runs is `docs/overnight-ram-cpu.md`.
 - `HYPOLAND_NO_DIRECT_RENDER=1` makes every frame go through the work buffer, for comparing the two paths.
 
 Performance (X200, `HYPOLAND_PROFILE_PASS`, GPU time per frame, 4 windows plus a 60 fps client):
