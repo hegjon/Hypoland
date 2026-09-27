@@ -140,9 +140,11 @@ void CEventLoopManager::enterLoop() {
 }
 
 void CEventLoopManager::onTimerFire() {
+    // one clock read for all timers, a timer that is due a little later is caught by the recalc below
+    const auto NOW = Time::steadyNow();
     const auto CPY = m_timers.timers;
     for (auto const& t : CPY) {
-        if (t.strongRef() > 2 /* if it's 2, it was lost. Don't call it. */ && t->passed() && !t->cancelled())
+        if (t.strongRef() > 2 /* if it's 2, it was lost. Don't call it. */ && t->passed(NOW) && !t->cancelled())
             t->call(t);
     }
 
@@ -194,17 +196,19 @@ void CEventLoopManager::nudgeTimers() {
     // remove timers that have gone missing
     std::erase_if(m_timers.timers, [](const auto& t) { return t.strongRef() <= 1; });
 
-    long nextTimerUs = 10L * 1000 * 1000; // 10s
+    long       nextTimerUs = 10L * 1000 * 1000; // 10s
 
+    const auto NOW = Time::steadyNow();
     for (auto const& t : m_timers.timers) {
-        if (auto const& µs = t->leftUs(); µs < nextTimerUs)
+        if (auto const& µs = t->leftUs(NOW); µs < nextTimerUs)
             nextTimerUs = µs;
     }
 
     nextTimerUs = std::clamp(nextTimerUs + 1, 1L, std::numeric_limits<long>::max());
 
-    timespec now;
-    clock_gettime(CLOCK_MONOTONIC, &now);
+    // steady_clock is CLOCK_MONOTONIC, the timerfd below uses the same clock
+    const auto [SEC, NSEC] = Time::secNsec(NOW);
+    timespec   now         = {.tv_sec = sc<time_t>(SEC), .tv_nsec = sc<long>(NSEC)};
     timespecAddNs(&now, nextTimerUs * 1000L);
 
     itimerspec ts = {.it_value = now};

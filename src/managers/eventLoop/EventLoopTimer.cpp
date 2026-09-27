@@ -24,9 +24,13 @@ void CEventLoopTimer::updateTimeout(std::optional<Time::steady_dur> timeout) {
 }
 
 bool CEventLoopTimer::passed() {
+    return passed(Time::steadyNow());
+}
+
+bool CEventLoopTimer::passed(const Time::steady_tp& now) {
     if (!m_expires.has_value())
         return false;
-    return Time::steadyNow() > *m_expires;
+    return now > *m_expires;
 }
 
 void CEventLoopTimer::cancel() {
@@ -44,10 +48,14 @@ void CEventLoopTimer::call(SP<CEventLoopTimer> self) {
 }
 
 float CEventLoopTimer::leftUs() {
+    return leftUs(Time::steadyNow());
+}
+
+float CEventLoopTimer::leftUs(const Time::steady_tp& now) {
     if (!m_expires.has_value())
         return std::numeric_limits<float>::max();
 
-    return std::chrono::duration_cast<std::chrono::microseconds>(*m_expires - Time::steadyNow()).count();
+    return std::chrono::duration_cast<std::chrono::microseconds>(*m_expires - now).count();
 }
 
 bool CEventLoopTimer::armed() {
