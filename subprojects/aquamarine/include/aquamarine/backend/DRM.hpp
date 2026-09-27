@@ -467,6 +467,7 @@ namespace Aquamarine {
         bool initResources();
         bool initMgpu();
         bool updateSecondaryRendererState();
+        Hyprutils::Memory::CSharedPointer<CDRMRenderer> primaryRenderer();
         bool grabFormats();
         bool shouldBlit();
         void scanConnectors();

@@ -650,6 +650,17 @@ bool Aquamarine::CDRMBackend::shouldBlit() {
     return !!primary;
 }
 
+SP<CDRMRenderer> Aquamarine::CDRMBackend::primaryRenderer() {
+    auto primaryBackend = primary.lock();
+    if (!primaryBackend)
+        return nullptr;
+
+    if (!primaryBackend->rendererState.renderer && !primaryBackend->initMgpu())
+        backend->log(AQ_LOG_ERROR, "drm: Failed to initialize the primary GPU renderer for blitting");
+
+    return primaryBackend->rendererState.renderer;
+}
+
 bool Aquamarine::CDRMBackend::initMgpu() {
     if (!rendererRequired)
         return true;
@@ -686,12 +697,11 @@ bool Aquamarine::CDRMBackend::updateSecondaryRendererState() {
     if (!backend->ready)
         return true;
 
-    if (!primary) {
-        if (rendererState.renderer && rendererState.allocator)
-            return true;
-
-        return initMgpu();
-    }
+    // The compositor renders to the primary GPU with its own context. The primary's DRM renderer is only a fallback for
+    // secondary GPUs that can't import a buffer, so primaryRenderer() creates it when one needs it. Creating it here costs
+    // every single GPU system a second EGL context (about 2 MB of heap and a driver thread).
+    if (!primary)
+        return true;
 
     const bool hasEnabledOutputs =
         std::ranges::any_of(connectors, [](const auto& c) { return c->status == DRM_MODE_CONNECTED && c->output && c->output->state && c->output->state->state().enabled; });
@@ -2173,9 +2183,7 @@ bool Aquamarine::CDRMOutput::commitState(bool onlyTest) {
                 return false;
             }
 
-            SP<Aquamarine::CDRMRenderer> primaryRenderer;
-            if (backend->primary)
-                primaryRenderer = backend->primary->rendererState.renderer;
+            auto primaryRenderer = backend->primaryRenderer();
             auto blitResult = backend->rendererState.renderer->blit(
                 STATE.buffer, NEWAQBUF, primaryRenderer, (COMMITTED & COutputState::eOutputStateProperties::AQ_OUTPUT_STATE_EXPLICIT_IN_FENCE) ? STATE.explicitInFence : -1);
             if (!blitResult.success) {
@@ -2403,9 +2411,7 @@ bool Aquamarine::CDRMOutput::setCursor(SP<IBuffer> buffer, const Vector2D& hotsp
                 return false;
             }
 
-            SP<Aquamarine::CDRMRenderer> primaryRenderer;
-            if (backend->primary)
-                primaryRenderer = backend->primary->rendererState.renderer;
+            auto primaryRenderer = backend->primaryRenderer();
             if (!backend->rendererState.renderer->blit(buffer, NEWAQBUF, primaryRenderer).success) {
                 backend->backend->log(AQ_LOG_ERROR, "drm: Backend requires blit, but cursor blit failed");
                 return false;
