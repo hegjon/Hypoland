@@ -377,6 +377,11 @@ namespace Aquamarine {
             uint16_t contentType = 0;
             uint32_t crtcID      = 0;
             bool     propsCached = false;
+
+            // the mode the CRTC runs, read from the kernel once and then kept until
+            // the next modeset, so a page-flip doesn't ask for it again.
+            drmModeModeInfo currentMode;
+            bool            currentModeKnown = false;
         } atomic;
 
         union UDRMConnectorProps {

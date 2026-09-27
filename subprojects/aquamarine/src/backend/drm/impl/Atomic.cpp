@@ -237,15 +237,23 @@ void Aquamarine::CDRMAtomicRequest::addConnector(Hyprutils::Memory::CSharedPoint
     bool           maxBpcEmitted  = false;
 
     if (enable) {
-        drmModeModeInfo* currentMode = connector->getCurrentMode();
-        bool             modeDiffers = true;
-        if (currentMode) {
-            modeDiffers = memcmp(currentMode, &data.modeInfo, sizeof(drmModeModeInfo)) != 0;
-            free(currentMode);
+        // only a modeset changes the mode of the CRTC, and every modeset drops the cached one
+        if (data.modeset || !connector->atomic.currentModeKnown) {
+            drmModeModeInfo* currentMode       = connector->getCurrentMode();
+            connector->atomic.currentModeKnown = currentMode;
+            if (currentMode) {
+                connector->atomic.currentMode = *currentMode;
+                free(currentMode);
+            }
         }
+
+        const bool modeDiffers = !connector->atomic.currentModeKnown || memcmp(&connector->atomic.currentMode, &data.modeInfo, sizeof(drmModeModeInfo)) != 0;
 
         if (modeDiffers)
             addConnectorModeset(connector, data);
+
+        if (modeDiffers || data.modeset)
+            connector->atomic.currentModeKnown = false;
 
         // Setup HDR
         if (connector->props.values.max_bpc && connector->maxBpcBounds.at(0) && connector->maxBpcBounds.at(1) && !connector->maxBpcFailed) {

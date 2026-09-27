@@ -408,6 +408,9 @@ void Aquamarine::CDRMBackend::restoreAfterVT() {
     // restore, but isPageFlipPending is already false so the = false
     // assignment is a harmless no-op.
     for (auto const& c : connectors) {
+        // whoever had the display in between may have set another mode
+        c->atomic.currentModeKnown = false;
+
         if (c->sched.frameInFlight() || c->sched.frameRunning()) {
             backend->log(AQ_LOG_DEBUG, std::format("drm: Clearing stale page-flip state for {}", c->szName));
             c->invalidateFrame();
