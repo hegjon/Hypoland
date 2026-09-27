@@ -330,11 +330,13 @@ namespace Render::GL {
         bool                    m_applyFinalShader     = false;
         bool                    m_blend                = false;
         bool                    m_offloadedFramebuffer = false;
+        bool                    m_directRender         = false;
 
         SP<CShader>             m_finalScreenShader;
         GLuint                  m_currentProgram;
 
         void                    initDRMFormats();
+        bool                    canRenderDirectly(PHLMONITOR pMonitor);
         void                    initEGL(bool gbm);
         EGLDeviceEXT            eglDeviceFromDRMFD(int drmFD);
 

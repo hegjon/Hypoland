@@ -716,13 +716,72 @@ void CHyprOpenGLImpl::begin(PHLMONITOR pMonitor, const CRegion& damage_, SP<IFra
         applyScreenShader(*PSHADER);
     }
 
+    g_pHyprRenderer->m_renderData.outFB = fb ? fb : dc<CHyprGLRenderer*>(g_pHyprRenderer.get())->m_currentRenderbuffer->getFB();
+
+    // Draw straight into the buffer that goes to the screen when nothing needs the frame in a separate work buffer.
+    // That saves copying every damaged pixel once more, which is a quarter of a frame on old GPUs. The screen
+    // buffer still holds the frame it showed bufferAge frames ago, and the damage covers everything since.
+    m_directRender = !fb && canRenderDirectly(pMonitor);
+    if (m_directRender) {
+        g_pHyprRenderer->bindFB(g_pHyprRenderer->m_renderData.outFB);
+        m_offloadedFramebuffer                           = false;
+        g_pHyprRenderer->m_renderData.mainFB             = g_pHyprRenderer->m_renderData.currentFB;
+        pMonitor->m_zoomController.m_resetCameraState = true;
+        return;
+    }
+
     g_pHyprRenderer->bindFB(g_pHyprRenderer->m_renderData.pMonitor->resources()->getUnusedWorkBuffer());
     m_offloadedFramebuffer = true;
-    if (!g_pHyprRenderer->m_renderData.damage.empty())
-        GLFB(g_pHyprRenderer->m_renderData.currentFB)->clearAfterInvalidation();
+    if (!g_pHyprRenderer->m_renderData.damage.empty()) {
+        // HYPOLAND_PROFILE_PASS=1, see CRenderPass::render()
+        static const bool PROFILE = Env::envEnabled("HYPOLAND_PROFILE_PASS");
+        const auto        STARTED = std::chrono::steady_clock::now();
+        if (PROFILE)
+            glFinish();
+
+        // Only what gets redrawn has to be clear: the render pass paints the background over its whole damage
+        // (expanded for blur), and only the final damage is copied to the output.
+        GLFB(g_pHyprRenderer->m_renderData.currentFB)->clearRegionAfterInvalidation(g_pHyprRenderer->m_renderData.damage);
+
+        if (PROFILE) {
+            static uint64_t us = 0, frames = 0;
+            glFinish();
+            us += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - STARTED).count();
+            if (++frames >= 120) {
+                std::println(stderr, "[pass profile]   {:<36} {:>6.2f} ms/frame", "clear work buffer", us / 1000.0 / frames);
+                us     = 0;
+                frames = 0;
+            }
+        }
+    }
 
     g_pHyprRenderer->m_renderData.mainFB = g_pHyprRenderer->m_renderData.currentFB;
-    g_pHyprRenderer->m_renderData.outFB  = fb ? fb : dc<CHyprGLRenderer*>(g_pHyprRenderer.get())->m_currentRenderbuffer->getFB();
+}
+
+bool CHyprOpenGLImpl::canRenderDirectly(PHLMONITOR pMonitor) {
+    static const bool DISABLED = Env::envEnabled("HYPOLAND_NO_DIRECT_RENDER");
+    if (DISABLED)
+        return false;
+
+    const auto& OUT = g_pHyprRenderer->m_renderData.outFB;
+    if (!OUT || !OUT->getTexture() || OUT->m_size != pMonitor->m_transformedSize)
+        return false; // the buffer cannot be drawn into as a texture, or does not match the monitor
+
+    if (g_pHyprRenderer->m_renderMode != RENDER_MODE_NORMAL)
+        return false;
+
+    // all of these are applied while the work buffer is copied to the screen
+    if (pMonitor->m_transform != WL_OUTPUT_TRANSFORM_NORMAL || g_pHyprRenderer->m_renderData.mouseZoomFactor != 1.F)
+        return false;
+
+    if (m_finalScreenShader->program() >= 1 || g_pHyprRenderer->m_crashingInProgress)
+        return false;
+
+    // mirrors and screen sharing take a copy of the finished frame
+    if (pMonitor->needsACopyFB())
+        return false;
+
+    return true;
 }
 
 void CHyprOpenGLImpl::end() {

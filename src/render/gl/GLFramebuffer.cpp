@@ -284,3 +284,17 @@ void CGLFramebuffer::clearAfterInvalidation() {
     g_pHyprOpenGL->scissor(nullptr);
     glClear(GL_COLOR_BUFFER_BIT);
 }
+
+void CGLFramebuffer::clearRegionAfterInvalidation(const CRegion& region) {
+    if (m_cleared)
+        return;
+
+    // Only a partial clear, so m_cleared stays false. On GPUs without fast clears a full clear costs as much
+    // fill rate as drawing a fullscreen quad, which is most of a frame on old hardware.
+    glClearColor(0, 0, 0, 0);
+    region.forEachRect([](const auto& RECT) {
+        g_pHyprOpenGL->scissor(&RECT, false);
+        glClear(GL_COLOR_BUFFER_BIT);
+    });
+    g_pHyprOpenGL->scissor(nullptr);
+}

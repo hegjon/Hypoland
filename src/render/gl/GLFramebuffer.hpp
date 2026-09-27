@@ -23,6 +23,8 @@ namespace Render::GL {
 
         // clear at most once per invalidate()
         void clearAfterInvalidation();
+        // clear only the given region, unless the whole buffer is still clear since the last invalidate()
+        void clearRegionAfterInvalidation(const CRegion& region);
 
       protected:
         bool internalAlloc(int w, int h, DRMFormat format = DRM_FORMAT_ARGB8888) override;
