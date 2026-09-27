@@ -45,6 +45,7 @@ namespace Render::GL {
         WP<IElementRenderer> elementRenderer() override;
 
       private:
+        bool                 needsRenderFence(PHLMONITOR monitor, const std::function<void()>& renderingDoneCallback);
         void                 preRender(PHLMONITOR pMonitor);
         void                 renderOffToMain(SP<IFramebuffer> off) override;
         SP<IRenderbuffer>    getOrCreateRenderbufferInternal(SP<Aquamarine::IBuffer> buffer, uint32_t fmt) override;

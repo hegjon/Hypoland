@@ -94,6 +94,16 @@ bool CHyprGLRenderer::beginRenderInternal(PHLMONITOR pMonitor, CRegion& damage, 
     return true;
 }
 
+// i915 attaches the fences of a batch to the buffers it uses, and the kernel waits for them in the atomic commit
+// and in the clients. A fence of our own costs a syncobj, its export and a poll on every frame, and is only
+// needed when somebody waits for it: an explicit sync client or a caller that wants to know when rendering is done.
+bool CHyprGLRenderer::needsRenderFence(PHLMONITOR monitor, const std::function<void()>& renderingDoneCallback) {
+    if (!isIntel() || isMgpu() || m_renderMode != RENDER_MODE_NORMAL || renderingDoneCallback)
+        return true;
+
+    return std::ranges::any_of(monitor->m_usedAsyncBuffers, [](const auto& buf) { return !buf.first.expired() && !buf.second->m_syncReleasers.empty(); });
+}
+
 void CHyprGLRenderer::endRender(const std::function<void()>& renderingDoneCallback) {
     const auto  PMONITOR           = g_pHyprRenderer->m_renderData.pMonitor;
     static auto PNVIDIAANTIFLICKER = CConfigValue<Config::INTEGER>("opengl:nvidia_anti_flicker");
@@ -121,8 +131,8 @@ void CHyprGLRenderer::endRender(const std::function<void()>& renderingDoneCallba
     if (m_renderMode == RENDER_MODE_NORMAL)
         PMONITOR->m_output->state->setBuffer(m_currentBuffer);
 
-    if (!explicitSyncSupported()) {
-        Log::logger->log(Log::TRACE, "renderer: Explicit sync unsupported, falling back to implicit in endRender");
+    if (!explicitSyncSupported() || !needsRenderFence(PMONITOR.lock(), renderingDoneCallback)) {
+        Log::logger->log(Log::TRACE, "renderer: No fence in endRender, relying on implicit sync");
 
         // nvidia doesn't have implicit sync, so we have to explicitly wait here, llvmpipe and other software renderer seems to bug out as well.
         if ((isNvidia() && *PNVIDIAANTIFLICKER) || isSoftware())
