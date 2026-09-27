@@ -179,6 +179,15 @@ remote 'hyprctl dispatch "hl.dsp.dpms({action=[[on]]})" >/dev/null; sleep 1'
 DPMS=$(remote 'hyprctl monitors | grep -m1 dpmsStatus')
 RESULTS+=("INFO  $(echo $DPMS)")
 
+# Omarchy starts a fullscreen screensaver after 150 s without input and locks after 300 s.
+# Both cover the windows under test and distort every measurement.
+IDLE=$(remote 'pkill -f "[o]rg.omarchy.screensaver" && echo screensaver; hyprctl monitors | grep -q "solitaryBlockedBy:.*lock" && echo locked; true')
+case $IDLE in
+    *locked*) fail "session is locked, results are not valid (restart the compositor to clear it)" ;;
+    *screensaver*) RESULTS+=("INFO  a running screensaver was closed") ;;
+    *) pass "no screensaver or lock in the way" ;;
+esac
+
 BEFORE=$(remote 'hyprctl clients -j | grep -c "\"address\""')
 # the test terminal fills itself with magenta, so the screenshot can prove that the window is drawn
 cat >"$OUT/magenta.sh" <<'MAGENTA'

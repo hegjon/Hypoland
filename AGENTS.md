@@ -139,6 +139,11 @@ Prefer compile-time flags (e.g. `-DNO_ANIMATIONS`) so removed code isn't built.
 - Screenshots need frames. With the panel off (DPMS, idle) nothing renders: `grim` blocks or shows stale content.
   The same applies to nested runs on the desktop when its monitor is off or the nested window is not visible.
 - Wrap every remote `hyprctl` / `grim` in `timeout`.
+- Omarchy's shell starts a fullscreen screensaver (terminal with class `org.omarchy.screensaver`) after 150 s
+  without input and locks the session after 300 s (`~/.config/omarchy/shell.json`, `idle`). Nothing types on
+  the X200 during tests, so any run longer than 2.5 minutes after a compositor start can end up measuring the
+  screensaver or a lock screen. Keep profiling runs short after a restart, check `hyprctl clients` for the
+  screensaver class and `solitaryBlockedBy` for `lock`, and look at `journalctl --user | grep "omarchy idle"`.
 
 ## Status (2026-09-27)
 
@@ -178,12 +183,25 @@ Performance findings (X200, profiler):
 - Not done: rendering straight to the output buffer would save the copy (about 25% of a frame), but it changes
   how damage and buffer age work.
 
-CPU profile (`perf` on the X200, as root):
-- GPU client at 60 fps, 7% CPU: kernel 38% (ioctls for the GPU batch and the atomic commit, `read_hpet`),
-  Hypoland's own code 19% with no function above 1.5%, Mesa 18%.
-- shm client updating a large window, 13-25% CPU: about 40% is `memcpy` under `CGLTexture::update`.
-- Candidates, not done: avoid copies in the shm upload, cache the DRM properties that aquamarine re-reads on
-  every commit (about 3%), check whether the X200 kernel uses the HPET clocksource.
+CPU profile: run `./profile-x200.sh`. It builds with frame pointers in `build-prof`, deploys, switches the
+Omarchy screensaver and idle lock off, records five workloads with `perf` as root, prints the report to
+`test-results/profile-*/profile.txt` and puts the normal build back. Use `--keep` to leave the profiling build
+on the X200; `perf report` on the saved data only resolves symbols while that build is installed.
+Findings:
+- Idle desktop: 0.1% CPU.
+- GPU client at 60 fps, 10% CPU: `renderMonitor` 76% of it. `endRender` 52% (of which `CEGLSync::create` 25%,
+  this is where the driver flushes and submits the batch, and `CDRMOutput::commitState` 11% with the atomic commit
+  8%), `CRenderPass::render` 19%. Clock reads 3%, DRM property re-reads in aquamarine 4%.
+- shm client redrawing a large window (Chromium), 26% CPU: `CGLTexture::update` 71%. About 38% of all samples
+  are the kernel allocating, clearing and cache-flushing pages for a new GPU buffer on every upload
+  (`shmem_alloc_and_add_folio`, `drm_clflush_sg`), about 23% is the `memcpy`.
+- Terminal scrolling fast (foot, shm), 15% CPU: `CGLTexture::update` 74%, the same upload cost as Chromium.
+- Workspace switching with three windows and animations, 15% CPU: only 30% is `renderMonitor`. Clock reads are
+  17% (`read_hpet` 12%), the rest is spread over animation ticks, layout and damage.
+- Hypoland's own code is flat, no function has more than about 1% self time.
+- The X200 uses the HPET clocksource (the TSC is marked unstable), so every clock read is a slow syscall.
+- Candidates, not done: avoid the new buffer per shm upload, cache the DRM properties that aquamarine re-reads
+  on every commit, fewer clock reads per frame.
 
 Fixed upstream bugs that showed on this hardware:
 - `IHyprRenderer::renderText(STextResourceData&&)` queued the text on the hyprgraphics worker and blocked in
