@@ -1,0 +1,106 @@
+# Maintainer: Jonny Heggheim <hegjon@gmail.com>
+#
+# Builds Hypoland from the working tree this PKGBUILD lives in:
+#   cd packaging/arch && makepkg -f
+#
+# The package replaces hyprland: it provides the same config path, IPC sockets,
+# session files and the Hyprland / hyprland / start-hyprland command names.
+
+pkgname=hypoland
+pkgver=0.56.0.r543.gccc91ecb
+pkgrel=1
+pkgdesc='A fork of the Hyprland Wayland compositor for OpenGL ES 2.0 hardware'
+arch=(x86_64)
+url='https://github.com/hegjon/Hyprland'
+license=(BSD-3-Clause)
+depends=(
+  cairo
+  glib2
+  glibc
+  glslang
+  hyprcursor
+  hyprgraphics
+  hyprlang
+  hyprutils
+  hyprwire
+  lcms2
+  libdisplay-info
+  libdrm
+  libgcc
+  libglvnd
+  libinput
+  libstdc++
+  libx11
+  libxcb
+  libxcomposite
+  libxcursor
+  libxfixes
+  libxkbcommon
+  libxrender
+  lua
+  mesa
+  muparser
+  opengl-driver
+  pango
+  pixman
+  re2
+  seatd
+  systemd-libs
+  tomlplusplus
+  util-linux-libs
+  wayland
+  wayland-protocols
+  xcb-proto
+  xcb-util
+  xcb-util-errors
+  xcb-util-image
+  xcb-util-keysyms
+  xcb-util-renderutil
+  xcb-util-wm
+  xorg-xwayland
+)
+# glaze is fetched by cmake when it is not installed, hyprland-protocols is a git submodule
+makedepends=(
+  binutils
+  cmake
+  git
+  hwdata
+  hyprwayland-scanner
+  xorgproto
+)
+optdepends=(
+  'xdg-desktop-portal-hyprland: xdg-desktop-portal backend'
+)
+provides=("hyprland=${pkgver%%.r*}" wayland-compositor)
+conflicts=(hyprland)
+# the embedded aquamarine is linked statically and relies on weakened symbols
+options=(!lto)
+
+_root="$(realpath "$startdir/../..")"
+
+pkgver() {
+  cd "$_root"
+  printf '%s.r%s.g%s' "$(cat VERSION)" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+build() {
+  # baseline x86-64: the target machines are much older than the build machine
+  local flags='-march=x86-64 -mtune=core2'
+  cmake -S "$_root" -B "$srcdir/build" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DCMAKE_C_FLAGS="$CFLAGS $flags" \
+    -DCMAKE_CXX_FLAGS="$CXXFLAGS $flags" \
+    -DCMAKE_SKIP_RPATH=ON
+  cmake --build "$srcdir/build" --parallel "$(nproc)"
+}
+
+package() {
+  DESTDIR="$pkgdir" cmake --install "$srcdir/build"
+
+  # plugins are not supported, so no headers and no pkg-config file
+  rm -rf "$pkgdir/usr/include" "$pkgdir/usr/share/pkgconfig"
+
+  install -Dm644 "$_root/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 "$_root/subprojects/aquamarine/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE.aquamarine"
+}

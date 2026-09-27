@@ -1,0 +1,131 @@
+--------------------------------------------
+   Hyprland Crash Report
+--------------------------------------------
+Have you tried asking Hyprland politely not to crash?
+
+Hyprland received signal 6(ABRT)
+Version: efb50993780079460b0cbed1363e2166a2de1d9f
+Tag: v0.56.2
+Date: Wed Aug 5 14:13:21 2026
+Flags:
+
+System info:
+	System name: Linux
+	Node name: a
+	Release: 7.1.9-arch1-2
+	Version: #1 SMP PREEMPT_DYNAMIC Fri, 21 Aug 2026 22:18:59 +0000
+
+GPU:
+	00:02.0 VGA compatible controller [0300]: Intel Corporation Mobile 4 Series Chipset Integrated Graphics Controller [8086:2a42] (rev 07) (prog-if 00 [VGA controller])
+00:02.1 Display controller [0380]: Intel Corporation Mobile 4 Series Chipset Integrated Graphics Controller [8086:2a43] (rev 07)
+
+
+os-release:
+	NAME="Omarchy"
+	PRETTY_NAME="Omarchy"
+	ID=omarchy
+	ID_LIKE=arch
+	BUILD_ID="4.0.2"
+	VERSION_ID="4.0.2"
+	ANSI_COLOR="38;2;158;206;106"
+	HOME_URL="https://omarchy.org/"
+	DOCUMENTATION_URL="https://learn.omacom.io/2/the-omarchy-manual"
+	SUPPORT_URL="https://discord.gg/tXFUdasqhY"
+	BUG_REPORT_URL="https://github.com/basecamp/omarchy/issues"
+	LOGO=omarchy
+
+Libraries:
+Hyprgraphics: built against 0.5.1, system has 0.5.1
+Hyprutils: built against 0.14.0, system has 0.14.1
+Hyprcursor: built against 0.1.13, system has 0.1.13
+Hyprlang: built against 0.6.8, system has 0.6.8
+Aquamarine: built against 0.14.0, system has 0.14.0
+
+Backtrace:
+	#0 | Hyprland(_Z12getBacktracev+0x73) [0x55d74b10d473]
+		getBacktrace()
+		??:?
+	#1 | Hyprland(_ZN13CrashReporter18createAndSaveCrashEi+0xad4) [0x55d74b031954]
+		CrashReporter::createAndSaveCrash(int)
+		??:?
+	#2 | Hyprland(+0x3bc7ee) [0x55d74af077ee]
+		void std::println<>(_IO_FILE*, std::basic_format_string<char>)
+		??:?
+	#3 | /usr/lib/libc.so.6(+0x3e6f0) [0x7f91ec83e6f0]
+		??
+		??:0
+	#4 | /usr/lib/libc.so.6(+0x9a17c) [0x7f91ec89a17c]
+		??
+		??:0
+	#5 | /usr/lib/libc.so.6(gsignal+0x20) [0x7f91ec83e5d0]
+		??
+		??:0
+	#6 | Hyprland(+0x230238) [0x55d74ad7b238]
+		void assertImpl<int&, int&>(int, std::basic_string_view<char, std::char_traits<char> >, std::basic_format_string<char, std::type_identity<int&>::type, std::type_identity<int&>::type>, int&, int&)
+		??:?
+	#7 | Hyprland(_ZN6Render2GL15CHyprOpenGLImplC1Ev+0xb2f) [0x55d74b511c5f]
+		Render::GL::CHyprOpenGLImpl::CHyprOpenGLImpl()
+		??:?
+	#8 | Hyprland(_ZN11CCompositor12initManagersE18eManagersInitStage+0xf68) [0x55d74af0e638]
+		CCompositor::initManagers(eManagersInitStage)
+		??:?
+	#9 | Hyprland(_ZN11CCompositor10initServerENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEi+0x1621) [0x55d74af13df1]
+		CCompositor::initServer(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, int)
+		??:?
+	#10 | Hyprland(main+0x10e1) [0x55d74adc7cb1]
+		main
+		??:?
+	#11 | /usr/lib/libc.so.6(+0x27781) [0x7f91ec827781]
+		??
+		??:0
+	#12 | /usr/lib/libc.so.6(__libc_start_main+0x89) [0x7f91ec8278b9]
+		??
+		??:0
+	#13 | Hyprland(_start+0x25) [0x55d74aef05e5]
+		_start
+		??:?
+
+
+Log tail:
+DEBUG from aquamarine ]: drm: gpu /dev/dri/card1 becomes primary drm
+DEBUG from aquamarine ]: DRM Dumb: created a dumb allocator
+DEBUG from aquamarine ]: Starting the Aquamarine backend!
+DEBUG from aquamarine ]: Starting the Wayland backend!
+ERR from aquamarine ]: Wayland backend cannot start: wl_display_connect failed (is a wayland compositor running?)
+ERR from aquamarine ]: Requested backend (wayland) could not start, enabling fallbacks
+ERR from aquamarine ]: Implementation wayland failed, erasing.
+DEBUG from aquamarine ]: Created a GBM allocator with drm fd 30
+DEBUG from aquamarine ]: drm: Connectors size2 7
+DEBUG from aquamarine ]: Created a GBM allocator with drm fd 34
+DEBUG from aquamarine ]: Supported EGL client extensions: (16) EGL_EXT_device_base EGL_EXT_device_enumeration EGL_EXT_device_query EGL_EXT_platform_base EGL_KHR_client_get_all_proc_addresses EGL_EXT_client_extensions EGL_KHR_debug EGL_EXT_platform_device EGL_EXT_explicit_device EGL_EXT_platform_wayland EGL_KHR_platform_wayland EGL_EXT_platform_x11 EGL_KHR_platform_x11 EGL_EXT_platform_xcb EGL_MESA_platform_gbm EGL_KHR_platform_gbm EGL_MESA_platform_surfaceless
+DEBUG from aquamarine ]: CDRMRenderer(drm): Using device /dev/dri/card1
+DEBUG from aquamarine ]: CDRMRenderer: IMG_context_priority supported, requesting high
+DEBUG from aquamarine ]: CDRMRenderer: EXT_create_context_robustness supported, requesting lose on reset
+DEBUG from aquamarine ]: CDRMRenderer: Using KHR_context_flush_control
+ERR from aquamarine ]: [EGL] Command eglCreateContext errored out with EGL_BAD_MATCH (0x12297): dri2_create_context
+ERR from aquamarine ]: CDRMRenderer: eglCreateContext failed with GLES 3.2, retrying GLES 3.0
+ERR from aquamarine ]: [EGL] Command eglCreateContext errored out with EGL_BAD_MATCH (0x12297): dri2_create_context
+ERR from aquamarine ]: CDRMRenderer: Can't create renderer, eglCreateContext failed with both GLES 3.2 and GLES 3.0
+ERR from aquamarine ]: drm: onReady: no renderer for gl formats
+DEBUG from aquamarine ]: drm: onReady: connector 73
+DEBUG from aquamarine ]: drm: onReady: connector 73 has output name LVDS-1
+DEBUG from aquamarine ]: Swapchain: Clearing
+DEBUG from aquamarine ]: drm: onReady: connector 77
+DEBUG from aquamarine ]: drm: onReady: connector 80
+DEBUG from aquamarine ]: drm: onReady: connector 87
+DEBUG from aquamarine ]: drm: onReady: connector 92
+DEBUG from aquamarine ]: drm: onReady: connector 95
+DEBUG from aquamarine ]: drm: onReady: connector 99
+DEBUG from aquamarine ]: Supported EGL client extensions: (16) EGL_EXT_device_base EGL_EXT_device_enumeration EGL_EXT_device_query EGL_EXT_platform_base EGL_KHR_client_get_all_proc_addresses EGL_EXT_client_extensions EGL_KHR_debug EGL_EXT_platform_device EGL_EXT_explicit_device EGL_EXT_platform_wayland EGL_KHR_platform_wayland EGL_EXT_platform_x11 EGL_KHR_platform_x11 EGL_EXT_platform_xcb EGL_MESA_platform_gbm EGL_KHR_platform_gbm EGL_MESA_platform_surfaceless
+DEBUG from aquamarine ]: CDRMRenderer(drm): Using device /dev/dri/card1
+DEBUG from aquamarine ]: CDRMRenderer: IMG_context_priority supported, requesting high
+DEBUG from aquamarine ]: CDRMRenderer: EXT_create_context_robustness supported, requesting lose on reset
+DEBUG from aquamarine ]: CDRMRenderer: Using KHR_context_flush_control
+ERR from aquamarine ]: [EGL] Command eglCreateContext errored out with EGL_BAD_MATCH (0x12297): dri2_create_context
+ERR from aquamarine ]: CDRMRenderer: eglCreateContext failed with GLES 3.2, retrying GLES 3.0
+ERR from aquamarine ]: [EGL] Command eglCreateContext errored out with EGL_BAD_MATCH (0x12297): dri2_create_context
+ERR from aquamarine ]: CDRMRenderer: Can't create renderer, eglCreateContext failed with both GLES 3.2 and GLES 3.0
+ERR from aquamarine ]: drm: initMgpu: no renderer
+ERR from aquamarine ]: drm: Failed to initialize renderer state for /dev/dri/card1
+ERR from aquamarine ]: [EGL] Command eglCreateContext errored out with EGL_BAD_MATCH (0x12297): dri2_create_context
+ERR from aquamarine ]: [EGL] Command eglCreateContext errored out with EGL_BAD_MATCH (0x12297): dri2_create_context
