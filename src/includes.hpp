@@ -17,9 +17,7 @@
 #include <unistd.h>
 #include <wayland-server-core.h>
 
-#define GLES32
-#include <GLES3/gl32.h>
-#include <GLES3/gl3ext.h>
+#include "render/gl/GLES2.hpp"
 
 #ifdef NO_XWAYLAND
 #define XWAYLAND false

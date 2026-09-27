@@ -1,6 +1,5 @@
 #include "GLES2Compat.hpp"
 
-#include <GLES2/gl2ext.h>
 #include <hyprgraphics/egl/Egl.hpp>
 #include <drm_fourcc.h>
 
@@ -9,19 +8,15 @@
 #include "../debug/log/Logger.hpp"
 
 namespace NGLES2Compat {
-    SGLFormat glFormatFor(const Hyprgraphics::Egl::SPixelFormat* fmt, bool legacyGLES) {
+    SGLFormat glFormatFor(const Hyprgraphics::Egl::SPixelFormat* fmt) {
         using namespace Hyprgraphics::Egl;
 
         SGLFormat res{
             .internalFormat = fmt->glInternalFormat ? fmt->glInternalFormat : fmt->glFormat,
             .format         = fmt->glFormat,
             .type           = fmt->glType,
-            .needsSwizzle   = fmt->swizzle.has_value(),
             .usable         = true,
         };
-
-        if (!legacyGLES)
-            return res;
 
         // Half-float colour buffers cannot be expressed with a GLES2
         // glTexImage2D call; callers must not pick such a format.
@@ -33,7 +28,7 @@ namespace NGLES2Compat {
         // GLES2 has no sized internal formats: internalformat must equal format.
         res.internalFormat = fmt->glFormat;
 
-        // No swizzle in GLES2. A BGRA-ordered 8888 format is uploaded as BGRA
+        // A BGRA-ordered 8888 format is uploaded as BGRA
         // directly instead, which is both correct and cheaper than sampling.
         //
         // Both BGRA (ARGB8888) and BGR1 (XRGB8888) qualify: the colour channels
@@ -43,32 +38,18 @@ namespace NGLES2Compat {
         // opaque window sampling its channels reversed.
         const bool BGRA_ORDERED = fmt->swizzle.has_value() && (fmt->swizzle.value() == SWIZZLE_BGRA || fmt->swizzle.value() == SWIZZLE_BGR1);
 
+        // anything else with a swizzle is unrepresentable; colours may be off, but do not error out
         if (BGRA_ORDERED && fmt->glFormat == GL_RGBA && fmt->glType == GL_UNSIGNED_BYTE) {
             res.internalFormat = GL_BGRA_EXT;
             res.format         = GL_BGRA_EXT;
-            res.needsSwizzle   = false;
-        } else
-            res.needsSwizzle = false; // unrepresentable; colours may be off, but do not error out
+        }
 
         return res;
     }
 
-    bool currentContextIsGLES2() {
+    std::string contextVersion() {
         const auto* VERSION = reinterpret_cast<const char*>(glGetString(GL_VERSION));
-        if (!VERSION) {
-            Log::logger->log(Log::ERR, "GLES: could not query GL_VERSION, assuming GLES3");
-            return false;
-        }
-
-        // Mesa reports e.g. "OpenGL ES 2.0 Mesa 26.2.1" or "OpenGL ES 3.2 Mesa 26.2.1".
-        const std::string_view SV{VERSION};
-        const auto             POS = SV.find("OpenGL ES ");
-        if (POS == std::string_view::npos) {
-            Log::logger->log(Log::ERR, "GLES: unrecognised GL_VERSION \"{}\", assuming GLES3", VERSION);
-            return false;
-        }
-
-        return SV.substr(POS + 10).starts_with("2.");
+        return VERSION ? VERSION : "unknown";
     }
 
     bool checkVertexArrayObjectExt() {

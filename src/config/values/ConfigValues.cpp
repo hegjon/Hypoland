@@ -204,7 +204,7 @@ std::vector<SP<IValue>> Values::getConfigValues() {
         MS<Float>("decoration:active_opacity", "opacity of active windows.", 1, {.min = 0, .max = 1, .refresh = Supplementary::REFRESH_WINDOW_STATES}),
         MS<Float>("decoration:inactive_opacity", "opacity of inactive windows.", 1, {.min = 0, .max = 1, .refresh = Supplementary::REFRESH_WINDOW_STATES}),
         MS<Float>("decoration:fullscreen_opacity", "opacity of fullscreen windows.", 1, {.min = 0, .max = 1, .refresh = Supplementary::REFRESH_WINDOW_STATES}),
-        MS<Bool>("decoration:shadow:enabled", "enable drop shadows on windows", true, {.refresh = Supplementary::REFRESH_WINDOW_STATES}),
+        MS<Bool>("decoration:shadow:enabled", "enable drop shadows on windows", false, {.refresh = Supplementary::REFRESH_WINDOW_STATES}),
         MS<Int>("decoration:shadow:range", "Shadow range (size) in layout px", 4, {.min = 0, .max = 100, .refresh = Supplementary::REFRESH_WINDOW_STATES}),
         MS<Int>("decoration:shadow:render_power", "in what power to render the falloff (more power, the faster the falloff)", 3,
                 {.min = 1, .max = 4, .refresh = Supplementary::REFRESH_WINDOW_STATES}),
@@ -235,7 +235,7 @@ std::vector<SP<IValue>> Values::getConfigValues() {
          * blur:
          */
 
-        MS<Bool>("decoration:blur:enabled", "enable window background blur", true, {.refresh = Supplementary::REFRESH_BLUR_FB}),
+        MS<Bool>("decoration:blur:enabled", "enable window background blur", false, {.refresh = Supplementary::REFRESH_BLUR_FB}),
         MS<Int>("decoration:blur:variant", "set the blur variant. Blur variants enhance regular blur, but may increase GPU and CPU usage, significantly so if they are animated.",
                 0,
                 {.min = 0,
@@ -343,7 +343,7 @@ std::vector<SP<IValue>> Values::getConfigValues() {
          * animations:
          */
 
-        MS<Bool>("animations:enabled", "enable animations", true),
+        MS<Bool>("animations:enabled", "enable animations", false),
         MS<Bool>("animations:workspace_wraparound", "changes the direction of slide animations between the first and last workspaces", false),
 
         /*
@@ -556,8 +556,8 @@ std::vector<SP<IValue>> Values::getConfigValues() {
          * misc:
          */
 
-        MS<Bool>("misc:disable_hyprland_logo", "disables the random Hyprland logo / anime girl background. :(", false),
-        MS<Bool>("misc:disable_splash_rendering", "disables the Hyprland splash rendering.", false),
+        MS<Bool>("misc:disable_hyprland_logo", "no-op, Hypoland has no logo background", true),
+        MS<Bool>("misc:disable_splash_rendering", "disables the splash text rendering.", true),
         MS<Color>("misc:col.splash", "Changes the color of the splash text.", 0x55ffffff),
         MS<String>("misc:font_family", "Set the global default font to render the text.", "Sans"),
         MS<String>("misc:splash_font_family", "Changes the font used to render the splash text.", "[[EMPTY]]"),
@@ -651,7 +651,7 @@ std::vector<SP<IValue>> Values::getConfigValues() {
         MS<Bool>("render:xp_mode", "Disable back buffer and bottom layer rendering.", false),
         MS<Int>("render:ctm_animation", "Whether to enable a fade animation for CTM changes.", 2,
                 {.min = 0, .max = 2, .map = OptionMap{{"disable", 0}, {"enable", 1}, {"auto", 2}}}),
-        MS<Bool>("render:cm_enabled", "Enable Color Management pipelines (requires restart to fully take effect)", true),
+        MS<Bool>("render:cm_enabled", "no-op, color management is not available with GLES2", false),
         MS<Bool>("render:send_content_type", "Report content type to allow monitor profile autoswitch", true),
         MS<Int>("render:cm_auto_hdr", "Auto-switch to hdr mode when fullscreen app is in hdr", 1,
                 {.min = 0, .max = 2, .map = OptionMap{{"disable", 0}, {"hdr", 1}, {"hdredid", 2}}}),
@@ -696,7 +696,7 @@ std::vector<SP<IValue>> Values::getConfigValues() {
         MS<Bool>("cursor:zoom_rigid", "whether the zoom should follow the cursor rigidly or loosely", false),
         MS<Bool>("cursor:zoom_disable_aa", "If enabled, when zooming, no antialiasing will be used", false),
         MS<Bool>("cursor:zoom_detached_camera", "Detaches the camera from the mouse when zoomed in", true),
-        MS<Bool>("cursor:enable_hyprcursor", "whether to enable hyprcursor support", true),
+        MS<Bool>("cursor:enable_hyprcursor", "whether to enable hyprcursor support", false),
         MS<Bool>("cursor:hide_on_key_press", "Hides the cursor when you press any key until the mouse is moved.", false),
         MS<Bool>("cursor:hide_on_touch", "Hides the cursor when the last input was a touch input until a mouse input is done.", true),
         MS<Bool>("cursor:hide_on_tablet", "Hides the cursor when the last input was a tablet input until a mouse input is done.", false),
@@ -826,7 +826,8 @@ std::vector<SP<IValue>> Values::getConfigValues() {
          */
 
         MS<Int>("quirks:prefer_hdr", "Prefer HDR mode.", 0, {.min = 0, .max = 2, .map = OptionMap{{"disable", 0}, {"enable", 1}, {"gamescope_only", 2}}}),
-        MS<Bool>("quirks:skip_non_kms_dmabuf_formats", "Do not report dmabuf formats which cannot be imported into KMS", true),
+        // off by default: Gen4 primary planes have no alpha formats, so skipping would leave clients without any alpha EGL config
+        MS<Bool>("quirks:skip_non_kms_dmabuf_formats", "Do not report dmabuf formats which cannot be imported into KMS", false),
     };
 
 #undef MS

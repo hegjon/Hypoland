@@ -5,10 +5,6 @@
 
 #include "defines.h"
 
-#if USE_CM
-#include "cm_helpers.glsl"
-#endif
-
 float hash(vec2 p) {
     vec3 p3 = fract(vec3(p.xyx) * 1689.1984);
     p3 += dot(p3, p3.yzx + 33.33);
@@ -16,10 +12,6 @@ float hash(vec2 p) {
 }
 
 vec4 blurFinish(vec4 pixColor, vec2 v_texcoord, float noise, float brightness
-#if USE_CM
-                ,
-                int sourceTF, int targetTF, mat3 convertMatrix, vec2 srcTFRange, vec2 dstTFRange
-#endif
 ) {
     // noise
     float noiseHash   = hash(v_texcoord);
@@ -28,10 +20,6 @@ vec4 blurFinish(vec4 pixColor, vec2 v_texcoord, float noise, float brightness
 
     // brightness
     pixColor.rgb *= min(1.0, brightness);
-
-#if USE_CM
-    pixColor = doColorManagement(pixColor, 1.0, sourceTF, targetTF, convertMatrix, srcTFRange, dstTFRange);
-#endif
 
     return pixColor;
 }

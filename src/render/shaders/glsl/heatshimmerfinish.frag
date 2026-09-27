@@ -1,9 +1,14 @@
-#version 300 es
+#version 100
+#extension GL_OES_standard_derivatives : enable
 #define ALLOW_INCLUDES
 #extension GL_ARB_shading_language_include : enable
 
-precision         highp float;
-in vec2           v_texcoord;
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+varying vec2           v_texcoord;
 uniform sampler2D tex;
 
 uniform float     noise;
@@ -15,15 +20,8 @@ uniform vec2      glassPosition;
 uniform float     time;
 
 #include "defines.h"
-#if USE_CM
-uniform int sourceTF;
-uniform int targetTF;
-#include "CM.glsl"
-#endif
 
 #include "glassFinish.glsl"
-
-layout(location = 0) out vec4 fragColor;
 
 vec2 heatShimmerNormal(vec2 position) {
     vec2 warpedPosition = position;
@@ -40,5 +38,5 @@ vec2 heatShimmerNormal(vec2 position) {
 
 void main() {
     vec2 position = (gl_FragCoord.xy - glassPosition) / glassSize;
-    fragColor = glassFinish(heatShimmerNormal(position));
+    gl_FragColor = glassFinish(heatShimmerNormal(position));
 }

@@ -57,22 +57,8 @@ namespace Render {
         SH_FRAG_BORDER1,
         SH_FRAG_GLITCH,
         SH_FRAG_FROSTFINISH,
-        SH_FRAG_RIPPLEFINISH,
         SH_FRAG_DROPSFINISH,
-        SH_FRAG_WATERSTEP,
-        SH_FRAG_WATERFINISH,
-        SH_FRAG_FLUIDJARINIT,
-        SH_FRAG_FLUIDJARSTEP,
-        SH_FRAG_FLUIDJARGRAPH,
-        SH_FRAG_FLUIDJARTRACK,
-        SH_FRAG_FLUIDJARVISUAL,
-        SH_FRAG_FLUIDJARRESAMPLE,
-        SH_FRAG_FLUIDJARHISTORYRESAMPLE,
-        SH_FRAG_FLUIDJARTRACKINGRESAMPLE,
-        SH_FRAG_FLUIDJARFINISH,
-        SH_FRAG_PRISMFINISH,
         SH_FRAG_HEATSHIMMERFINISH,
-        SH_FRAG_ACRYLICFINISH,
         SH_FRAG_AURORAFINISH,
         SH_FRAG_HAZEFINISH,
 
@@ -81,7 +67,7 @@ namespace Render {
 
     class CShaderLoader {
       public:
-        CShaderLoader(const std::vector<std::string> includes, const std::array<std::string, SH_FRAG_LAST>& frags, const std::string shaderPath = "", bool legacyGLES = false);
+        CShaderLoader(const std::vector<std::string> includes, const std::array<std::string, SH_FRAG_LAST>& frags, const std::string shaderPath = "");
         ~CShaderLoader();
 
         void                                      include(const std::string& filename);
@@ -100,10 +86,6 @@ namespace Render {
         std::string processSource(const std::string& source, glslang_stage_t stage = GLSLANG_STAGE_FRAGMENT);
 
         //
-        // When set, sources are rewritten to GLSL ES 1.00 and the shader
-        // features that need GLES3 are masked off. Fixed for the process: it
-        // comes from the context version detected at startup.
-        bool                                                            m_legacyGLES = false;
         std::string                                                     m_shaderPath;
         std::array<std::string, SH_FRAG_LAST>                           m_fragFiles;
         std::array<std::map<SShaderVariant, std::string>, SH_FRAG_LAST> m_fragVariants;

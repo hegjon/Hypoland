@@ -5,7 +5,7 @@
 #ifndef INNER_GLOW_GLSL
 #define INNER_GLOW_GLSL
 
-#include "cm_helpers.glsl"
+#include "color.glsl"
 #include "gradient.glsl"
 
 float innerGlowAlpha(float distFromEdge, float range, float glowPower) {
@@ -63,15 +63,6 @@ vec4 getInnerGlow(vec4 pixColor, vec4 colorSRGB, vec2 v_texcoord, float radius, 
     // premultiply
     pixColor.rgb *= pixColor[3];
 
-#if USE_MIRROR
-    vec4[2] pixColors;
-    pixColors[0] = pixColor;
-    pixColors[1] = colorSRGB;
-    pixColors[1].a = pixColor.a;
-    pixColors[1].rgb *= pixColors[1].a;
-    return pixColors;
-#else
     return pixColor;
-#endif
 }
 #endif

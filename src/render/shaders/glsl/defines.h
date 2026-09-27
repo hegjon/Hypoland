@@ -6,13 +6,5 @@
 #define USE_DISCARD     1
 #define USE_TINT        1
 #define USE_ROUNDING    1
-#define USE_CM          1
-#define USE_TONEMAP     1
-#define USE_ALT_TONEMAP 0
-#define USE_SDR_MOD     1
 #define USE_BLUR        1
-#define USE_ICC         0
-#define USE_MIRROR      0
 #define USE_BLUR_MATTE  0
-#define SOURCE_TF       9 // eTransferFunction, compiled in per variant. 9 is CM_TRANSFER_FUNCTION_SRGB
-#define TARGET_TF       9

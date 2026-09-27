@@ -1,9 +1,13 @@
-#version 300 es
+#version 100
 #define ALLOW_INCLUDES
 #extension GL_ARB_shading_language_include : enable
 
-precision         highp float;
-in vec2           v_texcoord;
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+varying vec2           v_texcoord;
 uniform sampler2D tex;
 
 uniform float     noise;
@@ -13,16 +17,9 @@ uniform float     hazeIridescence;
 uniform int       hazeTransferFunction;
 
 #include "defines.h"
-#if USE_CM
-uniform int sourceTF;
-uniform int targetTF;
-#include "CM.glsl"
-#endif
 
-#include "cm_helpers.glsl"
+#include "color.glsl"
 #include "blurFinish.glsl"
-
-layout(location = 0) out vec4 fragColor;
 
 const vec3 BT709_LUMA = vec3(0.2126, 0.7152, 0.0722);
 const vec3 PEARL_COOL = vec3(0.55, 1.08, 1.35);
@@ -58,12 +55,8 @@ vec4 applyHaze(vec4 color) {
 }
 
 void main() {
-    vec4 color = applyHaze(texture(tex, v_texcoord));
+    vec4 color = applyHaze(texture2D(tex, v_texcoord));
 
-    fragColor = blurFinish(color, v_texcoord, noise, brightness
-#if USE_CM
-                           ,
-                           sourceTF, targetTF, convertMatrix, srcTFRange, dstTFRange
-#endif
+    gl_FragColor = blurFinish(color, v_texcoord, noise, brightness
     );
 }

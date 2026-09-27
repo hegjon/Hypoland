@@ -1,9 +1,14 @@
-#version 300 es
+#version 100
+#extension GL_OES_standard_derivatives : enable
 #define ALLOW_INCLUDES
 #extension GL_ARB_shading_language_include : enable
 
-precision         highp float;
-in vec2           v_texcoord;
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+varying vec2           v_texcoord;
 uniform sampler2D tex;
 
 uniform float     noise;
@@ -14,15 +19,8 @@ uniform float     glassRoughness;
 uniform vec2      glassPosition;
 
 #include "defines.h"
-#if USE_CM
-uniform int sourceTF;
-uniform int targetTF;
-#include "CM.glsl"
-#endif
 
 #include "glassFinish.glsl"
-
-layout(location = 0) out vec4 fragColor;
 
 vec2 frostRandom(vec2 cell) {
     return vec2(hash(cell + vec2(13.37, 71.91)), hash(cell + vec2(83.17, 29.53)));
@@ -87,5 +85,5 @@ vec2 frostGradient(vec2 position) {
 void main() {
     vec2 position = (gl_FragCoord.xy - glassPosition) / glassSize;
     vec2 gradient = frostGradient(position);
-    fragColor = glassFinish(gradient);
+    gl_FragColor = glassFinish(gradient);
 }

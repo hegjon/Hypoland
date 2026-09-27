@@ -26,13 +26,9 @@ void CGLElementRenderer::draw(WP<CClearPassElement> element, const CRegion& dama
     TRACY_GPU_ZONE("RenderClear");
     const std::array<GLfloat, 4> c = {sc<GLfloat>(color.r), sc<GLfloat>(color.g), sc<GLfloat>(color.b), sc<GLfloat>(color.a)};
 
-    // glClearBufferfv is GLES3-only; GLES2 clears via the clear-colour state.
     const auto clearBuffer = [&c]() {
-        if (g_pHyprOpenGL->m_legacyGLES) {
-            glClearColor(c[0], c[1], c[2], c[3]);
-            glClear(GL_COLOR_BUFFER_BIT);
-        } else
-            glClearBufferfv(GL_COLOR, 0, c.data());
+        glClearColor(c[0], c[1], c[2], c[3]);
+        glClear(GL_COLOR_BUFFER_BIT);
     };
 
     if (!g_pHyprRenderer->m_renderData.damage.empty()) {

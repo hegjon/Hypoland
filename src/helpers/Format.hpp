@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
-#include <GLES3/gl32.h>
+#include "../render/gl/GLES2.hpp"
 #include "math/Math.hpp"
 #include <aquamarine/backend/Misc.hpp>
 

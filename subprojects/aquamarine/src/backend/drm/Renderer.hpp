@@ -4,9 +4,7 @@
 #include "FormatUtils.hpp"
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
-#include <GLES3/gl3.h>
-#include <GLES3/gl3ext.h>
-#define __gl2_h_ // define guard for gl2ext.h
+#include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 #include <gbm.h>
 #include <optional>
@@ -161,8 +159,6 @@ namespace Aquamarine {
 
       private:
         CDRMRenderer() = default;
-
-        bool                                                  m_gles2 = false;
 
         EGLImageKHR                                           createEGLImage(const SDMABUFAttrs& attrs);
         bool                                                  verifyDestinationDMABUF(const SDMABUFAttrs& attrs);

@@ -82,52 +82,8 @@ static GLuint createProgram(const std::string& vert, const std::string& frag) {
     return prog;
 }
 
-inline const std::string VERT_SRC = R"#(
-#version 300 es
-precision highp float;
-
-uniform mat3 proj;
-
-in vec2 pos;
-in vec2 texcoord;
-
-out vec2 v_texcoord;
-
-void main() {
-    gl_Position = vec4(proj * vec3(pos, 1.0), 1.0);
-    v_texcoord = texcoord;
-})#";
-
-inline const std::string FRAG_SRC = R"#(
-#version 300 es
-precision highp float;
-
-in vec2 v_texcoord;
-out vec4 fragColor;
-
-uniform sampler2D tex;
-
-void main() {
-    fragColor = texture(tex, v_texcoord);
-})#";
-
-inline const std::string FRAG_SRC_EXT = R"#(
-#version 300 es
-#extension GL_OES_EGL_image_external_essl3 : require
-precision highp float;
-
-in vec2 v_texcoord;
-out vec4 fragColor;
-
-uniform samplerExternalOES texture0;
-
-void main() {
-    fragColor = texture(texture0, v_texcoord);
-})#";
-
-// GLSL ES 1.00 variants of the shaders above, for GLES2 contexts.
 // highp is optional in ES 1.00 fragment shaders, hence the guard.
-inline const std::string VERT_SRC_ES100 = R"#(
+inline const std::string VERT_SRC = R"#(
 #version 100
 precision highp float;
 
@@ -143,7 +99,7 @@ void main() {
     v_texcoord = texcoord;
 })#";
 
-inline const std::string FRAG_SRC_ES100 = R"#(
+inline const std::string FRAG_SRC = R"#(
 #version 100
 #ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;
@@ -159,7 +115,7 @@ void main() {
     gl_FragColor = texture2D(tex, v_texcoord);
 })#";
 
-inline const std::string FRAG_SRC_EXT_ES100 = R"#(
+inline const std::string FRAG_SRC_EXT = R"#(
 #version 100
 #extension GL_OES_EGL_image_external : require
 #ifdef GL_FRAGMENT_PRECISION_HIGH
@@ -177,6 +133,11 @@ void main() {
 })#";
 
 // ------------------- egl stuff
+
+// GL_OES_vertex_array_object, extension entry points are not exported by libGLESv2
+static PFNGLBINDVERTEXARRAYOESPROC    glBindVertexArrayOES    = nullptr;
+static PFNGLGENVERTEXARRAYSOESPROC    glGenVertexArraysOES    = nullptr;
+static PFNGLDELETEVERTEXARRAYSOESPROC glDeleteVertexArraysOES = nullptr;
 
 static inline void loadGLProc(void* pProc, const char* name) {
     void* proc = (void*)eglGetProcAddress(name);
@@ -241,7 +202,7 @@ CDRMRenderer::SShader::~SShader() {
         return;
 
     if (shaderVao)
-        glDeleteVertexArrays(1, &shaderVao);
+        glDeleteVertexArraysOES(1, &shaderVao);
 
     if (shaderVboPos)
         glDeleteBuffers(1, &shaderVboPos);
@@ -261,8 +222,8 @@ void CDRMRenderer::SShader::createVao() {
         0, 1, // bottom left
     };
 
-    glGenVertexArrays(1, &shaderVao);
-    glBindVertexArray(shaderVao);
+    glGenVertexArraysOES(1, &shaderVao);
+    glBindVertexArrayOES(shaderVao);
 
     if (posAttrib != -1) {
         glGenBuffers(1, &shaderVboPos);
@@ -280,7 +241,7 @@ void CDRMRenderer::SShader::createVao() {
         glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
     }
 
-    glBindVertexArray(0);
+    glBindVertexArrayOES(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -466,6 +427,9 @@ void CDRMRenderer::loadEGLAPI() {
     loadGLProc(&proc.eglCreateSyncKHR, "eglCreateSyncKHR");
     loadGLProc(&proc.eglDupNativeFenceFDANDROID, "eglDupNativeFenceFDANDROID");
     loadGLProc(&proc.glReadnPixelsEXT, "glReadnPixelsEXT");
+    loadGLProc(&glBindVertexArrayOES, "glBindVertexArrayOES");
+    loadGLProc(&glGenVertexArraysOES, "glGenVertexArraysOES");
+    loadGLProc(&glDeleteVertexArraysOES, "glDeleteVertexArraysOES");
 
     if (EGLEXTENSIONS.contains("EGL_EXT_device_base") || EGLEXTENSIONS.contains("EGL_EXT_device_enumeration"))
         loadGLProc(&proc.eglQueryDevicesEXT, "eglQueryDevicesEXT");
@@ -536,46 +500,15 @@ void CDRMRenderer::initContext() {
         }
     }
 
-    auto attrsNoVer = attrs;
-
-    attrs.push_back(EGL_CONTEXT_MAJOR_VERSION);
-    attrs.push_back(3);
-    attrs.push_back(EGL_CONTEXT_MINOR_VERSION);
+    attrs.push_back(EGL_CONTEXT_CLIENT_VERSION);
     attrs.push_back(2);
 
     attrs.push_back(EGL_NONE);
 
     egl.context = eglCreateContext(egl.display, EGL_NO_CONFIG_KHR, EGL_NO_CONTEXT, attrs.data());
     if (egl.context == EGL_NO_CONTEXT) {
-        backend->log(AQ_LOG_WARNING, "CDRMRenderer: eglCreateContext failed with GLES 3.2, retrying GLES 3.0");
-
-        attrs = attrsNoVer;
-        attrs.push_back(EGL_CONTEXT_MAJOR_VERSION);
-        attrs.push_back(3);
-        attrs.push_back(EGL_CONTEXT_MINOR_VERSION);
-        attrs.push_back(0);
-
-        attrs.push_back(EGL_NONE);
-
-        egl.context = eglCreateContext(egl.display, EGL_NO_CONFIG_KHR, EGL_NO_CONTEXT, attrs.data());
-        if (egl.context == EGL_NO_CONTEXT) {
-            backend->log(AQ_LOG_WARNING, "CDRMRenderer: eglCreateContext failed with GLES 3.0, retrying GLES 2.0");
-
-            attrs = attrsNoVer;
-            attrs.push_back(EGL_CONTEXT_CLIENT_VERSION);
-            attrs.push_back(2);
-
-            attrs.push_back(EGL_NONE);
-
-            egl.context = eglCreateContext(egl.display, EGL_NO_CONFIG_KHR, EGL_NO_CONTEXT, attrs.data());
-            if (egl.context == EGL_NO_CONTEXT) {
-                backend->log(AQ_LOG_ERROR, "CDRMRenderer: Can't create renderer, eglCreateContext failed with GLES 3.2, 3.0 and 2.0");
-                return;
-            }
-
-            m_gles2 = true;
-            backend->log(AQ_LOG_DEBUG, "CDRMRenderer: running in GLES2 mode, using GLSL ES 1.00 shaders");
-        }
+        backend->log(AQ_LOG_ERROR, "CDRMRenderer: Can't create renderer, eglCreateContext failed with GLES 2.0");
+        return;
     }
 
     if (exts.IMG_context_priority) {
@@ -614,10 +547,7 @@ void CDRMRenderer::initResources() {
     if (!exts.EXT_image_dma_buf_import || !initDRMFormats())
         backend->log(AQ_LOG_ERROR, "CDRMRenderer: initDRMFormats failed, dma-buf won't work");
 
-    if (m_gles2)
-        shader.program = createProgram(VERT_SRC_ES100, FRAG_SRC_ES100);
-    else
-        shader.program = createProgram(VERT_SRC, FRAG_SRC);
+    shader.program = createProgram(VERT_SRC, FRAG_SRC);
     if (shader.program == 0)
         backend->log(AQ_LOG_ERROR, "CDRMRenderer: texture shader failed");
 
@@ -627,10 +557,7 @@ void CDRMRenderer::initResources() {
     shader.tex       = glGetUniformLocation(shader.program, "tex");
     shader.createVao();
 
-    if (m_gles2)
-        shaderExt.program = createProgram(VERT_SRC_ES100, FRAG_SRC_EXT_ES100);
-    else
-        shaderExt.program = createProgram(VERT_SRC, FRAG_SRC_EXT);
+    shaderExt.program = createProgram(VERT_SRC, FRAG_SRC_EXT);
     if (shaderExt.program == 0)
         backend->log(AQ_LOG_ERROR, "CDRMRenderer: external texture shader failed");
 
@@ -1165,11 +1092,11 @@ CDRMRenderer::SBlitResult CDRMRenderer::blit(SP<IBuffer> from, SP<IBuffer> to, S
     GLCALL(glUniformMatrix3fv(SHADER.proj, 1, GL_FALSE, glMtx));
 
     GLCALL(glUniform1i(SHADER.tex, 0));
-    GLCALL(glBindVertexArray(SHADER.shaderVao));
+    GLCALL(glBindVertexArrayOES(SHADER.shaderVao));
 
     GLCALL(glDrawArrays(GL_TRIANGLE_STRIP, 0, 4));
 
-    GLCALL(glBindVertexArray(0));
+    GLCALL(glBindVertexArrayOES(0));
     GLCALL(fromTex->unbind());
 
     // get an explicit sync fd for the secondary gpu.

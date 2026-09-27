@@ -8,7 +8,7 @@
 #include "../helpers/Format.hpp"
 #include "../helpers/DeformableMesh.hpp"
 #include "../helpers/sync/SyncTimeline.hpp"
-#include <GLES3/gl32.h>
+#include "gl/GLES2.hpp"
 #include <cstdint>
 #include <list>
 #include <optional>
@@ -28,7 +28,6 @@
 
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
-#include <GLES2/gl2ext.h>
 #include <aquamarine/buffer/Buffer.hpp>
 #include <hyprutils/os/FileDescriptor.hpp>
 #include <hyprgraphics/resource/resources/ImageResource.hpp>
@@ -91,7 +90,6 @@ namespace Render::GL {
 
     struct SPreparedShaders {
         std::string                                                                     TEXVERTSRC;
-        std::string                                                                     TEXVERTSRC320;
         std::array<std::map<Render::SShaderVariant, SP<CShader>>, Render::SH_FRAG_LAST> fragVariants;
     };
 
@@ -301,20 +299,6 @@ namespace Render::GL {
             bool EXT_create_context_robustness      = false;
             bool EGL_ANDROID_native_fence_sync_ext  = false;
         } m_exts;
-
-        enum eEGLContextVersion : uint8_t {
-            EGL_CONTEXT_GLES_2_0 = 0,
-            EGL_CONTEXT_GLES_3_0,
-            EGL_CONTEXT_GLES_3_2,
-        };
-
-        eEGLContextVersion m_eglContextVersion = EGL_CONTEXT_GLES_3_2;
-
-        // Set once in initEGL() from the version the driver actually reports.
-        // When true the renderer avoids every GLES3-only call and downgrades
-        // its shaders to GLSL ES 1.00, which is what lets one binary run on
-        // both a modern GPU and pre-GLES3 hardware such as an Intel GM45.
-        bool m_legacyGLES = false;
 
         enum eCachedCapStatus : uint8_t {
             CAP_STATUS_BLEND = 0,

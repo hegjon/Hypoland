@@ -1,5 +1,4 @@
 #include "ShaderLoader.hpp"
-#include "GLES2ShaderCompat.hpp"
 #include <format>
 #include <hyprutils/memory/Casts.hpp>
 #include <hyprutils/memory/UniquePtr.hpp>
@@ -15,8 +14,7 @@
 
 using namespace Render;
 
-CShaderLoader::CShaderLoader(const std::vector<std::string> includes, const std::array<std::string, SH_FRAG_LAST>& frags, const std::string shaderPath, bool legacyGLES) :
-    m_legacyGLES(legacyGLES), m_shaderPath(shaderPath) {
+CShaderLoader::CShaderLoader(const std::vector<std::string> includes, const std::array<std::string, SH_FRAG_LAST>& frags, const std::string shaderPath) : m_shaderPath(shaderPath) {
     m_callbacks = glsl_include_callbacks_t{
         .include_local =
             [](void* ctx, const char* header_name, const char* includer_name, size_t include_depth) {
@@ -72,16 +70,9 @@ std::string CShaderLoader::getDefines(const SShaderVariant& variant) {
         {"USE_DISCARD", SH_FEAT_DISCARD},
         {"USE_TINT", SH_FEAT_TINT},
         {"USE_ROUNDING", SH_FEAT_ROUNDING},
-        {"USE_CM", SH_FEAT_CM},
-        {"USE_TONEMAP", SH_FEAT_TONEMAP},
-        {"USE_SDR_MOD", SH_FEAT_SDR_MOD},
         {"USE_BLUR", SH_FEAT_BLUR},
-        {"USE_ICC", SH_FEAT_ICC},
-        {"USE_MIRROR", SH_FEAT_MIRROR},
-        {"USE_MOTION_BLUR", SH_FEAT_MOTION_BLUR},
         {"USE_BLUR_ALPHA_MASK", SH_FEAT_BLUR_ALPHA_MASK},
         {"USE_BLUR_MATTE", SH_FEAT_BLUR_MATTE},
-        {"USE_ALT_TONEMAP", SH_FEAT_ALT_TONEMAP},
     });
 
     std::string           res;
@@ -89,10 +80,6 @@ std::string CShaderLoader::getDefines(const SShaderVariant& variant) {
     for (const auto& [name, flag] : defines) {
         std::format_to(std::back_inserter(res), "#define {} {}\n", name, (variant.features & flag) != 0 ? '1' : '0');
     }
-
-    // eTransferFunction values, the shaders compare them against the CM_TRANSFER_FUNCTION_* in CM.glsl
-    std::format_to(std::back_inserter(res), "#define SOURCE_TF {}\n", sc<int>(variant.sourceTF));
-    std::format_to(std::back_inserter(res), "#define TARGET_TF {}\n", sc<int>(variant.targetTF));
     return res;
 }
 
@@ -134,19 +121,7 @@ std::string CShaderLoader::processSource(const std::string& source, glslang_stag
     }
 
     glslang_shader_delete(shader);
-
-    if (!m_legacyGLES)
-        return code;
-
-    // The shaders are written in GLSL ES 3.00. On a GLES2-only driver they are
-    // rewritten into GLSL ES 1.00 here, now that includes and #ifs have been
-    // resolved by the preprocessor above.
-    const auto DOWNGRADED = NGLES2Shader::downgradeToES100(code, stage == GLSLANG_STAGE_VERTEX);
-    if (!DOWNGRADED.ok) {
-        Log::logger->log(Log::ERR, "GLES2: cannot downgrade shader to GLSL ES 1.00: {}", DOWNGRADED.error);
-        throw std::runtime_error(std::format("shader is not expressible in GLSL ES 1.00: {}", DOWNGRADED.error));
-    }
-    return DOWNGRADED.source;
+    return code;
 }
 
 std::string CShaderLoader::process(const std::string& filename) {
@@ -165,21 +140,13 @@ std::string CShaderLoader::process(const std::string& filename, const std::map<s
 }
 
 std::string CShaderLoader::getVariantSource(ePreparedFragmentShader frag, SShaderVariant variant) {
-    static const auto PCM = CConfigValue<Config::INTEGER>("render:cm_enabled");
-    // None of these can be expressed in GLSL ES 1.00: colour management and
-    // tonemapping need switch/inverse/transpose, ICC needs sampler3D, mirror
-    // needs a second colour attachment, and motion blur needs textureSize.
-    if (m_legacyGLES)
-        variant.features &= ~(SH_FEAT_CM | SH_FEAT_TONEMAP | SH_FEAT_ALT_TONEMAP | SH_FEAT_SDR_MOD | SH_FEAT_ICC | SH_FEAT_MIRROR | SH_FEAT_MOTION_BLUR);
-    if (!*PCM)
-        variant.features &= ~(SH_FEAT_CM | SH_FEAT_TONEMAP | SH_FEAT_ALT_TONEMAP | SH_FEAT_SDR_MOD);
+    // none of these can be expressed in GLSL ES 1.00, the shaders have no code for them
+    variant.features &= ~(SH_FEAT_CM | SH_FEAT_TONEMAP | SH_FEAT_ALT_TONEMAP | SH_FEAT_SDR_MOD | SH_FEAT_ICC | SH_FEAT_MIRROR | SH_FEAT_MOTION_BLUR);
 
     // without CM the transfer functions are unused, keep them at the default so we don't cache
     // several variants of identical source
-    if (!(variant.features & SH_FEAT_CM)) {
-        variant.sourceTF = SHADER_DEFAULT_TF;
-        variant.targetTF = SHADER_DEFAULT_TF;
-    }
+    variant.sourceTF = SHADER_DEFAULT_TF;
+    variant.targetTF = SHADER_DEFAULT_TF;
 
     if (!m_fragVariants[frag].contains(variant)) {
         ASSERT(m_fragFiles[frag].length());

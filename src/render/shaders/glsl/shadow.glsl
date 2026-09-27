@@ -7,7 +7,7 @@
 
 #include "defines.h"
 #include "rounding.glsl"
-#include "cm_helpers.glsl"
+#include "color.glsl"
 #include "gradient.glsl"
 
 float pixAlphaRoundedDistance(float distanceToCorner, float radius, float range, float shadowPower) {
@@ -51,18 +51,10 @@ bool pointInRoundedRect(vec2 pixCoord, vec2 tl, vec2 br, float radius, float rou
     return distanceWithRounding(delta, roundingPower) <= radius;
 }
 
-#if USE_MIRROR
-vec4[2]
-#else
 vec4
-#endif
     getShadow(vec4 pixColor, vec4 colorSRGB, vec2 v_texcoord, float borderRadius, float roundingPower, vec2 topLeft, vec2 fullSize, float range, float shadowPower,
               vec2 bottomRight, vec2 windowTopLeft, vec2 windowBottomRight, float windowRadius, int gradientLength, vec4 gradient[10], float angle, int gradient2Length,
               vec4 gradient2[10], float angle2, float gradientLerp, float alpha
-#if USE_CM
-              ,
-              int srcTF
-#endif
     ) {
     float radius        = range + borderRadius;
     float originalAlpha = pixColor[3];
@@ -122,34 +114,12 @@ vec4
 
     if (pixColor[3] == 0.0) {
         discard;
-#if USE_MIRROR
-        vec4[2] pixColors;
-        pixColors[0] = pixColor;
-        pixColors[1] = pixColor;
-        return pixColors;
-#else
         return pixColor;
-#endif
     }
 
     // premultiply
-#if USE_CM
-    pixColor.rgb = toLinearRGB(pixColor.rgb, srcTF);
     pixColor.rgb *= pixColor[3];
-    pixColor.rgb = fromLinearRGB(pixColor.rgb, srcTF);
-#else
-    pixColor.rgb *= pixColor[3];
-#endif
 
-#if USE_MIRROR
-    vec4[2] pixColors;
-    pixColors[0]   = pixColor;
-    pixColors[1]   = colorSRGB;
-    pixColors[1].a = pixColor.a;
-    pixColors[1].rgb *= pixColors[1].a;
-    return pixColors;
-#else
     return pixColor;
-#endif
 }
 #endif

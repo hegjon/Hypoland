@@ -1,11 +1,14 @@
-#version 300 es
+#version 100
 #define ALLOW_INCLUDES
 #extension GL_ARB_shading_language_include : enable
 
-precision     highp float;
-in vec2       v_texcoord;
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+varying vec2       v_texcoord;
 
-uniform mat3  targetPrimariesXYZ;
 
 uniform vec2  fullSizeUntransformed;
 uniform float radiusOuter;
@@ -27,49 +30,13 @@ uniform vec2  topLeft;
 uniform vec2  fullSize;
 #include "defines.h"
 
-const int sourceTF = SOURCE_TF;
-const int targetTF = TARGET_TF;
 
 #include "rounding.glsl"
-#include "CM.glsl"
 #include "border.glsl"
 
-layout(location = 0) out vec4 fragColor;
-#if USE_MIRROR
-layout(location = 1) out vec4 mirrorColor;
-#endif
 void main() {
-#if USE_MIRROR
-    vec4[2] pixColors =
-#else
-    fragColor =
-#endif
+    gl_FragColor =
         getBorder(v_texcoord, alpha, fullSizeUntransformed, radiusOuter, thick, radius, roundingPower, topLeft, fullSize, gradientLength, gradient, angle, gradient2Length,
                   gradient2, angle2, gradientLerp
-#if USE_CM
-                  ,
-                  sourceTF, targetTF, convertMatrix, srcTFRange, dstTFRange
-#if USE_ICC
-                  ,
-                  iccLut3D, iccLutSize
-#else
-#if USE_TONEMAP || USE_SDR_MOD
-                  ,
-                  targetPrimariesXYZ
-#endif
-#if USE_TONEMAP
-                  ,
-                  maxLuminance, dstMaxLuminance, dstRefLuminance, srcRefLuminance, tonemapMode
-#endif
-#if USE_SDR_MOD
-                  ,
-                  sdrSaturation, sdrBrightnessMultiplier
-#endif
-#endif
-#endif
         );
-#if USE_MIRROR
-    fragColor   = pixColors[0];
-    mirrorColor = pixColors[1];
-#endif
 }

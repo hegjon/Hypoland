@@ -1,7 +1,11 @@
-#version 300 es
+#version 100
 
+#ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;
-in vec2 v_texcoord;
+#else
+precision mediump float;
+#endif
+varying vec2 v_texcoord;
 uniform sampler2D tex;
 uniform float time; // quirk: time is set to 0 at the beginning, should be around 10 when crash.
 uniform float distort;
@@ -26,7 +30,6 @@ float noise(vec2 point) {
     return mixed * mixed;
 }
 
-layout(location = 0) out vec4 fragColor;
 void main() {
     float ABERR_OFFSET = 4.0 * (distort / 5.5) * time;
     float TEAR_AMOUNT = 9000.0 * (1.0 - (distort / 5.5));
@@ -54,14 +57,14 @@ void main() {
 
     vec2 pixCoord = vec2(v_texcoord.x + offset + NOISE * 3.0 / fullSize.x + blockOffset.x, v_texcoord.y - meltAmount + 0.02 * NOISE / fullSize.x + NOISE * 3.0 / fullSize.y  + blockOffset.y);
 
-    vec4 pixColor = texture(tex, pixCoord);
-    vec4 pixColorLeft = texture(tex, pixCoord + vec2(ABERR_OFFSET / fullSize.x, 0));
-    vec4 pixColorRight = texture(tex, pixCoord + vec2(-ABERR_OFFSET / fullSize.x, 0));
+    vec4 pixColor = texture2D(tex, pixCoord);
+    vec4 pixColorLeft = texture2D(tex, pixCoord + vec2(ABERR_OFFSET / fullSize.x, 0));
+    vec4 pixColorRight = texture2D(tex, pixCoord + vec2(-ABERR_OFFSET / fullSize.x, 0));
 
     pixColor[0] = pixColorLeft[0];
     pixColor[2] = pixColorRight[2];
 
     pixColor[0] += distort / 90.0;
 
-    fragColor = pixColor;
+    gl_FragColor = pixColor;
 }

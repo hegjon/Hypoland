@@ -19,7 +19,7 @@ set(INCLUDE ${CMAKE_INSTALL_FULL_INCLUDEDIR})
 set(LIBDIR ${CMAKE_INSTALL_FULL_LIBDIR})
 
 find_package(PkgConfig REQUIRED)
-find_package(OpenGL REQUIRED COMPONENTS "GLES3")
+find_package(OpenGL REQUIRED COMPONENTS "GLES2")
 find_package(hyprwayland-scanner 0.4.0 REQUIRED)
 pkg_check_modules(
   deps
@@ -70,7 +70,7 @@ target_include_directories(
   PRIVATE "./src" "./src/include" "./protocols" "${CMAKE_BINARY_DIR}")
 set_target_properties(aquamarine PROPERTIES VERSION ${AQUAMARINE_VERSION}
                                             SOVERSION 13)
-target_link_libraries(aquamarine OpenGL::EGL OpenGL::OpenGL PkgConfig::deps)
+target_link_libraries(aquamarine OpenGL::EGL OpenGL::GLES2 PkgConfig::deps)
 
 check_include_file("sys/timerfd.h" HAS_TIMERFD)
 pkg_check_modules(epoll IMPORTED_TARGET epoll-shim)
@@ -157,16 +157,6 @@ add_test(
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests
   COMMAND output "output")
 add_dependencies(tests output)
-
-add_executable(gles2Fallback "tests/GLES2Fallback.cpp")
-target_include_directories(gles2Fallback PRIVATE "./src" "./src/include"
-                                                 "./src/backend/drm")
-target_link_libraries(gles2Fallback PRIVATE PkgConfig::deps aquamarine)
-add_test(
-  NAME "gles2Fallback"
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests
-  COMMAND gles2Fallback "gles2Fallback")
-add_dependencies(tests gles2Fallback)
 
 # Installation
 install(TARGETS aquamarine)

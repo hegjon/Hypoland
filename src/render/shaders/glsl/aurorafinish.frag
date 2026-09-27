@@ -1,9 +1,14 @@
-#version 300 es
+#version 100
+#extension GL_OES_standard_derivatives : enable
 #define ALLOW_INCLUDES
 #extension GL_ARB_shading_language_include : enable
 
-precision         highp float;
-in vec2           v_texcoord;
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+varying vec2           v_texcoord;
 uniform sampler2D tex;
 
 uniform float     noise;
@@ -19,16 +24,9 @@ uniform vec4      auroraColor2;
 uniform int       auroraTransferFunction;
 
 #include "defines.h"
-#if USE_CM
-uniform int sourceTF;
-uniform int targetTF;
-#include "CM.glsl"
-#endif
 
-#include "cm_helpers.glsl"
+#include "color.glsl"
 #include "blurFinish.glsl"
-
-layout(location = 0) out vec4 fragColor;
 
 vec3 auroraSurface(vec2 position) {
     float verticalWarp = sin(position.y * 0.19 - time) * 0.78 + sin(position.y * 0.43 + time * 2.0) * 0.24;
@@ -56,7 +54,7 @@ void main() {
 
     vec2 uvStep      = normal.x * dFdx(v_texcoord) + normal.y * dFdy(v_texcoord);
     vec2 displacedUV = clamp(v_texcoord + glassRefraction * uvStep, vec2(0.0), vec2(1.0));
-    vec4 color       = texture(tex, displacedUV);
+    vec4 color       = texture2D(tex, displacedUV);
 
     vec4 palette     = mix(auroraColor1, auroraColor2, surface.z);
     float amount     = clamp(auroraIntensity * surface.y, 0.0, 1.0);
@@ -70,10 +68,6 @@ void main() {
     linearColor *= 1.0 + emboss * glassRoughness * 0.08;
 
     color = fromLinear(vec4(max(linearColor, vec3(0.0)) * color.a, color.a), auroraTransferFunction);
-    fragColor = blurFinish(color, v_texcoord, noise, brightness
-#if USE_CM
-                           ,
-                           sourceTF, targetTF, convertMatrix, srcTFRange, dstTFRange
-#endif
+    gl_FragColor = blurFinish(color, v_texcoord, noise, brightness
     );
 }

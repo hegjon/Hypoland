@@ -5,6 +5,7 @@
 #include "../plugins/PluginAPI.hpp"
 #include "../plugins/PluginSystem.hpp"
 #include "../render/OpenGL.hpp"
+#include "GLES2Compat.hpp"
 #include "../config/ConfigManager.hpp"
 #include "../state/MonitorState.hpp"
 
@@ -232,11 +233,8 @@ std::string SystemInfo::getSystemInfo() {
 
     if (g_pHyprOpenGL) {
         result += std::format("\nExplicit sync: {}", g_pHyprOpenGL->m_exts.EGL_ANDROID_native_fence_sync_ext ? "supported" : "missing");
-        result += std::format("\nGL ver: {}",
-                              g_pHyprOpenGL->m_eglContextVersion == CHyprOpenGLImpl::EGL_CONTEXT_GLES_3_2     ? "3.2" :
-                                  g_pHyprOpenGL->m_eglContextVersion == CHyprOpenGLImpl::EGL_CONTEXT_GLES_3_0 ? "3.0" :
-                                                                                                                "2.0");
-        result += std::format("\nRender path: {}", g_pHyprOpenGL->m_legacyGLES ? "legacy GLES2 (GLSL ES 1.00 shaders)" : "GLES3");
+        result += std::format("\nGL ver: {}", NGLES2Compat::contextVersion());
+        result += "\nRender path: GLES2 (GLSL ES 1.00 shaders)";
         result += std::format("\nFP16: {}", g_pHyprOpenGL->fp16Supported() ? "supported" : "missing");
     }
 

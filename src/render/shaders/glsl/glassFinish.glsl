@@ -10,16 +10,12 @@ vec4 glassFinish(vec2 normal) {
 
     vec2 uvStep = normal.x * dFdx(v_texcoord) + normal.y * dFdy(v_texcoord);
     vec2 displacedUV = clamp(v_texcoord + glassRefraction * uvStep, vec2(0.0), vec2(1.0));
-    vec4 pixColor = texture(tex, displacedUV);
+    vec4 pixColor = texture2D(tex, displacedUV);
 
     const vec2 LIGHT_DIRECTION = vec2(-0.451219, 0.892413);
     float emboss = dot(normal, LIGHT_DIRECTION);
     pixColor.rgb *= 1.0 + emboss * glassRoughness * 0.12;
 
     return blurFinish(pixColor, v_texcoord, noise, brightness
-#if USE_CM
-                      ,
-                      sourceTF, targetTF, convertMatrix, srcTFRange, dstTFRange
-#endif
     );
 }

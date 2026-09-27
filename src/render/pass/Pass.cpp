@@ -14,6 +14,10 @@
 #include "RectPassElement.hpp"
 #include "BackdropScopePassElement.hpp"
 #include "macros.hpp"
+#include "../../helpers/env/Env.hpp"
+#include <chrono>
+#include <map>
+#include <print>
 
 using namespace Render;
 
@@ -137,6 +141,48 @@ void CRenderPass::planBackdropScopes() {
     RASSERT(planner.empty(), "Unclosed backdrop scope marker");
 }
 
+// HYPOLAND_PROFILE_PASS=1: measure the GPU time of every pass element with glFinish() and log the
+// totals per element type. This slows rendering down, it is a tool to find expensive passes on old GPUs.
+namespace {
+    struct SPassProfileEntry {
+        uint64_t us    = 0;
+        uint64_t draws = 0;
+        uint64_t area  = 0;
+    };
+
+    struct SPassProfile {
+        std::map<std::string, SPassProfileEntry> entries;
+        uint64_t                                 frames = 0;
+    };
+
+    bool passProfilingEnabled() {
+        static const bool ENABLED = Env::envEnabled("HYPOLAND_PROFILE_PASS");
+        return ENABLED;
+    }
+
+    uint64_t regionArea(const CRegion& rg) {
+        uint64_t area = 0;
+        rg.forEachRect([&area](const auto& RECT) { area += sc<uint64_t>(RECT.x2 - RECT.x1) * sc<uint64_t>(RECT.y2 - RECT.y1); });
+        return area;
+    }
+
+    void logPassProfile(SPassProfile& profile) {
+        uint64_t total = 0;
+        for (const auto& [name, e] : profile.entries) {
+            total += e.us;
+        }
+
+        // stderr: the compositor log is usually disabled
+        std::println(stderr, "[pass profile] {} frames, {:.2f} ms per frame", profile.frames, total / 1000.0 / profile.frames);
+        for (const auto& [name, e] : profile.entries) {
+            std::println(stderr, "[pass profile]   {:<36} {:>6.2f} ms/frame  {:>5.1f} draws/frame  {:>8} px/frame", name, e.us / 1000.0 / profile.frames,
+                         sc<double>(e.draws) / profile.frames, e.area / profile.frames);
+        }
+
+        profile = {};
+    }
+}
+
 CRegion CRenderPass::render(const CRegion& damage_) {
     const auto  pMonitor   = g_pHyprRenderer->m_renderData.pMonitor;
     static auto PDEBUGPASS = CConfigValue<Config::INTEGER>("debug:pass");
@@ -232,7 +278,28 @@ CRegion CRenderPass::render(const CRegion& damage_) {
         }
 
         g_pHyprRenderer->m_renderData.damage = el.elementDamage;
-        g_pHyprRenderer->draw(el.element, el.elementDamage);
+
+        if (passProfilingEnabled()) {
+            static SPassProfile profile;
+
+            glFinish();
+            const auto STARTED = std::chrono::steady_clock::now();
+            g_pHyprRenderer->draw(el.element, el.elementDamage);
+            glFinish();
+
+            std::string name = el.element->passName();
+            if (const auto BB = el.element->boundingBox(); BB)
+                name += std::format(" {}x{}", sc<int>(BB->w), sc<int>(BB->h));
+
+            auto& entry = profile.entries[name];
+            entry.us += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - STARTED).count();
+            entry.draws++;
+            entry.area += regionArea(el.elementDamage.copy().intersect(CBox{{}, pMonitor->m_transformedSize}));
+
+            if (&el == &m_passElements.back() && ++profile.frames >= 120)
+                logPassProfile(profile);
+        } else
+            g_pHyprRenderer->draw(el.element, el.elementDamage);
 
         if (!providerIsAnimated || (!el.element->needsLiveBlurCached && !el.element->needsPrecomputeBlurCached))
             continue;

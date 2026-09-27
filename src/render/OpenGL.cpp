@@ -1,6 +1,8 @@
-#include <GLES3/gl32.h>
+#include "gl/GLES2.hpp"
 #include "../helpers/GLES2Compat.hpp"
 #include <cstdint>
+#include <chrono>
+#include <print>
 #include <hyprgraphics/color/Color.hpp>
 #include <hyprutils/memory/SharedPtr.hpp>
 #include <hyprutils/memory/UniquePtr.hpp>
@@ -153,13 +155,7 @@ static int openRenderNode(int drmFd) {
 }
 
 static ShaderFeatureFlags globalFeatures() {
-    // GLES2 has a single colour attachment, so the mirror pass cannot run.
-    if (g_pHyprOpenGL->m_legacyGLES)
-        return 0;
-
-    return g_pHyprRenderer->m_renderData.pMonitor && g_pHyprRenderer->m_renderData.pMonitor->needsUnmodifiedCopy() && g_pHyprRenderer->m_renderData.currentFB->getMirrorTexture() ?
-        SH_FEAT_MIRROR :
-        0;
+    return 0;
 }
 
 void CHyprOpenGLImpl::initEGL(bool gbm) {
@@ -207,45 +203,13 @@ void CHyprOpenGLImpl::initEGL(bool gbm) {
         attrs.push_back(EGL_CONTEXT_RELEASE_BEHAVIOR_NONE_KHR); // or _FLUSH_KHR
     }
 
-    auto attrsNoVer = attrs;
-
-    attrs.push_back(EGL_CONTEXT_MAJOR_VERSION);
-    attrs.push_back(3);
-    attrs.push_back(EGL_CONTEXT_MINOR_VERSION);
+    attrs.push_back(EGL_CONTEXT_CLIENT_VERSION);
     attrs.push_back(2);
     attrs.push_back(EGL_NONE);
 
     m_eglContext = eglCreateContext(m_eglDisplay, EGL_NO_CONFIG_KHR, EGL_NO_CONTEXT, attrs.data());
-    if (m_eglContext == EGL_NO_CONTEXT) {
-        Log::logger->log(Log::WARN, "EGL: Failed to create a context with GLES3.2, retrying 3.0");
-
-        attrs = attrsNoVer;
-        attrs.push_back(EGL_CONTEXT_MAJOR_VERSION);
-        attrs.push_back(3);
-        attrs.push_back(EGL_CONTEXT_MINOR_VERSION);
-        attrs.push_back(0);
-        attrs.push_back(EGL_NONE);
-
-        m_eglContext        = eglCreateContext(m_eglDisplay, EGL_NO_CONFIG_KHR, EGL_NO_CONTEXT, attrs.data());
-        m_eglContextVersion = EGL_CONTEXT_GLES_3_0;
-
-        if (m_eglContext == EGL_NO_CONTEXT) {
-            // Pre-GLES3 hardware (Intel gen4/4.5/5 under crocus) refuses a GLES3
-            // context outright, so drop to 2.0 rather than giving up.
-            Log::logger->log(Log::WARN, "EGL: Failed to create a context with GLES3.0, retrying 2.0");
-
-            attrs = attrsNoVer;
-            attrs.push_back(EGL_CONTEXT_CLIENT_VERSION);
-            attrs.push_back(2);
-            attrs.push_back(EGL_NONE);
-
-            m_eglContext        = eglCreateContext(m_eglDisplay, EGL_NO_CONFIG_KHR, EGL_NO_CONTEXT, attrs.data());
-            m_eglContextVersion = EGL_CONTEXT_GLES_2_0;
-
-            if (m_eglContext == EGL_NO_CONTEXT)
-                RASSERT(false, "EGL: failed to create a context with GLES3.2, 3.0 or 2.0");
-        }
-    }
+    if (m_eglContext == EGL_NO_CONTEXT)
+        RASSERT(false, "EGL: failed to create a GLES2 context");
 
     if (m_exts.IMG_context_priority) {
         EGLint priority = EGL_CONTEXT_PRIORITY_MEDIUM_IMG;
@@ -258,16 +222,15 @@ void CHyprOpenGLImpl::initEGL(bool gbm) {
 
     eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, m_eglContext);
 
-    // Only the version the driver reports is authoritative: requesting a GLES2
-    // context on modern hardware still yields a 3.2 one, so the requested
-    // version cannot be used to pick the render path.
-    m_legacyGLES = NGLES2Compat::currentContextIsGLES2();
+    // a driver is free to hand out a newer context than requested, the renderer only uses the GLES2 subset of it
+    Log::logger->log(Log::DEBUG, "EGL: GL version: {}", NGLES2Compat::contextVersion());
 
-    if (m_legacyGLES) {
-        m_eglContextVersion = EGL_CONTEXT_GLES_2_0;
-        Log::logger->log(Log::WARN, "!RENDERER: GLES2-only driver detected, using the legacy render path");
-        RASSERT(NGLES2Compat::checkVertexArrayObjectExt(), "GLES2: GL_OES_vertex_array_object is required but unavailable");
-    }
+    RASSERT(NGLES2Compat::checkVertexArrayObjectExt(), "GLES2: GL_OES_vertex_array_object is required but unavailable");
+
+    loadGLProc(&NGLES2::bindVertexArray, "glBindVertexArrayOES");
+    loadGLProc(&NGLES2::genVertexArrays, "glGenVertexArraysOES");
+    loadGLProc(&NGLES2::deleteVertexArrays, "glDeleteVertexArraysOES");
+    RASSERT(NGLES2::bindVertexArray && NGLES2::genVertexArrays && NGLES2::deleteVertexArrays, "GLES2: failed to load the GL_OES_vertex_array_object entry points");
 }
 
 static bool drmDeviceHasName(const drmDevice* device, const std::string& name) {
@@ -649,13 +612,8 @@ void CHyprOpenGLImpl::initDRMFormats() {
     m_drmFormats = dmaFormats;
 
     // FP16 needs both a half float renderable color buffer and the drm format
-    // A half-float colour buffer needs a sized internal format, which GLES2
-    // does not have, so fp16 render targets are off on the legacy path.
-    m_fp16Supported =
-        !m_legacyGLES && m_exts.EXT_color_buffer_half_float && std::ranges::any_of(m_drmFormats, [](const auto& fmt) { return fmt.drmFormat == DRM_FORMAT_ABGR16161616F; });
-
-    if (!m_fp16Supported)
-        Log::logger->log(Log::WARN, "Your GPU does not support rendering to FP16 buffers, some effects and CM settings might be unavailable.");
+    // A half-float colour buffer needs a sized internal format, which GLES2 does not have
+    m_fp16Supported = false;
 }
 
 EGLImageKHR CHyprOpenGLImpl::createEGLImage(const Aquamarine::SDMABUFAttrs& attrs) {
@@ -715,21 +673,6 @@ EGLImageKHR CHyprOpenGLImpl::createEGLImage(const Aquamarine::SDMABUFAttrs& attr
 void CHyprOpenGLImpl::beginSimple(PHLMONITOR pMonitor, const CRegion& damage, SP<IRenderbuffer> rb, SP<IFramebuffer> fb) {
     g_pHyprRenderer->m_renderData.pMonitor = pMonitor;
 
-    // glGetGraphicsResetStatus needs GLES 3.2 (or KHR_robustness, which the old
-    // Intel parts the legacy path targets do not advertise).
-    const GLenum RESETSTATUS = m_legacyGLES ? GL_NO_ERROR : glGetGraphicsResetStatus();
-    if (RESETSTATUS != GL_NO_ERROR) {
-        std::string errStr = "";
-        switch (RESETSTATUS) {
-            case GL_GUILTY_CONTEXT_RESET: errStr = "GL_GUILTY_CONTEXT_RESET"; break;
-            case GL_INNOCENT_CONTEXT_RESET: errStr = "GL_INNOCENT_CONTEXT_RESET"; break;
-            case GL_UNKNOWN_CONTEXT_RESET: errStr = "GL_UNKNOWN_CONTEXT_RESET"; break;
-            default: errStr = "UNKNOWN??"; break;
-        }
-        RASSERT(false, "Aborting, glGetGraphicsResetStatus returned {}. Cannot continue until proper GPU reset handling is implemented.", errStr);
-        return;
-    }
-
     TRACY_GPU_ZONE("RenderBeginSimple");
 
     const auto FBO = rb ? rb->getFB() : fb;
@@ -762,21 +705,6 @@ void CHyprOpenGLImpl::makeEGLCurrent() {
 
 void CHyprOpenGLImpl::begin(PHLMONITOR pMonitor, const CRegion& damage_, SP<IFramebuffer> fb, std::optional<CRegion> finalDamage) {
     g_pHyprRenderer->m_renderData.pMonitor = pMonitor;
-
-    // glGetGraphicsResetStatus needs GLES 3.2 (or KHR_robustness, which the old
-    // Intel parts the legacy path targets do not advertise).
-    const GLenum RESETSTATUS = m_legacyGLES ? GL_NO_ERROR : glGetGraphicsResetStatus();
-    if (RESETSTATUS != GL_NO_ERROR) {
-        std::string errStr = "";
-        switch (RESETSTATUS) {
-            case GL_GUILTY_CONTEXT_RESET: errStr = "GL_GUILTY_CONTEXT_RESET"; break;
-            case GL_INNOCENT_CONTEXT_RESET: errStr = "GL_INNOCENT_CONTEXT_RESET"; break;
-            case GL_UNKNOWN_CONTEXT_RESET: errStr = "GL_UNKNOWN_CONTEXT_RESET"; break;
-            default: errStr = "UNKNOWN??"; break;
-        }
-        RASSERT(false, "Aborting, glGetGraphicsResetStatus returned {}. Cannot continue until proper GPU reset handling is implemented.", errStr);
-        return;
-    }
 
     TRACY_GPU_ZONE("RenderBegin");
 
@@ -928,10 +856,27 @@ void CHyprOpenGLImpl::end() {
             g_pHyprRenderer->setProjectionType(RPT_OUTPUT);
             g_pHyprRenderer->m_renderData.transformDamage = true;
 
+            // HYPOLAND_PROFILE_PASS=1, see CRenderPass::render()
+            static const bool PROFILE = Env::envEnabled("HYPOLAND_PROFILE_PASS");
+            const auto        STARTED = std::chrono::steady_clock::now();
+            if (PROFILE)
+                glFinish();
+
             if (NEEDS_CM && !finalCMComplete)
                 renderTexture(finalTexture, finalBox, {.finalMonitorCM = true});
             else
                 renderTexturePrimitive(finalTexture, finalBox);
+
+            if (PROFILE) {
+                static uint64_t us = 0, frames = 0;
+                glFinish();
+                us += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - STARTED).count();
+                if (++frames >= 120) {
+                    std::println(stderr, "[pass profile]   {:<36} {:>6.2f} ms/frame", "copy work buffer to output", us / 1000.0 / frames);
+                    us     = 0;
+                    frames = 0;
+                }
+            }
 
             for (size_t i = 0; i < postProcessCount; ++i)
                 postProcessFBs[i]->setImageDescription(savedDescriptions[i]);
@@ -957,7 +902,7 @@ void CHyprOpenGLImpl::end() {
     g_pHyprRenderer->m_renderData.pMonitor->resources()->forEachUnusedFB(
         [](const auto& fb) {
             fb->bind();
-            GLFB(fb)->invalidate({GL_DEPTH_STENCIL_ATTACHMENT, GL_COLOR_ATTACHMENT0});
+            GLFB(fb)->invalidate({GL_STENCIL_ATTACHMENT, GL_COLOR_ATTACHMENT0});
         },
         false);
 
@@ -969,14 +914,14 @@ void CHyprOpenGLImpl::end() {
         // check for gl errors
         const GLenum ERR = glGetError();
 
-        if UNLIKELY (ERR == GL_CONTEXT_LOST) /* We don't have infra to recover from this */
+        if UNLIKELY (ERR == GL_CONTEXT_LOST_KHR) /* We don't have infra to recover from this */
             RASSERT(false, "glGetError at Opengl::end() returned GL_CONTEXT_LOST. Cannot continue until proper GPU reset handling is implemented.");
     }
 }
 
 static const std::vector<std::string> SHADER_INCLUDES = {
-    "defines.h",       "constants.h",      "cm_helpers.glsl", "rounding.glsl", "CM.glsl",         "tonemap.glsl",     "gain.glsl",     "border.glsl",      "shadow.glsl",
-    "inner_glow.glsl", "blurprepare.glsl", "blur1.glsl",      "blur2.glsl",    "blurFinish.glsl", "motion_blur.glsl", "gradient.glsl", "glassFinish.glsl", "fluidJar.glsl",
+    "defines.h",  "constants.h", "color.glsl",      "rounding.glsl", "gain.glsl",        "border.glsl", "shadow.glsl", "inner_glow.glsl", "blurprepare.glsl",
+    "blur1.glsl", "blur2.glsl",  "blurFinish.glsl", "gradient.glsl", "glassFinish.glsl",
 };
 
 // order matters, see ePreparedFragmentShader
@@ -995,63 +940,22 @@ const std::array<std::string, SH_FRAG_LAST> FRAG_SHADERS = {
     "border.frag",
     "glitch.frag",
     "frostfinish.frag",
-    "ripplefinish.frag",
     "dropsfinish.frag",
-    "waterstep.frag",
-    "waterfinish.frag",
-    "fluidjarinit.frag",
-    "fluidjarstep.frag",
-    "fluidjargraph.frag",
-    "fluidjartrack.frag",
-    "fluidjarvisual.frag",
-    "fluidjarresample.frag",
-    "fluidjarhistoryresample.frag",
-    "fluidjartrackingresample.frag",
-    "fluidjarfinish.frag",
-    "prismfinish.frag",
     "heatshimmerfinish.frag",
-    "acrylicfinish.frag",
     "aurorafinish.frag",
     "hazefinish.frag",
 };
 
-// These effects need GLSL ES 3.00 features with no ES 1.00 equivalent:
-// textureSize() (ripple, water, prism, acrylic, fluidjar finish) and unsigned
-// integer samplers (the whole fluid-jar simulation). On a GLES2-only driver
-// they are swapped for a plain passthrough, so selecting one of these blur
-// styles simply has no visual effect rather than failing to compile.
-static const std::array<std::string_view, 12> GLES2_UNSUPPORTED_EFFECTS = {
-    "ripplefinish.frag",   "waterfinish.frag",      "fluidjarinit.frag",
-    "fluidjarstep.frag",   "fluidjargraph.frag",    "fluidjartrack.frag",
-    "fluidjarvisual.frag", "fluidjarresample.frag", "fluidjartrackingresample.frag",
-    "fluidjarfinish.frag", "prismfinish.frag",      "acrylicfinish.frag",
-};
-
-static std::array<std::string, SH_FRAG_LAST> fragShadersFor(bool legacyGLES) {
-    auto frags = FRAG_SHADERS;
-    if (!legacyGLES)
-        return frags;
-
-    for (auto& f : frags) {
-        if (std::ranges::contains(GLES2_UNSUPPORTED_EFFECTS, f))
-            f = "passthru.frag";
-    }
-    return frags;
-}
-
 bool CHyprOpenGLImpl::initShaders(const std::string& path) {
     auto              shaders = makeShared<SPreparedShaders>();
-    static const auto PCM     = CConfigValue<Config::INTEGER>("render:cm_enabled");
 
     try {
-        auto shaderLoader = makeUnique<CShaderLoader>(SHADER_INCLUDES, fragShadersFor(m_legacyGLES), path, m_legacyGLES);
+        auto shaderLoader = makeUnique<CShaderLoader>(SHADER_INCLUDES, FRAG_SHADERS, path);
 
-        shaders->TEXVERTSRC    = shaderLoader->process("tex300.vert");
-        shaders->TEXVERTSRC320 = shaderLoader->process("tex320.vert");
+        shaders->TEXVERTSRC = shaderLoader->process("tex.vert");
 
-        // Colour management needs GLSL ES 3.00 (switch, inverse, transpose,
-        // sampler3D), none of which exist in ES 1.00.
-        m_cmSupported = *PCM && !m_legacyGLES;
+        // Colour management needs GLSL ES 3.00 (switch, inverse, transpose, sampler3D)
+        m_cmSupported = false;
 
         g_pShaderLoader = std::move(shaderLoader);
 
@@ -1099,12 +1003,7 @@ void CHyprOpenGLImpl::applyScreenShader(const std::string& path) {
 
     std::string fragmentShader((std::istreambuf_iterator<char>(infile)), (std::istreambuf_iterator<char>()));
 
-    if (!m_finalScreenShader->createProgram(              //
-            fragmentShader.starts_with("#version 320 es") // do not break existing custom shaders
-                ?
-                m_shaders->TEXVERTSRC320 :
-                m_shaders->TEXVERTSRC,
-            fragmentShader, true)) {
+    if (!m_finalScreenShader->createProgram(m_shaders->TEXVERTSRC, fragmentShader, true)) {
         // Error will have been sent by now by the underlying cause
         return;
     }
@@ -2049,7 +1948,7 @@ void CHyprOpenGLImpl::renderTextureWithBlurInternal(SP<ITexture> tex, const CBox
                               .primarySurfaceUVBottomRight = g_pHyprRenderer->m_renderData.primarySurfaceUVBottomRight,
                           });
 
-    GLFB(g_pHyprRenderer->m_renderData.currentFB)->invalidate({GL_DEPTH_STENCIL_ATTACHMENT});
+    GLFB(g_pHyprRenderer->m_renderData.currentFB)->invalidate({GL_STENCIL_ATTACHMENT});
     scissor(nullptr);
 }
 
@@ -2533,28 +2432,13 @@ void CHyprOpenGLImpl::bindArrayBuffer(GLuint buffer) {
 }
 
 void CHyprOpenGLImpl::bindFramebuffer(GLenum target, GLuint fb) {
-    const bool DRAW = target == GL_FRAMEBUFFER || target == GL_DRAW_FRAMEBUFFER;
-    const bool READ = target == GL_FRAMEBUFFER || target == GL_READ_FRAMEBUFFER;
-
-    if ((DRAW || READ) && (!DRAW || m_boundDrawFB == fb) && (!READ || m_boundReadFB == fb))
+    // GLES2 has only the combined GL_FRAMEBUFFER target, binding it sets both
+    if (m_boundDrawFB == fb && m_boundReadFB == fb)
         return;
 
-    if (m_legacyGLES) {
-        // GLES2 has only the combined GL_FRAMEBUFFER target; separate read and
-        // draw bindings arrived with GLES3. Binding the combined target sets
-        // both, so both have to be recorded or a later bind would be skipped.
-        GLCALL(glBindFramebuffer(GL_FRAMEBUFFER, fb));
-        m_boundDrawFB = fb;
-        m_boundReadFB = fb;
-        return;
-    }
-
-    GLCALL(glBindFramebuffer(target, fb));
-
-    if (DRAW)
-        m_boundDrawFB = fb;
-    if (READ)
-        m_boundReadFB = fb;
+    GLCALL(glBindFramebuffer(GL_FRAMEBUFFER, fb));
+    m_boundDrawFB = fb;
+    m_boundReadFB = fb;
 }
 
 void CHyprOpenGLImpl::onFramebufferDeleted(GLuint fb) {

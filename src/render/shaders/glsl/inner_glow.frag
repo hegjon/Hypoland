@@ -1,12 +1,16 @@
-#version 300 es
+#version 100
 #define ALLOW_INCLUDES
 #extension GL_ARB_shading_language_include : enable
 
 #include "defines.h"
 
-precision     highp float;
-in vec4       v_color;
-in vec2       v_texcoord;
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+varying vec4       v_color;
+varying vec2       v_texcoord;
 
 uniform vec4  colorSRGB;
 uniform vec2  topLeft;
@@ -29,21 +33,9 @@ uniform float alpha;
 
 #include "inner_glow.glsl"
 
-layout(location = 0) out vec4 fragColor;
-#if USE_MIRROR
-layout(location = 1) out vec4 mirrorColor;
-#endif
 void main() {
     vec4 pixColor = v_color;
-#if USE_MIRROR
-    vec4[2] pixColors =
-#else
-    fragColor =
-#endif
+    gl_FragColor =
     getInnerGlow(pixColor, colorSRGB, v_texcoord, radius, roundingPower, topLeft, fullSize, range, shadowPower, bottomRight,
                  gradientLength, gradient, angle, gradient2Length, gradient2, angle2, gradientLerp, alpha);
-#if USE_MIRROR
-    fragColor   = pixColors[0];
-    mirrorColor = pixColors[1];
-#endif
 }

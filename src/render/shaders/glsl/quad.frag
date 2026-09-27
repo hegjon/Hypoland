@@ -1,11 +1,15 @@
-#version 300 es
+#version 100
 
 #define ALLOW_INCLUDES
 #extension GL_ARB_shading_language_include : enable
 #include "defines.h"
 
+#ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;
-in vec4   v_color;
+#else
+precision mediump float;
+#endif
+varying vec4   v_color;
 
 uniform vec4 colorSRGB;
 #if USE_ROUNDING
@@ -16,10 +20,6 @@ uniform vec2  fullSize;
 #include "rounding.glsl"
 #endif
 
-layout(location = 0) out vec4 fragColor;
-#if USE_MIRROR
-layout(location = 1) out vec4 mirrorColor;
-#endif
 void main() {
     vec4 pixColor = v_color;
 
@@ -27,12 +27,5 @@ void main() {
     pixColor = rounding(pixColor, radius, roundingPower, topLeft, fullSize);
 #endif
 
-    fragColor = pixColor;
-#if USE_MIRROR
-#if USE_ROUNDING
-    mirrorColor = rounding(colorSRGB, radius, roundingPower, topLeft, fullSize);
-#else
-    mirrorColor = colorSRGB;
-#endif
-#endif
+    gl_FragColor = pixColor;
 }

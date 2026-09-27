@@ -217,60 +217,6 @@ void CShader::getUniformLocations() {
     m_uniformLocations[SHADER_GLASS_POSITION]              = getUniform("glassPosition");
     m_uniformLocations[SHADER_DROPS_POSITION]              = getUniform("dropsPosition");
     m_uniformLocations[SHADER_SHARP_TEX]                   = getUniform("sharpTex");
-    m_uniformLocations[SHADER_RIPPLE_COUNT]                = getUniform("rippleCount");
-    m_uniformLocations[SHADER_RIPPLE_IMPULSES]             = getUniform("rippleImpulses[0]");
-    m_uniformLocations[SHADER_RIPPLE_PARAMS]               = getUniform("rippleParams");
-    m_uniformLocations[SHADER_WATER_ENABLED]               = getUniform("waterEnabled");
-    m_uniformLocations[SHADER_WATER_STATE_TEX]             = getUniform("waterStateTex");
-    m_uniformLocations[SHADER_WATER_TEXEL_SIZE]            = getUniform("waterTexelSize");
-    m_uniformLocations[SHADER_WATER_EXTENT]                = getUniform("waterExtent");
-    m_uniformLocations[SHADER_WATER_REFRACTION]            = getUniform("waterRefraction");
-    m_uniformLocations[SHADER_WATER_PARAMS]                = getUniform("waterParams");
-    m_uniformLocations[SHADER_WATER_IMPULSE_COUNT]         = getUniform("waterImpulseCount");
-    m_uniformLocations[SHADER_WATER_IMPULSES]              = getUniform("waterImpulses[0]");
-    m_uniformLocations[SHADER_FLUIDJAR_PARTICLE_TEX]       = getUniform("fluidJarParticleTex");
-    m_uniformLocations[SHADER_FLUIDJAR_GRAPH_TEX]          = getUniform("fluidJarGraphTex");
-    m_uniformLocations[SHADER_FLUIDJAR_TRACKING_TEX]       = getUniform("fluidJarTrackingTex");
-    m_uniformLocations[SHADER_FLUIDJAR_VISUAL_TEX]         = getUniform("fluidJarVisualTex");
-    m_uniformLocations[SHADER_FLUIDJAR_RESOLUTION]         = getUniform("fluidJarResolution");
-    m_uniformLocations[SHADER_FLUIDJAR_GRID_SIZE]          = getUniform("fluidJarGridSize");
-    m_uniformLocations[SHADER_FLUIDJAR_PARTICLE_COUNT]     = getUniform("fluidJarParticleCount");
-    m_uniformLocations[SHADER_FLUIDJAR_FRAME]              = getUniform("fluidJarFrame");
-    m_uniformLocations[SHADER_FLUIDJAR_DT]                 = getUniform("fluidJarDt");
-    m_uniformLocations[SHADER_FLUIDJAR_MASS]               = getUniform("fluidJarMass");
-    m_uniformLocations[SHADER_FLUIDJAR_OLD_RESOLUTION]     = getUniform("fluidJarOldResolution");
-    m_uniformLocations[SHADER_FLUIDJAR_OLD_GRID_SIZE]      = getUniform("fluidJarOldGridSize");
-    m_uniformLocations[SHADER_FLUIDJAR_OLD_PARTICLE_COUNT] = getUniform("fluidJarOldParticleCount");
-    m_uniformLocations[SHADER_FLUIDJAR_TRANSFORM]          = getUniform("fluidJarTransform");
-    m_uniformLocations[SHADER_FLUIDJAR_VELOCITY_SCALE]     = getUniform("fluidJarVelocityScale");
-    m_uniformLocations[SHADER_FLUIDJAR_WALL_VELOCITIES]    = getUniform("fluidJarWallVelocities");
-    m_uniformLocations[SHADER_FLUIDJAR_HISTORY_TEX]        = getUniform("fluidJarHistoryTex");
-    m_uniformLocations[SHADER_FLUIDJAR_HISTORY_TRANSFORM]  = getUniform("fluidJarHistoryTransform");
-    m_uniformLocations[SHADER_FLUIDJAR_HISTORY_FALLBACK]   = getUniform("fluidJarHistoryFallback");
-    m_uniformLocations[SHADER_FLUIDJAR_EXTENT]             = getUniform("fluidJarExtent");
-    m_uniformLocations[SHADER_FLUIDJAR_OUTPUT_TRANSFORM]   = getUniform("fluidJarOutputTransform");
-    m_uniformLocations[SHADER_FLUIDJAR_OUTPUT_OFFSET]      = getUniform("fluidJarOutputOffset");
-    m_uniformLocations[SHADER_FLUIDJAR_LOGICAL_SIZE]       = getUniform("fluidJarLogicalSize");
-    m_uniformLocations[SHADER_FLUIDJAR_COLOR]              = getUniform("fluidJarColor");
-    m_uniformLocations[SHADER_FLUIDJAR_REFRACTION]         = getUniform("fluidJarRefraction");
-    m_uniformLocations[SHADER_FLUIDJAR_TRANSFER_FUNCTION]  = getUniform("fluidJarTransferFunction");
-    m_uniformLocations[SHADER_FLUIDJAR_VISUAL_RESPONSE]    = getUniform("fluidJarVisualResponse");
-    m_uniformLocations[SHADER_FLUIDJAR_STRENGTH]           = getUniform("fluidJarStrength");
-    m_uniformLocations[SHADER_FLUIDJAR_TURBULENCE]         = getUniform("fluidJarTurbulence");
-    m_uniformLocations[SHADER_FLUIDJAR_DISTORTION]         = getUniform("fluidJarDistortion");
-    m_uniformLocations[SHADER_FLUIDJAR_ENABLED]            = getUniform("fluidJarEnabled");
-    m_uniformLocations[SHADER_ACRYLIC_ENABLED]             = getUniform("acrylicEnabled");
-    m_uniformLocations[SHADER_ACRYLIC_EXTENT]              = getUniform("acrylicExtent");
-    m_uniformLocations[SHADER_ACRYLIC_RADIUS]              = getUniform("acrylicRadius");
-    m_uniformLocations[SHADER_ACRYLIC_ROUNDING_POWER]      = getUniform("acrylicRoundingPower");
-    m_uniformLocations[SHADER_ACRYLIC_REFRACTION]          = getUniform("acrylicRefraction");
-    m_uniformLocations[SHADER_ACRYLIC_BULB]                = getUniform("acrylicBulb");
-    m_uniformLocations[SHADER_ACRYLIC_CLARITY]             = getUniform("acrylicClarity");
-    m_uniformLocations[SHADER_ACRYLIC_ABERRATION]          = getUniform("acrylicAberration");
-    m_uniformLocations[SHADER_ACRYLIC_TINT]                = getUniform("acrylicTint");
-    m_uniformLocations[SHADER_ACRYLIC_STRENGTH]            = getUniform("acrylicStrength");
-    m_uniformLocations[SHADER_ACRYLIC_TRANSFER_FUNCTION]   = getUniform("acrylicTransferFunction");
-    m_uniformLocations[SHADER_ACRYLIC_LUMINANCE_SCALE]     = getUniform("acrylicLuminanceScale");
     m_uniformLocations[SHADER_AURORA_INTENSITY]            = getUniform("auroraIntensity");
     m_uniformLocations[SHADER_AURORA_COLOR1]               = getUniform("auroraColor1");
     m_uniformLocations[SHADER_AURORA_COLOR2]               = getUniform("auroraColor2");
@@ -424,12 +370,8 @@ void CShader::setUniformMatrix3fv(eShaderUniform location, GLsizei count, GLbool
     if (m_uniformLocations.at(location) == -1)
         return;
 
-    // GLES2 requires transpose to be GL_FALSE: glUniformMatrix3fv raises
-    // GL_INVALID_VALUE otherwise, the uniform is left at its default, and every
-    // vertex collapses to the origin -- a completely blank screen with no error
-    // anywhere else. Transpose on the CPU instead, which is what the renderer
-    // did before the legacy path was removed.
-    if (transpose == GL_TRUE && g_pHyprOpenGL->m_legacyGLES) {
+    // GLES2 requires transpose to be GL_FALSE, so transpose on the CPU
+    if (transpose == GL_TRUE) {
         std::swap(value[1], value[3]);
         std::swap(value[2], value[6]);
         std::swap(value[5], value[7]);
@@ -446,29 +388,6 @@ void CShader::setUniformMatrix3fv(eShaderUniform location, GLsizei count, GLbool
 
     cached = SUniformMatrix3Data{.count = count, .transpose = transpose, .value = value};
     GLCALL(glUniformMatrix3fv(m_uniformLocations[location], count, transpose, value.data()));
-}
-
-void CShader::setUniformMatrix4x2fv(eShaderUniform location, GLsizei count, GLboolean transpose, std::array<GLfloat, 8> value) {
-    if (m_uniformLocations.at(location) == -1)
-        return;
-
-    auto& cached = uniformStatus.at(location);
-
-    if (cached.index() != 0) {
-        auto val = std::get<SUniformMatrix4Data>(cached);
-        if (val.count == count && val.transpose == transpose && compareFloat(val.value, value))
-            return;
-    }
-
-    cached = SUniformMatrix4Data{.count = count, .transpose = transpose, .value = value};
-    // Non-square matrix uniforms do not exist in GLES2. No shader on the legacy
-    // path uses one, so this is unreachable there rather than merely skipped.
-    if (g_pHyprOpenGL->m_legacyGLES) {
-        Log::logger->log(Log::ERR, "setUniformMatrix4x2fv is unsupported on the GLES2 render path");
-        return;
-    }
-
-    GLCALL(glUniformMatrix4x2fv(m_uniformLocations[location], count, transpose, value.data()));
 }
 
 void CShader::setUniformfv(eShaderUniform location, GLsizei count, const std::vector<float>& value, GLsizei vec_size) {

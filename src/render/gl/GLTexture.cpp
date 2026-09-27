@@ -47,9 +47,7 @@ CGLTexture::CGLTexture(uint32_t drmFormat, uint8_t* pixels, uint32_t stride, con
     setTexParameter(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     setTexParameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    const auto GLFMT = NGLES2Compat::glFormatFor(format, g_pHyprOpenGL->m_legacyGLES);
-    if (GLFMT.needsSwizzle)
-        swizzle(format->swizzle.value());
+    const auto GLFMT = NGLES2Compat::glFormatFor(format);
 
     bool alignmentChanged = false;
     if (format->bytesPerBlock != 4) {
@@ -96,30 +94,8 @@ CGLTexture::CGLTexture(const Aquamarine::SDMABUFAttrs& attrs, void* image, bool 
     unbind();
 }
 
-CGLTexture::CGLTexture(std::span<const float> lut3D, size_t N) : ITexture(lut3D, N), m_target(GL_TEXTURE_3D) {
-    allocate({});
-    bind();
-
-    GLCALL(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
-    setTexParameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    setTexParameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    setTexParameter(GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    setTexParameter(GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    setTexParameter(GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-    // Expand RGB->RGBA on upload (alpha=1)
-    std::vector<float> rgba;
-    rgba.resize(N * N * N * 4);
-    for (size_t i = 0, j = 0; i < N * N * N; ++i, j += 3) {
-        rgba[i * 4 + 0] = lut3D[j + 0];
-        rgba[i * 4 + 1] = lut3D[j + 1];
-        rgba[i * 4 + 2] = lut3D[j + 2];
-        rgba[i * 4 + 3] = 1.F;
-    }
-
-    GLCALL(glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA16F, N, N, N, 0, GL_RGBA, GL_FLOAT, rgba.data()));
-
-    unbind();
+CGLTexture::CGLTexture(std::span<const float> lut3D, size_t N) : ITexture(lut3D, N) {
+    // 3D textures are GLES3, ICC LUTs are never sampled by the renderer
 }
 
 void CGLTexture::update(uint32_t drmFormat, uint8_t* pixels, uint32_t stride, const CRegion& damage) {
@@ -133,14 +109,8 @@ void CGLTexture::update(uint32_t drmFormat, uint8_t* pixels, uint32_t stride, co
 
     bind();
 
-    // Must use the same format mapping as createFromShm(): on the legacy path
-    // the texture was allocated as GL_BGRA_EXT, so uploading with the table's
-    // GL_RGBA here is a format mismatch and every update silently fails,
-    // leaving the window texture empty. Swizzle does not exist on GLES2 either.
-    const auto GLFMT = NGLES2Compat::glFormatFor(format, g_pHyprOpenGL->m_legacyGLES);
-
-    if (GLFMT.needsSwizzle)
-        swizzle(format->swizzle.value());
+    // must use the same format mapping as the constructor, the texture was allocated with it
+    const auto GLFMT = NGLES2Compat::glFormatFor(format);
 
     bool alignmentChanged = false;
     if (format->bytesPerBlock != 4) {
@@ -204,10 +174,6 @@ constexpr std::optional<size_t> CGLTexture::getCacheStateIndex(GLenum pname) {
         case GL_TEXTURE_WRAP_T: return TEXTURE_PAR_WRAP_T;
         case GL_TEXTURE_MAG_FILTER: return TEXTURE_PAR_MAG_FILTER;
         case GL_TEXTURE_MIN_FILTER: return TEXTURE_PAR_MIN_FILTER;
-        case GL_TEXTURE_SWIZZLE_R: return TEXTURE_PAR_SWIZZLE_R;
-        case GL_TEXTURE_SWIZZLE_G: return TEXTURE_PAR_SWIZZLE_G;
-        case GL_TEXTURE_SWIZZLE_B: return TEXTURE_PAR_SWIZZLE_B;
-        case GL_TEXTURE_SWIZZLE_A: return TEXTURE_PAR_SWIZZLE_A;
         default: return std::nullopt;
     }
 }
@@ -227,11 +193,4 @@ void CGLTexture::setTexParameter(GLenum pname, GLint param) {
 
     m_cachedStates[idx] = param;
     GLCALL(glTexParameteri(m_target, pname, param));
-}
-
-void CGLTexture::swizzle(const std::array<GLint, 4>& colors) {
-    setTexParameter(GL_TEXTURE_SWIZZLE_R, colors.at(0));
-    setTexParameter(GL_TEXTURE_SWIZZLE_G, colors.at(1));
-    setTexParameter(GL_TEXTURE_SWIZZLE_B, colors.at(2));
-    setTexParameter(GL_TEXTURE_SWIZZLE_A, colors.at(3));
 }

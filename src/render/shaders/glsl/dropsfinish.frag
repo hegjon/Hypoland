@@ -1,9 +1,14 @@
-#version 300 es
+#version 100
+#extension GL_OES_standard_derivatives : enable
 #define ALLOW_INCLUDES
 #extension GL_ARB_shading_language_include : enable
 
-precision         highp float;
-in vec2           v_texcoord;
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+varying vec2           v_texcoord;
 uniform sampler2D tex;
 
 uniform float     noise;
@@ -16,15 +21,8 @@ uniform vec2      dropsPosition;
 uniform sampler2D sharpTex;
 
 #include "defines.h"
-#if USE_CM
-uniform int sourceTF;
-uniform int targetTF;
-#include "CM.glsl"
-#endif
 
 #include "glassFinish.glsl"
-
-layout(location = 0) out vec4 fragColor;
 
 const float TAU = 6.28318530718;
 
@@ -275,17 +273,13 @@ vec4 dropsFinish(vec2 normal, float clarity) {
 
     vec2 uvStep = normal.x * dFdx(v_texcoord) + normal.y * dFdy(v_texcoord);
     vec2 displacedUV = clamp(v_texcoord + glassRefraction * uvStep, vec2(0.0), vec2(1.0));
-    vec4 pixColor = mix(texture(tex, displacedUV), texture(sharpTex, displacedUV), clarity);
+    vec4 pixColor = mix(texture2D(tex, displacedUV), texture2D(sharpTex, displacedUV), clarity);
 
     const vec2 LIGHT_DIRECTION = vec2(-0.451219, 0.892413);
     float emboss = dot(normal, LIGHT_DIRECTION);
     pixColor.rgb *= 1.0 + emboss * glassRoughness * 0.12;
 
     return blurFinish(pixColor, v_texcoord, noise, brightness
-#if USE_CM
-                      ,
-                      sourceTF, targetTF, convertMatrix, srcTFRange, dstTFRange
-#endif
     );
 }
 
@@ -303,5 +297,5 @@ void main() {
         gradient = vec2(horizontalHeight - surface.height, verticalHeight - surface.height);
     }
     gradient *= glassSize * 0.16;
-    fragColor = dropsFinish(gradient, surface.clarity);
+    gl_FragColor = dropsFinish(gradient, surface.clarity);
 }

@@ -1365,7 +1365,9 @@ SP<ITexture> IHyprRenderer::getBackground(PHLMONITOR pMonitor) {
 }
 
 void IHyprRenderer::renderBackground(PHLMONITOR pMonitor) {
-    static auto PRENDERTEX       = CConfigValue<Config::INTEGER>("misc:disable_hyprland_logo");
+    // Hypoland ships no Hyprland artwork, misc:disable_hyprland_logo is accepted and ignored
+    static constexpr bool PRENDERTEXVAL = true;
+    static auto           PRENDERTEX    = &PRENDERTEXVAL;
     static auto PBACKGROUNDCOLOR = CConfigValue<Config::INTEGER>("misc:background_color");
     static auto PNOSPLASH        = CConfigValue<Config::INTEGER>("misc:disable_splash_rendering");
 
@@ -1424,7 +1426,9 @@ void IHyprRenderer::requestBackgroundResource() {
     if (m_backgroundResource)
         return;
 
-    static auto PNOWALLPAPER    = CConfigValue<Config::INTEGER>("misc:disable_hyprland_logo");
+    // Hypoland ships no Hyprland artwork, misc:disable_hyprland_logo is accepted and ignored
+    static constexpr bool PNOWALLPAPERVAL = true;
+    static auto           PNOWALLPAPER    = &PNOWALLPAPERVAL;
     static auto PFORCEWALLPAPER = CConfigValue<Config::INTEGER>("misc:force_default_wallpaper");
 
     const auto  FORCEWALLPAPER = std::clamp(*PFORCEWALLPAPER, sc<int64_t>(-1), sc<int64_t>(2));
@@ -1630,8 +1634,9 @@ SP<ITexture> IHyprRenderer::renderText(const std::string& text, CHyprColor col, 
 
 SP<ITexture> IHyprRenderer::renderText(Hyprgraphics::CTextResource::STextResourceData&& data) {
     auto res = makeAtomicShared<Hyprgraphics::CTextResource>(std::move(data));
-    g_pAsyncResourceGatherer->enqueue(res);
-    g_pAsyncResourceGatherer->await(res);
+    // Rendered on this thread on purpose. Handing it to the gatherer only to block on await()
+    // gains nothing, and await() can miss the wakeup on slow machines and then blocks forever.
+    res->render();
 
     if (!res->m_asset.cairoSurface)
         return nullptr;
