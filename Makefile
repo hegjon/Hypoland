@@ -37,7 +37,7 @@ pluginenv:
 installheaders:
 	@if [ ! -f ./src/version.h ]; then echo -en "You need to run $(MAKE) all first.\n" && exit 1; fi
 
-	# remove previous headers from hyprpm's dir
+	# remove previous headers
 	rm -fr ${PREFIX}/include/hyprland
 	mkdir -p ${PREFIX}/include/hyprland
 	mkdir -p ${PREFIX}/include/hyprland/protocols

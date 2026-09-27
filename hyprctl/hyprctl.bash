@@ -11,7 +11,7 @@ _hyprctl_cmd_2 () {
 }
 
 _hyprctl_cmd_0 () {
-    hyprpm list | awk '/Plugin/{print $4}'
+    printf '%s\n' load unload list
 }
 
 _hyprctl () {

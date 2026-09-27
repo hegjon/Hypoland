@@ -15,7 +15,7 @@ end
 
 function _hyprctl_1
     set 1 $argv[1]
-    hyprpm list | awk '/Plugin/{print $4}'
+    printf '%s\n' load unload list
 end
 
 function _hyprctl

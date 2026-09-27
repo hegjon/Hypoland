@@ -45,7 +45,6 @@ depends=(
   re2
   seatd
   systemd-libs
-  tomlplusplus
   util-linux-libs
   wayland
   wayland-protocols

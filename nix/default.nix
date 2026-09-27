@@ -45,7 +45,6 @@
   re2,
   sdbus-cpp_2,
   systemd,
-  tomlplusplus,
   udis86-hyprland,
   wayland,
   wayland-protocols,
@@ -119,7 +118,6 @@ customStdenv.mkDerivation (finalAttrs: {
             ../assets/install
             ../hyprctl
             ../hyprland.pc.in
-            ../hyprpm
             ../LICENSE
             ../meta
             ../protocols
@@ -204,7 +202,6 @@ customStdenv.mkDerivation (finalAttrs: {
       pciutils
       re2
       sdbus-cpp_2
-      tomlplusplus
       udis86-hyprland
       wayland
       wayland-protocols

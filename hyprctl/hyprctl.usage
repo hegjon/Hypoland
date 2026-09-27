@@ -14,8 +14,6 @@ hyprctl [<OPTIONS>]... <ARGUMENTS>
 
 <WINDOWS> ::= {{{ hyprctl clients | awk '/class/{print $2}' }}};
 
-<AVAILABLE_PLUGINS> ::= {{{ hyprpm list | awk '/Plugin/{print $4}' }}};
-
 <MONITORS> ::= {{{ hyprctl monitors | awk '/Monitor/{ print $2 }' }}};
 
 <KEYBOARDS> ::= {{{ hyprctl devices | sed -n '/Keyboard at/{n; s/^\s\+//; p}' }}};
@@ -81,7 +79,7 @@ hyprctl [<OPTIONS>]... <ARGUMENTS>
             |   (monitors [all])                                      "List active outputs with their properties"
             |   (notify <NOTIFICATION_TYPES> <NUM>)                   "Send a notification using the built-in Hyprland notification system"
             |   (output (create (wayland | x11 | headless | auto) | remove <MONITORS>)) "Allows adding/removing fake outputs to a specific backend"
-            |   (plugin <AVAILABLE_PLUGINS>)                          "Interact with a plugin"
+            |   (plugin (load | unload | list))                       "Interact with a plugin"
             |   (reload [config-only])                                "Force reload the config"
             |   (rollinglog [-f])                                     "Print tail of the log"
             |   (setcursor)                                           "Set the cursor theme and reloads the cursor manager"
