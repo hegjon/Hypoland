@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Hypoland logo, single color. It takes the color of the surrounding text. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Hypoland">
+  <title>Hypoland</title>
+  <g transform="rotate(-18 128 128)">
+    <path d="M 26 132 C 24 92 62 64 110 70 C 142 74 164 58 196 70 C 234 84 244 132 222 164 C 198 198 150 202 108 196 C 62 190 28 172 26 132 Z" fill="none" stroke="currentColor" stroke-width="12" stroke-linejoin="round"/>
+    <g fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round">
+      <path d="M 84 140 q 10 8 20 0"/>
+      <path d="M 150 104 q 9 7 18 0"/>
+      <path d="M 170 152 q 10 8 20 0"/>
+      <path d="M 118 172 q 8 6 16 0"/>
+    </g>
+  </g>
+</svg>

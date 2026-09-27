@@ -1,3 +1,7 @@
+<div align="center">
+<img src="assets/logo/header.svg" width="760" alt="Hypoland">
+</div>
+
 # Hypoland
 
 Hypoland is a fork of [Hyprland](https://github.com/hyprwm/Hyprland), the dynamic tiling Wayland compositor,
@@ -22,13 +26,15 @@ Hypoland is an independent project. It is not affiliated with or endorsed by Hyp
 
 Hypoland is meant to be a drop-in replacement, everything that talks to Hyprland keeps working:
 
-- Config: `$XDG_CONFIG_HOME/hypr/hyprland.conf`
+- Config: `$XDG_CONFIG_HOME/hypr/hyprland.lua`
 - IPC: `hyprctl`, the sockets in `$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/`, command names,
   JSON output and event names
 - `XDG_CURRENT_DESKTOP=Hyprland`
 - The Hyprland Wayland protocols
 
 Use the `hyprctl` built from this repository, so the versions match.
+
+Source: <https://github.com/hegjon/Hypoland>
 
 ## Building
 
