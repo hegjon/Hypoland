@@ -27,8 +27,7 @@ Hypoland's renderer and shaders are GLES 2.0 / GLSL ES 1.00 only; that port is d
 - History: `master` is based on `origin/gles2-legacy-renderer` (the user's commit on upstream main, v0.56.0+141),
   which added a GLES2 path chosen at runtime. Hypoland has since removed the GLES3 path and the runtime switch,
   so `m_legacyGLES` and `GLES2ShaderCompat` no longer exist.
-- Git state (2026-09-27): three commits on `master` on top of the aquamarine subtree import. Nothing is pushed,
-  `origin` has no `master` yet and its default branch is still `main` (plain upstream Hyprland).
+- `master` is pushed to `origin`. The default branch on GitHub is still `main` (plain upstream Hyprland).
   Commit and push only when the user asks.
 - aquamarine is embedded: `subprojects/aquamarine` is a squashed `git subtree` of
   `hegjon/aquamarine` branch `gles2-support` (remote `aquamarine`). It is built as a static library by
@@ -46,7 +45,14 @@ Hypoland's renderer and shaders are GLES 2.0 / GLSL ES 1.00 only; that port is d
     only the sRGB / gamma 2.2 transfer functions that gradients need.
   - Blur variants ripple, water, fluid_jar, prism and acrylic are removed and fall back to dual Kawase.
   - The embedded aquamarine is patched in-tree the same way (GLES2 context and ES 1.00 shaders only).
-  - Framebuffers have one color attachment and no stencil. FP16 is always unsupported.
+  - Framebuffers have one color attachment. The stencil is a `GL_STENCIL_INDEX8` renderbuffer per framebuffer
+    (GLES2 has no packed depth/stencil texture); blur needs it for `ignore_alpha`.
+  - Removed as dead code: the color management render paths and protocol (`wp_color_manager_v1` is not
+    advertised), the ICC 3D LUT, FP16 work buffers, the mirror texture (second color attachment), motion blur and
+    `hyprpm/`. Their config options are still registered and ignored.
+  - Kept: the image description types in `src/helpers/cm/` and the KMS side in `Monitor.cpp` /
+    `handleFullscreenSettings()` (HDR metadata, CTM, wide gamut). They are inert, because every output is forced
+    to sRGB in `applyMonitorRuleSoft()`. ICC profiles still apply their VCGT gamma ramps through KMS.
 - The config is Lua in this Hyprland version (`~/.config/hypr/hyprland.lua`, Omarchy uses it). With a Lua config
   `hyprctl keyword` answers `unknown request`; use `hyprctl eval "hl.config({...})"`.
 - Both machines have identical hypr* library versions (hyprutils 0.14.2, hyprlang 0.6.8, hyprcursor 0.1.13,
@@ -86,8 +92,9 @@ Ship `hyprctl` built from this fork so versions match. The Arch package should d
 ## Features to remove or default off
 
 Remove/rewrite (GPU heavy): color management / HDR pipeline, screen shaders, per-window offscreen rendering
-where avoidable. Done so far: color management is gone from the shaders and the protocol is not advertised;
-the C++ pipeline, screen shaders and shadows (default off) are still in the code.
+where avoidable. Done so far: color management is removed from the renderer, the shaders and the protocols.
+Screen shaders and shadows (default off) are still in the code; screen shaders written for Hyprland are
+GLSL ES 3.00 and do not compile here.
 
 Keep: blur (dual Kawase and the GLES2-capable variants), default off. Decided by the user on 2026-09-27 after
 measuring it on the X200: about 1% extra compositor CPU and 57-60 fps. Do not remove it.
@@ -96,7 +103,7 @@ Optional, default off: animations (keep short slides only, no fades), animated/g
 rounded corners (radius 0 must skip the shader path), dim inactive, inactive opacity, fractional scaling.
 
 CPU/RAM: drop the plugin system and hyprpm; default to XCursor over hyprcursor SVG; keep Xwayland optional.
-Done so far: hyprpm is not built and hyprcursor is off by default. The plugin system is still compiled.
+Done so far: hyprpm is removed and hyprcursor is off by default. The plugin system is still compiled.
 
 Keep (they help): damage tracking, direct scanout, hardware cursor planes.
 
@@ -163,7 +170,7 @@ Findings worth keeping:
   the upstream default no client gets an EGL config with alpha and Quickshell's fullscreen overlay turns black.
 - Omarchy 4 locks with its Quickshell shell, `hyprlock` / `hypridle` are not installed.
 - Defaults changed: blur, shadows, animations and hyprcursor off; logo background and splash are gone
-  (`misc:disable_hyprland_logo` is a no-op); hyprpm is only built with `-DWITH_HYPRPM=ON`.
+  (`misc:disable_hyprland_logo` is a no-op); hyprpm is removed.
 - Packaging: `packaging/arch/PKGBUILD` builds from the working tree (`makepkg -f`).
 
 Tools:
@@ -212,17 +219,16 @@ Known issues:
 - Not a bug: foot 1.28 is never blurred by default. It binds `ext-background-effect-v1` and only sets a blur
   region with `blur=yes` in its `[colors-dark]` section, and `CWindow::shouldBlur()` honours that. Live and
   precomputed blur both work on the X200 for other clients. Do not use foot to judge blur.
-- The C++ color management pipeline and the mirror texture plumbing are still compiled, but never enabled.
 
 ## Next steps
 
 Open decisions for the user:
-- Commit the pending changes, push `master` to `origin` and make it the default branch on GitHub.
+- Make `master` the default branch on GitHub.
 - Pick the logo: the current potato or the pre-2000 test in `assets/logo/retro/`.
 - Install the Arch package on the X200 (replaces the system `hyprland`).
 
 Work that is left from the plan above:
-- Remove the C++ color management pipeline, screen shaders and the plugin system, behind compile-time flags.
+- Remove screen shaders and the plugin system.
 - Translated strings in `src/i18n/` and the man page still say Hyprland.
 - The X200 loop starts `Hypoland` directly, so the "started without start-hypoland" notification shows.
 
