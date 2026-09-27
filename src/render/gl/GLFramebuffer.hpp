@@ -28,9 +28,10 @@ namespace Render::GL {
         bool internalAlloc(int w, int h, DRMFormat format = DRM_FORMAT_ARGB8888) override;
 
       private:
-        GLuint m_fb      = -1;
-        bool   m_tempBuf = false;
-        bool   m_cleared = false;
+        GLuint m_fb        = -1;
+        GLuint m_stencilRB = 0;
+        bool   m_tempBuf   = false;
+        bool   m_cleared   = false;
 
         friend class CGLRenderbuffer;
     };

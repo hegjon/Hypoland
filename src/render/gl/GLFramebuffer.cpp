@@ -42,14 +42,23 @@ bool CGLFramebuffer::internalAlloc(int w, int h, uint32_t drmFormat) {
     g_pHyprOpenGL->bindFramebuffer(GL_FRAMEBUFFER, m_fb);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_tex->m_texID, 0);
 
-    // GLES2 has exactly one colour attachment and no packed depth/stencil attachment point,
-    // so there is no mirror texture and no stencil
+    // GLES2 has no packed depth/stencil texture, the stencil is a renderbuffer of this framebuffer.
+    // m_stencilTex only says that a stencil was asked for.
+    if (m_stencilTex) {
+        if (!m_stencilRB)
+            glGenRenderbuffers(1, &m_stencilRB);
+
+        glBindRenderbuffer(GL_RENDERBUFFER, m_stencilRB);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX8, w, h);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_stencilRB);
+        glBindRenderbuffer(GL_RENDERBUFFER, 0);
+    }
 
     auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE)
         Log::logger->log(
-            Log::ERR, "Framebuffer \"{}\" incomplete: status 0x{:x}, drm format 0x{:x}, gl iformat 0x{:x} format 0x{:x} type 0x{:x}", m_name, status, drmFormat,
-            GLFMT.internalFormat, GLFMT.format, GLFMT.type);
+            Log::ERR, "Framebuffer \"{}\" incomplete: status 0x{:x}, drm format 0x{:x}, gl iformat 0x{:x} format 0x{:x} type 0x{:x}, stencil {}", m_name,
+            status, drmFormat, GLFMT.internalFormat, GLFMT.format, GLFMT.type, m_stencilRB ? "yes" : "no");
     RASSERT((status == GL_FRAMEBUFFER_COMPLETE), "Framebuffer incomplete, couldn't create! (FB status: {}, GL Error: 0x{:x})", status, sc<int>(glGetError()));
 
     Log::logger->log(Log::DEBUG, "Framebuffer \"{}\" created, status {}", m_name, status);
@@ -57,7 +66,7 @@ bool CGLFramebuffer::internalAlloc(int w, int h, uint32_t drmFormat) {
     glBindTexture(GL_TEXTURE_2D, 0);
     g_pHyprOpenGL->bindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    // this can run mid frame in enableMirror() in begin() restore the draw fb the renderer had bound
+    // this can run mid frame, restore the draw fb the renderer had bound
     if (g_pHyprRenderer && g_pHyprRenderer->m_renderData.currentFB)
         g_pHyprRenderer->m_renderData.currentFB->bind();
     else
@@ -110,6 +119,12 @@ void CGLFramebuffer::release() {
             glBindFramebuffer(GL_FRAMEBUFFER, m_fb);
 
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
+
+        if (m_stencilRB) {
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, 0);
+            glDeleteRenderbuffers(1, &m_stencilRB);
+            m_stencilRB = 0;
+        }
 
         glDeleteFramebuffers(1, &m_fb);
         if (g_pHyprOpenGL)
