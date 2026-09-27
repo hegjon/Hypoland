@@ -42,6 +42,7 @@
 #define GLFB(ifb) dc<CGLFramebuffer*>(ifb.get())
 
 struct gbm_device;
+class CEventLoopTimer;
 namespace Render {
     class IHyprRenderer;
 }
@@ -251,6 +252,7 @@ namespace Render::GL {
         WP<CShader>                               useShader(WP<CShader> prog);
 
         bool                                      explicitSyncSupported();
+        void                                      scheduleShaderCompilerRelease();
         WP<CShader>                               getShaderVariant(Render::ePreparedFragmentShader frag, Render::ShaderFeatureFlags features = 0);
         WP<CShader>                               getShaderVariant(Render::ePreparedFragmentShader frag, const Render::SShaderVariant& variant);
 
@@ -303,6 +305,8 @@ namespace Render::GL {
         };
 
       private:
+        SP<CEventLoopTimer> m_shaderCompilerReleaseTimer;
+
         struct {
             GLint   x      = 0;
             GLint   y      = 0;

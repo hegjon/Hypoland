@@ -1,5 +1,6 @@
 #include "gl/GLES2.hpp"
 #include "../helpers/GLES2Compat.hpp"
+#include <malloc.h>
 #include <cstdint>
 #include <chrono>
 #include <print>
@@ -28,6 +29,7 @@
 #include "../helpers/cm/ColorManagement.hpp"
 #include "../managers/input/InputManager.hpp"
 #include "../managers/eventLoop/EventLoopManager.hpp"
+#include "../managers/eventLoop/EventLoopTimer.hpp"
 #include "../pointer/cursor/CursorManager.hpp"
 #include "../helpers/fs/FsUtils.hpp"
 #include "../helpers/env/Env.hpp"
@@ -446,6 +448,9 @@ CHyprOpenGLImpl::CHyprOpenGLImpl() : m_drmFD(g_pCompositor->m_drmRenderNode.fd >
 }
 
 CHyprOpenGLImpl::~CHyprOpenGLImpl() {
+    if (m_shaderCompilerReleaseTimer && g_pEventLoopManager)
+        g_pEventLoopManager->removeTimer(m_shaderCompilerReleaseTimer);
+
     if (m_eglDisplay && m_eglContext != EGL_NO_CONTEXT)
         eglDestroyContext(m_eglDisplay, m_eglContext);
 
@@ -2288,6 +2293,32 @@ std::vector<uint64_t> CHyprOpenGLImpl::getDRMFormatModifiers(DRMFormat drmFormat
     }
 
     return format.modifiers;
+}
+
+// Mesa builds the tables of the GLSL built-in functions for the first shader and keeps them, 5.7 MiB with crocus.
+// They are given back once no shader has been compiled for a while, the next compile builds them again.
+void CHyprOpenGLImpl::scheduleShaderCompilerRelease() {
+    static constexpr auto DELAY = std::chrono::seconds(10);
+
+    if (!g_pEventLoopManager)
+        return;
+
+    if (!m_shaderCompilerReleaseTimer) {
+        m_shaderCompilerReleaseTimer = makeShared<CEventLoopTimer>(
+            std::nullopt,
+            [this](SP<CEventLoopTimer> self, void* data) {
+                makeEGLCurrent();
+                glReleaseShaderCompiler();
+#ifdef __GLIBC__
+                // the tables were allocated early, so they are holes in the heap that only a trim returns
+                malloc_trim(0);
+#endif
+            },
+            nullptr);
+        g_pEventLoopManager->addTimer(m_shaderCompilerReleaseTimer);
+    }
+
+    m_shaderCompilerReleaseTimer->updateTimeout(DELAY);
 }
 
 bool CHyprOpenGLImpl::explicitSyncSupported() {

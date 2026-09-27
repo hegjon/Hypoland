@@ -99,6 +99,9 @@ bool CShader::createProgram(const std::string& vert, const std::string& frag, bo
     glDeleteShader(vertCompiled);
     glDeleteShader(fragCompiled);
 
+    if (g_pHyprOpenGL)
+        g_pHyprOpenGL->scheduleShaderCompilerRelease();
+
     GLint ok;
     glGetProgramiv(prog, GL_LINK_STATUS, &ok);
     if (dynamic) {
