@@ -34,7 +34,7 @@ static char const* const MESSAGES[] = {
     "We've got an imposter in the code!",
     "Well, at least the crash reporter didn't crash!",
     "Everything's just fi-",
-    "Have you tried asking Hyprland politely not to crash?",
+    "Have you tried asking Hypoland politely not to crash?",
 };
 
 // <random> is not async-signal-safe, fake it with time(NULL) instead
@@ -83,7 +83,7 @@ void CrashReporter::createAndSaveCrash(int sig) {
 
         {
             SignalSafe::CBufFileWriter<64> stderrOut(STDERR_FILENO);
-            stderrOut += "Hyprland has crashed :( Consult the crash report at ";
+            stderrOut += "Hypoland has crashed :( Consult the crash report at ";
             if (!reportPath.boundsExceeded())
                 stderrOut += reportPath.getStr();
             else
@@ -99,11 +99,11 @@ void CrashReporter::createAndSaveCrash(int sig) {
     }
     SignalSafe::CBufFileWriter<512> finalCrashReport(reportFd);
 
-    finalCrashReport += "--------------------------------------------\n   Hyprland Crash Report\n--------------------------------------------\n";
+    finalCrashReport += "--------------------------------------------\n   Hypoland Crash Report\n--------------------------------------------\n";
     finalCrashReport += getRandomMessage();
     finalCrashReport += "\n\n";
 
-    finalCrashReport += "Hyprland received signal ";
+    finalCrashReport += "Hypoland received signal ";
     finalCrashReport.writeNum(sig);
     finalCrashReport += '(';
     finalCrashReport += SignalSafe::strsignal(sig);

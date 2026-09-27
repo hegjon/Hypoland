@@ -25,17 +25,17 @@ using namespace Hyprutils::Memory;
 #include <filesystem>
 
 static void help() {
-    std::println("usage: Hyprland [arg [...]].\n");
+    std::println("usage: Hypoland [arg [...]].\n");
     std::println(R"#(Arguments:
     --help              -h       - Show this message again
     --config FILE       -c FILE  - Specify config file to use
     --socket NAME                - Sets the Wayland socket name (for Wayland socket handover)
     --wayland-fd FD              - Sets the Wayland socket fd (for Wayland socket handover)
-    --watchdog-fd FD             - Used by start-hyprland
-    --safe-mode                  - Starts Hyprland in safe mode
+    --watchdog-fd FD             - Used by start-hypoland
+    --safe-mode                  - Starts Hypoland in safe mode
     --systeminfo                 - Prints system infos
     --i-am-really-stupid         - Omits root user privileges check (why would you do that?)
-    --verify-config              - Do not run Hyprland, only print if the config has any errors
+    --verify-config              - Do not run Hypoland, only print if the config has any errors
     --version           -v       - Print this binary's version
     --version-json               - Print this binary's version as json
     --locked-cmd [COMMAND]       - Launches locker on startup via the provided command)#");
@@ -203,7 +203,7 @@ int main(int argc, char** argv) {
 
     if (!ignoreSudo && NInit::isSudo()) {
         std::println(stderr,
-                     "[ ERROR ] Hyprland was launched with superuser privileges, but the privileges check is not omitted.\n"
+                     "[ ERROR ] Hypoland was launched with superuser privileges, but the privileges check is not omitted.\n"
                      "          Hint: Use the --i-am-really-stupid flag to omit that check.");
 
         return 1;
@@ -212,46 +212,14 @@ int main(int argc, char** argv) {
 
     if (socketName.empty() ^ (socketFd == -1)) {
         std::println(stderr,
-                     "[ ERROR ] Hyprland was launched with only one of --socket and --wayland-fd.\n"
+                     "[ ERROR ] Hypoland was launched with only one of --socket and --wayland-fd.\n"
                      "          Hint: Pass both --socket and --wayland-fd to perform Wayland socket handover.");
 
         return 1;
     }
 
     if (!verifyConfig) {
-        std::println("Welcome to Hyprland!");
-        std::println(R"#(
-                                                  
-                     YY    UJ                     
-                    YYY    UUJ                    
-                   XXXY    UUUU                   
-                  zXXXX    UUUUU                  
-                zzzzX        UUUUJ                
-               cczzz          UUUUJ               
-             vccccz            UUUUUJ             
-            vvcccc              UUUUUJ            
-           vvvvv                  UUUUJ           
-          uuuvv                    UUUUJ          
-         uuuuu                      UUUUU         
-        nnnuu                        UUUUU        
-       nnnnn                          YUUUU       
-       xxnn                            YUUU       
-       xxxn                            YYUU       
-      xxxx                              YYUU      
-      rxxx                              YYYY      
-      rrrx                              YYYY      
-       rrrx                            XXXY       
-       rrrr                            XXXX       
-        rrrr                          zzXX        
-         rrrr                        zzzz         
-          rrrrr                    ccczz          
-           rrrrrx                vccccc           
-             rrrrxxxx        uuvvvvvc             
-                rrxxxxxxnnnnuuuuuv                
-                    xxxxxnnnnu                    
-
-
-)#");
+        std::println("Welcome to Hypoland, a fork of Hyprland!");
     }
 
     NInit::lowerAmbientCaps();
@@ -281,7 +249,7 @@ int main(int argc, char** argv) {
     }
 
     if (!watchdogOk && !verifyConfig)
-        Log::logger->log(Log::WARN, "WARNING: Hyprland is being launched without start-hyprland. This is highly advised against.");
+        Log::logger->log(Log::WARN, "WARNING: Hypoland is being launched without start-hypoland. This is highly advised against.");
 
     g_pCompositor->initServer(socketName, socketFd);
 

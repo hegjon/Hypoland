@@ -5,8 +5,8 @@ file(READ "${CMAKE_SOURCE_DIR}/VERSION" VER_RAW)
 string(STRIP ${VER_RAW} VER)
 
 project(
-  Hyprland
-  DESCRIPTION "A Modern C++ Wayland Compositor"
+  Hypoland
+  DESCRIPTION "A fork of Hyprland for OpenGL ES 2.0 hardware"
   VERSION ${VER})
 
 include(CTest)
@@ -85,12 +85,12 @@ message(
   STATUS "Found wayland-scanner pkgdatadir at ${WAYLAND_SCANNER_PKGDATA_DIR}")
 
 if(CMAKE_BUILD_TYPE MATCHES Debug OR CMAKE_BUILD_TYPE MATCHES DEBUG)
-  message(STATUS "Configuring Hyprland in Debug with CMake")
+  message(STATUS "Configuring Hypoland in Debug with CMake")
   add_compile_definitions(HYPRLAND_DEBUG)
   set(BUILD_TESTING ON)
 else()
   add_compile_options(-O3)
-  message(STATUS "Configuring Hyprland in Release with CMake")
+  message(STATUS "Configuring Hypoland in Release with CMake")
   set(BUILD_TESTING OFF)
 endif()
 
@@ -124,10 +124,9 @@ message(STATUS "Checking deps...")
 
 find_package(Threads REQUIRED)
 
-# One binary serves both modern GPUs and pre-GLES3 hardware: the renderer
-# detects the context version at runtime (see CHyprOpenGLImpl::m_legacyGLES)
-# and avoids GLES3-only calls when the driver only offers OpenGL ES 2.0.
-set(GLES_VERSION "GLES3")
+# The renderer is OpenGL ES 2.0 only. GLES3 entry points are poisoned in
+# src/render/gl/GLES2.hpp.
+set(GLES_VERSION "GLES2")
 find_package(OpenGL REQUIRED COMPONENTS ${GLES_VERSION})
 find_package(glslang CONFIG REQUIRED)
 
@@ -145,24 +144,22 @@ if(NOT glaze_FOUND)
   FetchContent_MakeAvailable(glaze)
 endif()
 
-set(AQUAMARINE_MINIMUM_VERSION 0.9.3)
 set(HYPRLANG_MINIMUM_VERSION 0.6.7)
 set(HYPRCURSOR_MINIMUM_VERSION 0.1.7)
 set(HYPRUTILS_MINIMUM_VERSION 0.14.0)
 set(HYPRGRAPHICS_MINIMUM_VERSION 0.5.1)
 
-pkg_check_modules(aquamarine_dep REQUIRED IMPORTED_TARGET aquamarine>=${AQUAMARINE_MINIMUM_VERSION})
+include(cmake/aquamarine.cmake)
 pkg_check_modules(hyprlang_dep REQUIRED IMPORTED_TARGET hyprlang>=${HYPRLANG_MINIMUM_VERSION})
 pkg_check_modules(hyprcursor_dep REQUIRED IMPORTED_TARGET hyprcursor>=${HYPRCURSOR_MINIMUM_VERSION})
 pkg_check_modules(hyprutils_dep REQUIRED IMPORTED_TARGET hyprutils>=${HYPRUTILS_MINIMUM_VERSION})
 pkg_check_modules(hyprgraphics_dep REQUIRED IMPORTED_TARGET hyprgraphics>=${HYPRGRAPHICS_MINIMUM_VERSION})
 
-string(REPLACE "." ";" AQ_VERSION_LIST ${aquamarine_dep_VERSION})
+string(REPLACE "." ";" AQ_VERSION_LIST ${AQUAMARINE_VERSION})
 list(GET AQ_VERSION_LIST 0 AQ_VERSION_MAJOR)
 list(GET AQ_VERSION_LIST 1 AQ_VERSION_MINOR)
 list(GET AQ_VERSION_LIST 2 AQ_VERSION_PATCH)
 
-set(AQUAMARINE_VERSION "${aquamarine_dep_VERSION}")
 set(AQUAMARINE_VERSION_MAJOR "${AQ_VERSION_MAJOR}")
 set(AQUAMARINE_VERSION_MINOR "${AQ_VERSION_MINOR}")
 set(AQUAMARINE_VERSION_PATCH "${AQ_VERSION_PATCH}")
@@ -307,6 +304,8 @@ endif()
 add_library(hyprland_lib STATIC ${SRCFILES})
 add_executable(Hyprland src/main.cpp ${TRACY_CPP_FILES})
 target_link_libraries(Hyprland hyprland_lib)
+# only the binary is renamed, the cmake target keeps its upstream name
+set_target_properties(Hyprland PROPERTIES OUTPUT_NAME Hypoland)
 
 target_include_directories(hyprland_lib PUBLIC ${deps_INCLUDE_DIRS} ${LUA_INCLUDE_DIRS})
 target_include_directories(Hyprland PUBLIC ${deps_INCLUDE_DIRS} ${LUA_INCLUDE_DIRS})
@@ -450,7 +449,7 @@ message(STATUS "Setting link libraries")
 target_link_libraries(
   hyprland_lib
   PUBLIC
-  PkgConfig::aquamarine_dep
+  aquamarine
   PkgConfig::hyprlang_dep
   PkgConfig::hyprutils_dep
   PkgConfig::hyprcursor_dep
@@ -540,7 +539,7 @@ endfunction()
 if(TARGET OpenGL::GL)
   target_link_libraries(hyprland_lib PUBLIC OpenGL::EGL OpenGL::GL glslang::glslang glslang::glslang-default-resource-limits glslang::SPIRV Threads::Threads)
 else()
-  target_link_libraries(hyprland_lib PUBLIC OpenGL::EGL OpenGL::GLES3 glslang::glslang glslang::glslang-default-resource-limits glslang::SPIRV Threads::Threads)
+  target_link_libraries(hyprland_lib PUBLIC OpenGL::EGL OpenGL::GLES2 glslang::glslang glslang::glslang-default-resource-limits glslang::SPIRV Threads::Threads)
 endif()
 
 pkg_check_modules(hyprland_protocols_dep hyprland-protocols>=0.7.0)
@@ -630,6 +629,11 @@ protocolwayland()
 add_subdirectory(hyprctl)
 add_subdirectory(start)
 
+# plugins are not supported, hyprpm is only built on request
+option(WITH_HYPRPM "Build hyprpm" OFF)
+if(NOT WITH_HYPRPM)
+  set(NO_HYPRPM ON)
+endif()
 if(NO_HYPRPM)
   message(STATUS "hyprpm is disabled")
 else()
@@ -646,12 +650,15 @@ set(CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS
 # binary and symlink
 install(TARGETS Hyprland)
 
-install(
-  CODE "execute_process( \
-        COMMAND ${CMAKE_COMMAND} -E create_symlink \
-        ${CMAKE_INSTALL_FULL_BINDIR}/Hyprland \
-        \"\$ENV{DESTDIR}${CMAKE_INSTALL_FULL_BINDIR}/hyprland\" \
-        )")
+# Hyprland and hyprland are kept as symlinks, so existing session files and scripts keep working
+foreach(BIN_ALIAS hypoland Hyprland hyprland)
+  install(
+    CODE "execute_process( \
+          COMMAND ${CMAKE_COMMAND} -E create_symlink \
+          Hypoland \
+          \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/${BIN_ALIAS}\" \
+          )")
+endforeach()
 # session file
 configure_file(
     ${CMAKE_SOURCE_DIR}/example/hyprland.desktop.in
@@ -665,7 +672,8 @@ install(FILES ${CMAKE_SOURCE_DIR}/example/hyprland.desktop
 add_compile_definitions(DATAROOTDIR="${CMAKE_INSTALL_FULL_DATAROOTDIR}")
 
 # installable assets
-file(GLOB_RECURSE INSTALLABLE_ASSETS "assets/install/*")
+# the wall*.png backgrounds are Hyprland artwork and are not installed
+file(GLOB_RECURSE INSTALLABLE_ASSETS "assets/install/lockdead*")
 install(FILES ${INSTALLABLE_ASSETS}
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/hypr)
 

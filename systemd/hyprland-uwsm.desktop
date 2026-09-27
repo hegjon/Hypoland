@@ -1,6 +1,6 @@
 [Desktop Entry]
-Name=Hyprland (uwsm-managed)
-Comment=An intelligent dynamic tiling Wayland compositor
+Name=Hypoland (uwsm-managed)
+Comment=A fork of Hyprland for OpenGL ES 2.0 hardware
 Exec=uwsm start -e -D Hyprland hyprland.desktop
 TryExec=uwsm
 DesktopNames=Hyprland

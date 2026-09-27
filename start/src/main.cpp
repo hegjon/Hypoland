@@ -48,7 +48,7 @@ static void terminateChildOnSignal(int signal) {
 
 int main(int argc, const char** argv, const char** envp) {
     g_logger = makeUnique<Hyprutils::CLI::CLoggerConnection>(*g_loggerMain);
-    g_logger->setName("start-hyprland");
+    g_logger->setName("start-hypoland");
     g_logger->setLogLevel(Hyprutils::CLI::LOG_DEBUG);
 
     terminateChildOnSignal(SIGTERM);
@@ -90,7 +90,7 @@ int main(int argc, const char** argv, const char** envp) {
         g_state->rawArgvNoBinPath = std::span<const char*>{argv + startArgv, argc - startArgv};
 
     if (!g_state->rawArgvNoBinPath.empty())
-        g_logger->log(Hyprutils::CLI::LOG_WARN, "Arguments after -- are passed to Hyprland");
+        g_logger->log(Hyprutils::CLI::LOG_WARN, "Arguments after -- are passed to Hypoland");
 
     // check if our environment is OK
     if (const auto RET = Nix::nixEnvironmentOk(); !RET) {
@@ -111,12 +111,12 @@ int main(int argc, const char** argv, const char** envp) {
         g_instance.reset();
 
         if (!RET) {
-            g_logger->log(Hyprutils::CLI::LOG_ERR, "Hyprland exit not-cleanly, restarting");
+            g_logger->log(Hyprutils::CLI::LOG_ERR, "Hypoland exit not-cleanly, restarting");
             safeMode = true;
             continue;
         }
 
-        g_logger->log(Hyprutils::CLI::LOG_DEBUG, "Hyprland exit cleanly.");
+        g_logger->log(Hyprutils::CLI::LOG_DEBUG, "Hypoland exit cleanly.");
         break;
     }
 
