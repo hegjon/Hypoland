@@ -24,6 +24,11 @@ CGLTexture::~CGLTexture() {
         m_texID = 0;
     }
 
+    if (m_backTexID) {
+        GLCALL(glDeleteTextures(1, &m_backTexID));
+        m_backTexID = 0;
+    }
+
     if (m_eglImage)
         g_pHyprOpenGL->m_proc.eglDestroyImageKHR(g_pHyprOpenGL->m_eglDisplay, m_eglImage);
     m_eglImage = nullptr;
@@ -94,6 +99,11 @@ CGLTexture::CGLTexture(const Aquamarine::SDMABUFAttrs& attrs, void* image, bool 
     unbind();
 }
 
+// Writing to a texture that the GPU still reads from makes the driver (crocus at least) allocate, clear and
+// cache-flush a staging buffer for every upload, which costs more than twice the upload itself. So the update
+// goes into a second texture that was last shown one update ago and is idle by now, and the two are swapped.
+// The second texture also gets the damage it missed while it was not shown; the client buffer is complete, so
+// uploading more than the current damage is always correct.
 void CGLTexture::update(uint32_t drmFormat, uint8_t* pixels, uint32_t stride, const CRegion& damage) {
     if (damage.empty())
         return;
@@ -103,12 +113,10 @@ void CGLTexture::update(uint32_t drmFormat, uint8_t* pixels, uint32_t stride, co
     const auto format = getPixelFormatFromDRM(drmFormat);
     ASSERT(format);
 
-    bind();
-
     // must use the same format mapping as the constructor, the texture was allocated with it
     const auto GLFMT = NGLES2Compat::glFormatFor(format);
 
-    bool alignmentChanged = false;
+    bool       alignmentChanged = false;
     if (format->bytesPerBlock != 4) {
         const GLint alignment = (stride % 4 == 0) ? 4 : 1;
         GLCALL(glPixelStorei(GL_UNPACK_ALIGNMENT, alignment));
@@ -117,14 +125,27 @@ void CGLTexture::update(uint32_t drmFormat, uint8_t* pixels, uint32_t stride, co
 
     GLCALL(glPixelStorei(GL_UNPACK_ROW_LENGTH_EXT, stride / format->bytesPerBlock));
 
-    damage.copy().intersect(CBox{{}, m_size}).forEachRect([&GLFMT, &pixels](const auto& rect) {
-        GLCALL(glPixelStorei(GL_UNPACK_SKIP_PIXELS_EXT, rect.x1));
-        GLCALL(glPixelStorei(GL_UNPACK_SKIP_ROWS_EXT, rect.y1));
+    const CRegion DAMAGE = damage.copy().intersect(CBox{{}, m_size});
 
-        int width  = rect.x2 - rect.x1;
-        int height = rect.y2 - rect.y1;
-        GLCALL(glTexSubImage2D(GL_TEXTURE_2D, 0, rect.x1, rect.y1, width, height, GLFMT.format, GLFMT.type, pixels));
-    });
+    if (!m_backTexID) {
+        // first update: the second texture gets the whole buffer
+        GLCALL(glGenTextures(1, &m_backTexID));
+        GLCALL(glBindTexture(m_target, m_backTexID));
+        GLCALL(glTexParameteri(m_target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+        GLCALL(glTexParameteri(m_target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+        m_backCachedStates.fill(std::nullopt);
+        m_backCachedStates[TEXTURE_PAR_WRAP_S] = GL_CLAMP_TO_EDGE;
+        m_backCachedStates[TEXTURE_PAR_WRAP_T] = GL_CLAMP_TO_EDGE;
+        GLCALL(glTexImage2D(m_target, 0, GLFMT.internalFormat, m_size.x, m_size.y, 0, GLFMT.format, GLFMT.type, pixels));
+    } else {
+        GLCALL(glBindTexture(m_target, m_backTexID));
+        uploadRegion(GLFMT.format, GLFMT.type, pixels, DAMAGE.copy().add(m_backStaleDamage));
+    }
+
+    // the texture that was shown until now misses this update
+    std::swap(m_texID, m_backTexID);
+    std::swap(m_cachedStates, m_backCachedStates);
+    m_backStaleDamage = DAMAGE;
 
     if (alignmentChanged)
         GLCALL(glPixelStorei(GL_UNPACK_ALIGNMENT, 4));
@@ -139,6 +160,14 @@ void CGLTexture::update(uint32_t drmFormat, uint8_t* pixels, uint32_t stride, co
         m_dataCopy.resize(stride * m_size.y);
         memcpy(m_dataCopy.data(), pixels, stride * m_size.y);
     }
+}
+
+void CGLTexture::uploadRegion(GLenum format, GLenum type, uint8_t* pixels, const CRegion& region) {
+    region.forEachRect([this, format, type, pixels](const auto& rect) {
+        GLCALL(glPixelStorei(GL_UNPACK_SKIP_PIXELS_EXT, rect.x1));
+        GLCALL(glPixelStorei(GL_UNPACK_SKIP_ROWS_EXT, rect.y1));
+        GLCALL(glTexSubImage2D(m_target, 0, rect.x1, rect.y1, rect.x2 - rect.x1, rect.y2 - rect.y1, format, type, pixels));
+    });
 }
 
 void CGLTexture::allocate(const Vector2D& size, uint32_t drmFormat) {

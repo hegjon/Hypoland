@@ -31,6 +31,11 @@ namespace Render::GL {
       private:
         void* m_eglImage = nullptr;
 
+        // Synchronous (shm) textures are double buffered, see update(). m_backTexID is the texture that is not
+        // shown, m_backStaleDamage what it is missing compared to the shown one.
+        GLuint  m_backTexID = 0;
+        CRegion m_backStaleDamage;
+
         enum eTextureParam : uint8_t {
             TEXTURE_PAR_WRAP_S = 0,
             TEXTURE_PAR_WRAP_T,
@@ -42,7 +47,9 @@ namespace Render::GL {
         GLenum                                             m_target = GL_TEXTURE_2D;
 
         constexpr std::optional<size_t>                    getCacheStateIndex(GLenum pname);
+        void                                               uploadRegion(GLenum format, GLenum type, uint8_t* pixels, const CRegion& region);
 
         std::array<std::optional<GLint>, TEXTURE_PAR_LAST> m_cachedStates;
+        std::array<std::optional<GLint>, TEXTURE_PAR_LAST> m_backCachedStates;
     };
 }
