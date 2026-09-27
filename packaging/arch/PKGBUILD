@@ -11,7 +11,7 @@ pkgver=0.56.0.r543.gccc91ecb
 pkgrel=1
 pkgdesc='A fork of the Hyprland Wayland compositor for OpenGL ES 2.0 hardware'
 arch=(x86_64)
-url='https://github.com/hegjon/Hyprland'
+url='https://github.com/hegjon/Hypoland'
 license=(BSD-3-Clause)
 depends=(
   cairo
