@@ -67,6 +67,21 @@ Aquamarine::CDRMBackend::CDRMBackend(SP<CBackend> backend_) : backend(backend_) 
     });
 }
 
+// Probing a connector makes the kernel detect the display and read its EDID. Without a display that waits for the
+// DDC timeout, about 160 ms per connector on i915 Gen4. The kernel keeps the connector state current through hotplug
+// interrupts and output polling, so a connector it reports as disconnected is not probed again. Connected connectors
+// and ones the kernel has never probed (unknown) are, so their modes are fresh.
+static drmModeConnector* getConnectorProbeIfNeeded(int fd, uint32_t id) {
+    auto conn = drmModeGetConnectorCurrent(fd, id);
+    if (conn && conn->connection == DRM_MODE_DISCONNECTED)
+        return conn;
+
+    if (conn)
+        drmModeFreeConnector(conn);
+
+    return drmModeGetConnector(fd, id);
+}
+
 static udev_enumerate* enumDRMCards(udev* udev) {
     auto enumerate = udev_enumerate_new(udev);
     if (!enumerate)
@@ -94,7 +109,8 @@ static int gpuNumBuiltinPanels(const SP<CSessionDevice> gpu) {
 
     int num = 0;
     for (int i = 0; i < resources->count_connectors; ++i) {
-        auto drmConn = drmModeGetConnector(gpu->fd, resources->connectors[i]);
+        // the type and the state the kernel knows are enough here, scanConnectors() probes later
+        auto drmConn = drmModeGetConnectorCurrent(gpu->fd, resources->connectors[i]);
         if (!drmConn)
             continue;
 
@@ -1023,7 +1039,8 @@ void Aquamarine::CDRMBackend::recheckOutputs() {
 
             backend->log(AQ_LOG_DEBUG, std::format("drm: Connector {} connected", conn->szName));
 
-            auto drmConn = drmModeGetConnector(gpu->fd, conn->id);
+            // scanConnectors() above just probed it
+            auto drmConn = drmModeGetConnectorCurrent(gpu->fd, conn->id);
 
             // ??? was valid 5 sec ago...
             if (!drmConn) {
@@ -1053,7 +1070,7 @@ void Aquamarine::CDRMBackend::scanConnectors() {
         uint32_t          connectorID = resources->connectors[i];
 
         SP<SDRMConnector> conn;
-        auto              drmConn = drmModeGetConnector(gpu->fd, connectorID);
+        auto              drmConn = getConnectorProbeIfNeeded(gpu->fd, connectorID);
 
         backend->log(AQ_LOG_DEBUG, std::format("drm: Scanning connector id {}", connectorID));
 
