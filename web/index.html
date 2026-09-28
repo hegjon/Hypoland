@@ -132,6 +132,23 @@ li { margin: 0.25em 0; }
 .e { color: var(--bad); }
 .g { color: var(--ok); }
 
+/* The Linux console: VGA colors, bold bitmap-looking text */
+.term .body.tty { padding: 18px 20px 22px; }
+.tty pre {
+  color: #aaa; font-weight: 700; font-size: 14px; line-height: 1.45;
+  font-family: "Terminus", "Terminus (TTF)", "Fixedsys Excelsior", "Px437 IBM VGA 8x16", var(--mono);
+  text-shadow: 0 0 1px rgba(255, 255, 255, 0.45);
+}
+.tty .w { color: #fff; }
+.tty .r { color: #ff5555; }
+.tty .n { color: #55ff55; }
+.tty .d { color: #777; }
+.tty .cur { display: inline-block; width: 0.6em; height: 0.2em; background: #aaa; vertical-align: -0.1em; }
+@media (prefers-reduced-motion: no-preference) {
+  .tty .cur { animation: blink 1.06s steps(1) infinite; }
+}
+@keyframes blink { 50% { visibility: hidden; } }
+
 /* Numbers */
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--gap); margin: 0 0 12px; }
 .stat { border: 2px dashed var(--frame-dim); padding: 10px 12px; }
@@ -219,17 +236,20 @@ footer img { vertical-align: middle; image-rendering: pixelated; }
 
   <section class="win term" id="why" aria-labelledby="t-why">
     <h2 class="title" id="t-why">tty1: ThinkPad X200 console</h2>
-    <div class="body">
-<pre><span class="p">$</span> Hyprland
-<span class="e">eglCreateContext failed with both GLES 3.2 and GLES 3.0</span>
-<span class="e">Hyprland received signal 6(ABRT)</span>
-<span class="c">Have you tried asking Hyprland politely
+    <div class="body tty">
+<pre><span class="w">Omarchy 7.2.5-4-omarchy (tty1)</span>
+
+$ <span class="w">Hyprland</span>
+<span class="r">eglCreateContext failed with both GLES 3.2 and GLES 3.0</span>
+<span class="r">Hyprland received signal 6(ABRT)</span>
+<span class="d">Have you tried asking Hyprland politely
 not to crash?</span>
 
-<span class="p">$</span> Hypoland
-<span class="g">Using: OpenGL ES 2.0 Mesa 26.2.3</span>
-<span class="c"># bar, wallpaper, notifications, windows,
-# Xwayland. At 60 fps.</span></pre>
+$ <span class="w">Hypoland</span>
+<span class="n">Using: OpenGL ES 2.0 Mesa 26.2.3</span>
+<span class="d"># bar, wallpaper, notifications, windows,
+# Xwayland. At 60 fps.</span>
+<span class="cur"></span></pre>
     </div>
   </section>
 
