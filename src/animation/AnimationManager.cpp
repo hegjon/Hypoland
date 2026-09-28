@@ -370,7 +370,8 @@ void CHyprAnimationManager::requestTick() {
 }
 
 void CHyprAnimationManager::scheduleTick() {
-    if (m_tickScheduled)
+    // a requested tick (an animation starts) comes soon, even when a slower one is scheduled
+    if (m_tickScheduled && !m_manualTickRequested)
         return;
 
     m_tickScheduled = true;
@@ -380,7 +381,17 @@ void CHyprAnimationManager::scheduleTick() {
         return;
     }
 
-    m_animationTimer->updateTimeout(std::chrono::milliseconds(1));
+    if (m_manualTickRequested) {
+        m_animationTimer->updateTimeout(std::chrono::milliseconds(1));
+        return;
+    }
+
+    // Every rendered frame ticks right before it draws (IHyprRenderer::renderMonitor), so while something animates
+    // the timer only has to keep it going when no frame is rendered, once per frame of the fastest monitor is enough.
+    // It was 1 ms, which ran the whole tick with its damage up to 16 times per frame at 60 Hz.
+    const auto MOSTHZ = g_pHyprRenderer ? g_pHyprRenderer->m_mostHzMonitor.lock() : nullptr;
+    const auto HZ     = MOSTHZ && MOSTHZ->m_refreshRate > 1.F ? MOSTHZ->m_refreshRate : 60.F;
+    m_animationTimer->updateTimeout(std::chrono::microseconds(std::clamp(sc<int64_t>(1000000.F / HZ), sc<int64_t>(1000), sc<int64_t>(1000000))));
 }
 
 void CHyprAnimationManager::onTicked() {
