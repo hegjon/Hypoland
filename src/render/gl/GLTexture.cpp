@@ -54,7 +54,7 @@ CGLTexture::CGLTexture(uint32_t drmFormat, uint8_t* pixels, uint32_t stride, con
 
     const auto GLFMT = NGLES2Compat::glFormatFor(format);
 
-    bool alignmentChanged = false;
+    bool       alignmentChanged = false;
     if (format->bytesPerBlock != 4) {
         const GLint alignment = (stride % 4 == 0) ? 4 : 1;
         GLCALL(glPixelStorei(GL_UNPACK_ALIGNMENT, alignment));

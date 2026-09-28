@@ -1353,10 +1353,10 @@ SP<ITexture> IHyprRenderer::getBackground(PHLMONITOR pMonitor) {
 
 void IHyprRenderer::renderBackground(PHLMONITOR pMonitor) {
     // Hypoland ships no Hyprland artwork, misc:disable_hyprland_logo is accepted and ignored
-    static constexpr bool PRENDERTEXVAL = true;
-    static auto           PRENDERTEX    = &PRENDERTEXVAL;
-    static auto PBACKGROUNDCOLOR = CConfigValue<Config::INTEGER>("misc:background_color");
-    static auto PNOSPLASH        = CConfigValue<Config::INTEGER>("misc:disable_splash_rendering");
+    static constexpr bool PRENDERTEXVAL    = true;
+    static auto           PRENDERTEX       = &PRENDERTEXVAL;
+    static auto           PBACKGROUNDCOLOR = CConfigValue<Config::INTEGER>("misc:background_color");
+    static auto           PNOSPLASH        = CConfigValue<Config::INTEGER>("misc:disable_splash_rendering");
 
     if (*PRENDERTEX /* inverted cfg flag */ || pMonitor->m_backgroundOpacity->isBeingAnimated())
         m_renderPass.add(makeUnique<CClearPassElement>(CClearPassElement::SClearData{CHyprColor(*PBACKGROUNDCOLOR)}));
@@ -1416,9 +1416,9 @@ void IHyprRenderer::requestBackgroundResource() {
     // Hypoland ships no Hyprland artwork, misc:disable_hyprland_logo is accepted and ignored
     static constexpr bool PNOWALLPAPERVAL = true;
     static auto           PNOWALLPAPER    = &PNOWALLPAPERVAL;
-    static auto PFORCEWALLPAPER = CConfigValue<Config::INTEGER>("misc:force_default_wallpaper");
+    static auto           PFORCEWALLPAPER = CConfigValue<Config::INTEGER>("misc:force_default_wallpaper");
 
-    const auto  FORCEWALLPAPER = std::clamp(*PFORCEWALLPAPER, sc<int64_t>(-1), sc<int64_t>(2));
+    const auto            FORCEWALLPAPER = std::clamp(*PFORCEWALLPAPER, sc<int64_t>(-1), sc<int64_t>(2));
 
     if (*PNOWALLPAPER)
         return;

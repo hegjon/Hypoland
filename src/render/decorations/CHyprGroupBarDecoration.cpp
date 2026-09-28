@@ -325,8 +325,8 @@ static SP<ITexture> renderGradient(Config::CGradientValueData* grad) {
     // so one column gives the same picture as a texture of the size of the monitor (4 MiB each)
     const Vector2D bufferSize = {1.0, Desktop::focusState()->monitor()->m_transformedSize.y};
 
-    const auto      CAIROSURFACE = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, bufferSize.x, bufferSize.y);
-    const auto      CAIRO        = cairo_create(CAIROSURFACE);
+    const auto     CAIROSURFACE = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, bufferSize.x, bufferSize.y);
+    const auto     CAIRO        = cairo_create(CAIROSURFACE);
 
     // clear the pixmap
     cairo_save(CAIRO);

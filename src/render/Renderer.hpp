@@ -239,13 +239,13 @@ namespace Render {
         SP<ITexture>         getBackground(PHLMONITOR pMonitor);
         virtual SP<ITexture> getBlurTexture(PHLMONITORREF pMonitor);
 
-        SP<ITexture>                       m_lockDeadTexture;
-        SP<ITexture>                       m_lockDead2Texture;
-        SP<ITexture>                       m_lockDead3Texture;
-        SP<ITexture>                       m_lockTtyTextTexture;
-        CRenderPass*                       m_currentPass = nullptr;
+        SP<ITexture>         m_lockDeadTexture;
+        SP<ITexture>         m_lockDead2Texture;
+        SP<ITexture>         m_lockDead3Texture;
+        SP<ITexture>         m_lockTtyTextTexture;
+        CRenderPass*         m_currentPass = nullptr;
 
-        void                               handleFullscreenSettings(PHLMONITOR pMonitor);
+        void                 handleFullscreenSettings(PHLMONITOR pMonitor);
 
         // old private:
         void arrangeLayerArray(PHLMONITOR, const std::vector<PHLLSREF>&, bool, CBox*);

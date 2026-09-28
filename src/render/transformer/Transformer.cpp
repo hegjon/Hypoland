@@ -46,4 +46,3 @@ CBox IWindowTransformer::sourceBoxForOutput(const CBox&, const CBox& inputBox) c
 CBox IWindowTransformer::transformBoxForDamage(const CBox& currentBox) const {
     return transformedExtents(currentBox);
 }
-

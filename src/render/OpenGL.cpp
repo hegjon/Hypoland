@@ -715,8 +715,8 @@ void CHyprOpenGLImpl::begin(PHLMONITOR pMonitor, const CRegion& damage_, SP<IFra
     m_directRender = !fb && canRenderDirectly(pMonitor);
     if (m_directRender) {
         g_pHyprRenderer->bindFB(g_pHyprRenderer->m_renderData.outFB);
-        m_offloadedFramebuffer                           = false;
-        g_pHyprRenderer->m_renderData.mainFB             = g_pHyprRenderer->m_renderData.currentFB;
+        m_offloadedFramebuffer                        = false;
+        g_pHyprRenderer->m_renderData.mainFB          = g_pHyprRenderer->m_renderData.currentFB;
         pMonitor->m_zoomController.m_resetCameraState = true;
         return;
     }
@@ -823,8 +823,8 @@ void CHyprOpenGLImpl::end() {
 
             const bool WANTS_FINAL_SHADER = !g_pHyprRenderer->m_renderData.blockScreenShader && (m_finalScreenShader->program() >= 1 || g_pHyprRenderer->m_crashingInProgress);
 
-            auto             finalTexture = g_pHyprRenderer->m_renderData.currentFB->getTexture();
-            CBox             finalBox     = monbox;
+            auto       finalTexture = g_pHyprRenderer->m_renderData.currentFB->getTexture();
+            CBox       finalBox     = monbox;
             SP<IFramebuffer> postProcessFB;
 
             if (WANTS_FINAL_SHADER) {
@@ -909,34 +909,18 @@ void CHyprOpenGLImpl::end() {
 }
 
 static const std::vector<std::string> SHADER_INCLUDES = {
-    "defines.h",  "constants.h", "color.glsl",      "rounding.glsl", "gain.glsl",        "border.glsl", "shadow.glsl", "inner_glow.glsl", "blurprepare.glsl",
-    "blur1.glsl", "blur2.glsl",  "blurFinish.glsl", "gradient.glsl", "glassFinish.glsl",
+    "defines.h",       "constants.h",      "color.glsl", "rounding.glsl", "gain.glsl",       "border.glsl",   "shadow.glsl",
+    "inner_glow.glsl", "blurprepare.glsl", "blur1.glsl", "blur2.glsl",    "blurFinish.glsl", "gradient.glsl", "glassFinish.glsl",
 };
 
 // order matters, see ePreparedFragmentShader
 const std::array<std::string, SH_FRAG_LAST> FRAG_SHADERS = {
-    "quad.frag",
-    "passthru.frag",
-    "rgbamatte.frag",
-    "ext.frag",
-    "blur1.frag",
-    "blur2.frag",
-    "blurprepare.frag",
-    "blurfinish.frag",
-    "shadow.frag",
-    "inner_glow.frag",
-    "surface.frag",
-    "border.frag",
-    "glitch.frag",
-    "frostfinish.frag",
-    "dropsfinish.frag",
-    "heatshimmerfinish.frag",
-    "aurorafinish.frag",
-    "hazefinish.frag",
+    "quad.frag",       "passthru.frag", "rgbamatte.frag", "ext.frag",    "blur1.frag",       "blur2.frag",       "blurprepare.frag",       "blurfinish.frag",   "shadow.frag",
+    "inner_glow.frag", "surface.frag",  "border.frag",    "glitch.frag", "frostfinish.frag", "dropsfinish.frag", "heatshimmerfinish.frag", "aurorafinish.frag", "hazefinish.frag",
 };
 
 bool CHyprOpenGLImpl::initShaders(const std::string& path) {
-    auto              shaders = makeShared<SPreparedShaders>();
+    auto shaders = makeShared<SPreparedShaders>();
 
     try {
         auto shaderLoader = makeUnique<CShaderLoader>(SHADER_INCLUDES, FRAG_SHADERS, path);
@@ -1223,7 +1207,7 @@ void CHyprOpenGLImpl::renderTexture(SP<ITexture> tex, const CBox& box, STextureR
 
 static std::map<std::pair<uint32_t, uint32_t>, std::array<GLfloat, 9>> primariesConversionCache;
 
-WP<CShader> CHyprOpenGLImpl::renderScreenShaderInternal() {
+WP<CShader>                                                            CHyprOpenGLImpl::renderScreenShaderInternal() {
     static const auto PDT            = CConfigValue<Config::INTEGER>("debug:damage_tracking");
     static const auto PCURSORTIMEOUT = CConfigValue<Config::FLOAT>("cursor:inactive_timeout");
 

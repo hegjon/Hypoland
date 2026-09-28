@@ -250,8 +250,8 @@ void IElementRenderer::drawSurface(WP<CSurfacePassElement> element, const CRegio
         return;
     }
 
-    const auto INTERACTIVERESIZEINPROGRESS = m_data.pWindow && g_layoutManager->dragController()->target() && g_layoutManager->dragController()->mode() == MBIND_RESIZE;
-    auto        PSURFACE = Desktop::View::CWLSurface::fromResource(m_data.surface);
+    const auto  INTERACTIVERESIZEINPROGRESS = m_data.pWindow && g_layoutManager->dragController()->target() && g_layoutManager->dragController()->mode() == MBIND_RESIZE;
+    auto        PSURFACE                    = Desktop::View::CWLSurface::fromResource(m_data.surface);
 
     const float ALPHA         = m_data.alpha * m_data.fadeAlpha * (PSURFACE ? PSURFACE->m_alphaModifier : 1.F);
     const float OVERALL_ALPHA = PSURFACE ? PSURFACE->m_overallOpacity : 1.F;
@@ -589,13 +589,13 @@ void IElementRenderer::drawTransformedWindow(WP<CTransformedWindowPassElement> e
     if (!pMonitor)
         return;
 
-    const auto      PWINDOW           = element->m_data.window.lock();
-    bool            applyTransformers = PWINDOW && !element->m_data.standalone && !element->m_data.renderingSnapshot;
-    const CBox      MONITORBOX        = CBox{{}, pMonitor->m_size};
+    const auto PWINDOW           = element->m_data.window.lock();
+    bool       applyTransformers = PWINDOW && !element->m_data.standalone && !element->m_data.renderingSnapshot;
+    const CBox MONITORBOX        = CBox{{}, pMonitor->m_size};
 
-    const CBox      visualBox          = applyTransformers ? element->m_data.transformedBox : element->m_data.currentBox;
-    const bool      HASRENDERMODIFIERS = renderData.renderModif.enabled && !renderData.renderModif.modifs.empty();
-    CBox            visibleOutput      = HASRENDERMODIFIERS ? visualBox : visualBox.intersection(MONITORBOX);
+    const CBox visualBox          = applyTransformers ? element->m_data.transformedBox : element->m_data.currentBox;
+    const bool HASRENDERMODIFIERS = renderData.renderModif.enabled && !renderData.renderModif.modifs.empty();
+    CBox       visibleOutput      = HASRENDERMODIFIERS ? visualBox : visualBox.intersection(MONITORBOX);
     if (visibleOutput.empty())
         return;
 
@@ -747,7 +747,7 @@ void IElementRenderer::drawTransformedWindow(WP<CTransformedWindowPassElement> e
     if (!last.framebuffer || !last.framebuffer->getTexture())
         return;
 
-    CBox outputBox = last.box;
+    CBox                         outputBox = last.box;
     CTexPassElement::SRenderData data;
     data.tex = last.framebuffer->getTexture();
     data.box = outputBox;

@@ -11,7 +11,6 @@ ITexture::ITexture(uint32_t drmFormat, uint8_t* pixels, uint32_t stride, const V
     }
 }
 
-
 bool ITexture::ok() {
     return false;
 }

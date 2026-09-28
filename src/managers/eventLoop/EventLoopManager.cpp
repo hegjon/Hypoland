@@ -208,7 +208,7 @@ void CEventLoopManager::nudgeTimers() {
 
     // steady_clock is CLOCK_MONOTONIC, the timerfd below uses the same clock
     const auto [SEC, NSEC] = Time::secNsec(NOW);
-    timespec   now         = {.tv_sec = sc<time_t>(SEC), .tv_nsec = sc<long>(NSEC)};
+    timespec now           = {.tv_sec = sc<time_t>(SEC), .tv_nsec = sc<long>(NSEC)};
     timespecAddNs(&now, nextTimerUs * 1000L);
 
     itimerspec ts = {.it_value = now};

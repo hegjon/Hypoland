@@ -25,7 +25,7 @@ void CGLElementRenderer::draw(WP<CClearPassElement> element, const CRegion& dama
 
     const std::array<GLfloat, 4> c = {sc<GLfloat>(color.r), sc<GLfloat>(color.g), sc<GLfloat>(color.b), sc<GLfloat>(color.a)};
 
-    const auto clearBuffer = [&c]() {
+    const auto                   clearBuffer = [&c]() {
         glClearColor(c[0], c[1], c[2], c[3]);
         glClear(GL_COLOR_BUFFER_BIT);
     };

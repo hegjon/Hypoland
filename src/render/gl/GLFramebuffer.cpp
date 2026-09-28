@@ -56,9 +56,8 @@ bool CGLFramebuffer::internalAlloc(int w, int h, uint32_t drmFormat) {
 
     auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE)
-        Log::logger->log(
-            Log::ERR, "Framebuffer \"{}\" incomplete: status 0x{:x}, drm format 0x{:x}, gl iformat 0x{:x} format 0x{:x} type 0x{:x}, stencil {}", m_name,
-            status, drmFormat, GLFMT.internalFormat, GLFMT.format, GLFMT.type, m_stencilRB ? "yes" : "no");
+        Log::logger->log(Log::ERR, "Framebuffer \"{}\" incomplete: status 0x{:x}, drm format 0x{:x}, gl iformat 0x{:x} format 0x{:x} type 0x{:x}, stencil {}", m_name, status,
+                         drmFormat, GLFMT.internalFormat, GLFMT.format, GLFMT.type, m_stencilRB ? "yes" : "no");
     RASSERT((status == GL_FRAMEBUFFER_COMPLETE), "Framebuffer incomplete, couldn't create! (FB status: {}, GL Error: 0x{:x})", status, sc<int>(glGetError()));
 
     Log::logger->log(Log::DEBUG, "Framebuffer \"{}\" created, status {}", m_name, status);

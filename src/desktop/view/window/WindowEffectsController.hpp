@@ -36,9 +36,9 @@ namespace Desktop::View {
         const UP<Render::CWindowTransformerList>& transformers() const;
 
       private:
-        Render::CWobbleTransformer*           wobbleTransformer();
+        Render::CWobbleTransformer*        wobbleTransformer();
 
-        CWindow&                              m_window;
-        UP<Render::CWindowTransformerList>    m_transformers;
+        CWindow&                           m_window;
+        UP<Render::CWindowTransformerList> m_transformers;
     };
 }

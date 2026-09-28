@@ -378,7 +378,6 @@ namespace NColorManagement {
 
     using PImageDescription = WP<const CImageDescription>;
 
-
     PImageDescription getDefaultImageDescription();
 
     inline const auto DEFAULT_GAMMA22_IMAGE_DESCRIPTION = CImageDescription::from(SImageDescription{

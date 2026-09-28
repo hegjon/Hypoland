@@ -54,16 +54,16 @@ int main(int argc, char** argv) {
                 return 1;
             }
 
-            struct gbm_device*         gbm  = gbm_create_device(fd);
+            struct gbm_device*                 gbm  = gbm_create_device(fd);
             struct gbm_import_fd_modifier_data data = {
-                .width     = fb->width,
-                .height    = fb->height,
-                .format    = fb->pixel_format,
-                .num_fds   = 1,
-                .fds       = {dmabuf},
-                .strides   = {(int)fb->pitches[0]},
-                .offsets   = {(int)fb->offsets[0]},
-                .modifier  = fb->modifier,
+                .width    = fb->width,
+                .height   = fb->height,
+                .format   = fb->pixel_format,
+                .num_fds  = 1,
+                .fds      = {dmabuf},
+                .strides  = {(int)fb->pitches[0]},
+                .offsets  = {(int)fb->offsets[0]},
+                .modifier = fb->modifier,
             };
             struct gbm_bo* bo = gbm_bo_import(gbm, GBM_BO_IMPORT_FD_MODIFIER, &data, 0);
             if (!bo) {
@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
                 return 1;
             }
 
-            uint32_t stride = 0;
+            uint32_t stride  = 0;
             void*    mapData = NULL;
             uint8_t* px      = gbm_bo_map(bo, 0, 0, fb->width, fb->height, GBM_BO_TRANSFER_READ, &stride, &mapData);
             if (!px) {

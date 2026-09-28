@@ -15,8 +15,8 @@
 // Vertex array objects are an extension in GLES2 (GL_OES_vertex_array_object, required at startup).
 // Extension entry points are not exported by libGLESv2, they are loaded in CHyprOpenGLImpl::initEGL().
 namespace NGLES2 {
-    inline void (*bindVertexArray)(GLuint array)                      = nullptr;
-    inline void (*genVertexArrays)(GLsizei n, GLuint* arrays)         = nullptr;
+    inline void (*bindVertexArray)(GLuint array)                       = nullptr;
+    inline void (*genVertexArrays)(GLsizei n, GLuint* arrays)          = nullptr;
     inline void (*deleteVertexArrays)(GLsizei n, const GLuint* arrays) = nullptr;
 }
 

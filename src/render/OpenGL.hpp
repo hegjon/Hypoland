@@ -178,7 +178,7 @@ namespace Render::GL {
             bool                   allowDim      = true;
             bool                   noAA          = false; // unused
             uint8_t                wrapX = WRAP_CLAMP_TO_EDGE, wrapY = WRAP_CLAMP_TO_EDGE;
-            bool                   finalOutput    = false; // the work buffer on its way to the output, always opaque
+            bool                   finalOutput = false; // the work buffer on its way to the output, always opaque
 
             uint8_t                discardMode    = DISCARD_OPAQUE;
             float                  discardOpacity = 0.f;
@@ -188,7 +188,6 @@ namespace Render::GL {
 
             Vector2D               primarySurfaceUVTopLeft     = Vector2D(-1, -1);
             Vector2D               primarySurfaceUVBottomRight = Vector2D(-1, -1);
-
         };
 
         struct SBorderRenderData {
@@ -324,7 +323,7 @@ namespace Render::GL {
         GLenum                  m_blendDFactor     = GL_ZERO;
 
         std::vector<SDRMFormat> m_drmFormats;
-        bool                    m_hasModifiers  = false;
+        bool                    m_hasModifiers = false;
 
         int                     m_drmFD = -1;
         std::string             m_extensions;
@@ -352,13 +351,13 @@ namespace Render::GL {
         //
         std::optional<std::vector<uint64_t>> getModsForFormat(EGLint format);
 
-        void        renderRectInternal(const CBox&, const CHyprColor&, const SRectRenderData& data);
-        void        renderRectWithBlurInternal(const CBox&, const CHyprColor&, const SRectRenderData& data);
-        void        renderRectWithDamageInternal(const CBox&, const CHyprColor&, const SRectRenderData& data);
-        WP<CShader> renderScreenShaderInternal();
-        WP<CShader> renderToFBInternal(SP<ITexture> tex, const STextureRenderData& data, eTextureType texType, const CBox& newBox);
-        void        renderTextureInternal(SP<ITexture>, const CBox&, const STextureRenderData& data);
-        void        renderTextureWithBlurInternal(SP<ITexture>, const CBox&, const STextureRenderData& data);
+        void                                 renderRectInternal(const CBox&, const CHyprColor&, const SRectRenderData& data);
+        void                                 renderRectWithBlurInternal(const CBox&, const CHyprColor&, const SRectRenderData& data);
+        void                                 renderRectWithDamageInternal(const CBox&, const CHyprColor&, const SRectRenderData& data);
+        WP<CShader>                          renderScreenShaderInternal();
+        WP<CShader>                          renderToFBInternal(SP<ITexture> tex, const STextureRenderData& data, eTextureType texType, const CBox& newBox);
+        void                                 renderTextureInternal(SP<ITexture>, const CBox&, const STextureRenderData& data);
+        void                                 renderTextureWithBlurInternal(SP<ITexture>, const CBox&, const STextureRenderData& data);
 
         friend class IHyprRenderer;
         friend class CHyprGLRenderer;

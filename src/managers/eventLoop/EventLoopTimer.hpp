@@ -13,10 +13,10 @@ class CEventLoopTimer {
 
     // if not specified, disarms.
     // if specified, arms.
-    void  updateTimeout(std::optional<Time::steady_dur> timeout);
+    void updateTimeout(std::optional<Time::steady_dur> timeout);
 
-    void  cancel();
-    bool  passed();
+    void cancel();
+    bool passed();
     // with a time the caller already read, reading the clock is a syscall on some machines
     bool  passed(const Time::steady_tp& now);
     bool  armed();
