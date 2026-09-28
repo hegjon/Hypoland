@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Runs on the X200 from tty1 autologin: starts the compositor and restarts it whenever it exits.
-# Installed as ~/hypoland/run-loop.sh. Restart the compositor with `pkill Hypoland`.
+# Installed as ~/hypoland/run-loop.sh. Restart the compositor with `pkill -x hypoland`.
 # Create ~/hypoland/stop to leave the loop and drop to a shell.
 # If ~/hypoland/env exists it is sourced before every start (exported variables, e.g. HYPOLAND_PROFILE_PASS=1).
 # If ~/hypoland/test.lua exists it is used as the config instead of ~/.config/hypr/hyprland.lua.
@@ -14,7 +14,7 @@ export XDG_SESSION_TYPE=wayland
 
 FAST_EXITS=0
 while [ ! -e "$PREFIX/stop" ]; do
-    BIN=$(ls "$PREFIX/bin/Hypoland" "$PREFIX/bin/Hyprland" 2>/dev/null | head -1)
+    BIN=$(ls "$PREFIX/bin/hypoland" "$PREFIX/bin/Hypoland" "$PREFIX/bin/Hyprland" 2>/dev/null | head -1)
     if [ -z "$BIN" ]; then
         echo "$(date -Is) no compositor binary in $PREFIX/bin, waiting" >>"$LOG"
         sleep 5

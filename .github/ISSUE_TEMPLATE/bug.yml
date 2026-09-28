@@ -11,7 +11,7 @@ body:
     id: version
     attributes:
       label: Version
-      description: The output of `hyprctl version` (or `Hypoland --version` if it does not start).
+      description: The output of `hyprctl version` (or `hypoland --version` if it does not start).
       render: text
     validations:
       required: true

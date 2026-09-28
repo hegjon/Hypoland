@@ -241,7 +241,7 @@ $ <span class="w">Hyprland</span>
 <span class="d">Have you tried asking Hyprland politely
 not to crash?</span>
 
-$ <span class="w">Hypoland</span>
+$ <span class="w">hypoland</span>
 <span class="n">Using: OpenGL ES 2.0 Mesa 26.2.3</span>
 <span class="d"># bar, wallpaper, notifications, windows,
 # Xwayland. At 60 fps.</span>
@@ -334,7 +334,7 @@ $ <span class="w">Hypoland</span>
           <tr><td>IPC</td><td><code>hyprctl</code>, sockets, command names, JSON output, events</td><td class="yes">same</td></tr>
           <tr><td>Desktop name</td><td><code>XDG_CURRENT_DESKTOP=Hyprland</code>, so the portal and apps detect it</td><td class="yes">same</td></tr>
           <tr><td>Protocols</td><td>The Hyprland Wayland protocols (Quickshell, portals, global shortcuts)</td><td class="yes">same</td></tr>
-          <tr><td>Binary</td><td><code>Hypoland</code> and <code>start-hypoland</code>, there is no <code>Hyprland</code> command</td><td class="no">renamed</td></tr>
+          <tr><td>Binary</td><td><code>hypoland</code> and <code>start-hypoland</code>, there is no <code>Hyprland</code> command</td><td class="no">renamed</td></tr>
           <tr><td>Screen shaders</td><td>Must be GLSL ES 1.00, Hyprland's GLSL ES 3.00 shaders do not compile</td><td class="no">differs</td></tr>
           <tr><td>Plugins</td><td>Not supported, <code>hl.plugin.load()</code> warns and does nothing</td><td class="no">removed</td></tr>
         </tbody>
@@ -347,8 +347,8 @@ $ <span class="w">Hypoland</span>
     <div class="body">
 <pre><span class="c"># same dependencies as Hyprland, but aquamarine
 # is embedded and udis86 is not needed</span>
-<span class="p">$</span> git clone https://github.com/hegjon/Hypoland
-<span class="p">$</span> cd Hypoland
+<span class="p">$</span> git clone https://github.com/hegjon/Hypoland hypoland
+<span class="p">$</span> cd hypoland
 <span class="p">$</span> cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 <span class="p">$</span> cmake --build build -j$(nproc)
 

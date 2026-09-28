@@ -23,7 +23,7 @@ Not allowed, write them down as proposals in the journal instead:
 
 ## Rules
 
-- Never reboot the X200. Restart the compositor with `pkill -x Hypoland`, a dead loop with
+- Never reboot the X200. Restart the compositor with `pkill -x hypoland`, a dead loop with
   `ssh root@x200 systemctl restart getty@tty1`. If the X200 stays unreachable or the GPU hangs for good, stop
   the job and write down what happened.
 - Work on the local branch `overnight/ram-cpu`. One commit per kept change, with the measured numbers in the

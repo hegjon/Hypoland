@@ -11,7 +11,7 @@ fi
 if [ ! -f perf.data ]; then
     echo "No perf.data found in current directory."
     echo "Run Hyprland under perf first:"
-    echo "  perf record -F 99 -g -- ./build/Hypoland"
+    echo "  perf record -F 99 -g -- ./build/hypoland"
     exit 1
 fi
 

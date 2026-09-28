@@ -28,7 +28,7 @@ jobs:
           mkdir x86_64-pc-linux-gnu
           mkdir hyprland
           cp ./LICENSE hyprland/
-          cp build/Hypoland hyprland/
+          cp build/hypoland hyprland/
           cp build/hyprctl/hyprctl hyprland/
           cp -r example/ hyprland/
           cp -r assets/ hyprland/

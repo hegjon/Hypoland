@@ -41,7 +41,7 @@ void CHyprlandInstance::runHyprlandThread(bool safeMode, bool lockedCrash) {
     // spawn a process manually. Hyprutils' Async is detached, while Sync redirects stdout
     // TODO: make Sync respect fds?
 
-    std::vector<char*> args = {strdup(g_state->customPath.value_or("Hypoland").c_str())};
+    std::vector<char*> args = {strdup(g_state->customPath.value_or("hypoland").c_str())};
     for (const auto& a : argsStd) {
         args.emplace_back(strdup(a.c_str()));
     }
@@ -57,7 +57,7 @@ void CHyprlandInstance::runHyprlandThread(bool safeMode, bool lockedCrash) {
         procctl(P_PID, getpid(), PROC_PDEATHSIG_CTL, &sig);
 #endif
 
-        execvp(g_state->customPath.value_or("Hypoland").c_str(), args.data());
+        execvp(g_state->customPath.value_or("hypoland").c_str(), args.data());
 
         g_logger->log(Hyprutils::CLI::LOG_ERR, "fork(): execvp failed: {}", strerror(errno));
         std::fflush(stdout);

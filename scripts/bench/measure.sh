@@ -12,7 +12,7 @@
 #   --rounds N          how often the workloads are repeated, bench only (default 1)
 #   --workloads LIST    comma separated, default: idle,gpu-client,terminal-scroll,shm-fullwindow,workspace-switch
 #   --client NAME=CMD   one more workload: CMD is started as a client and measured as NAME, can be repeated
-#   --process NAME      name of the compositor process (default: Hypoland, then Hyprland)
+#   --process NAME      name of the compositor process (default: hypoland, then Hypoland, then Hyprland)
 #   --settle N          age of the compositor in seconds before memory is measured (default 60)
 #   --keep-governor     leave the CPU frequency governor alone
 #   --stages REGEX      functions whose inclusive time perf mode prints
@@ -69,10 +69,10 @@ case $METER in auto | rapl | battery | none) ;; *) echo "measure.sh: unknown met
 
 # ---- the compositor and its session
 
-for name in ${PROCESS:-Hypoland Hyprland}; do
+for name in ${PROCESS:-hypoland Hypoland Hyprland}; do
     P=$(pgrep -n -x "$name" 2>/dev/null) && PROCESS=$name && break
 done
-[ -n "${P:-}" ] || { echo "no compositor is running (looked for ${PROCESS:-Hypoland, Hyprland})"; exit 1; }
+[ -n "${P:-}" ] || { echo "no compositor is running (looked for ${PROCESS:-hypoland, Hypoland, Hyprland})"; exit 1; }
 
 TESTUSER=$(stat -c %U /proc/$P)
 USERHOME=$(getent passwd "$TESTUSER" | cut -d: -f6)

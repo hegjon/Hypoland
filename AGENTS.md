@@ -15,7 +15,7 @@ Hypoland's renderer and shaders are GLES 2.0 / GLSL ES 1.00 only; that port is d
   i915 kernel driver). It runs Omarchy 4 on Hypoland. Stock Hyprland fails to start on it (no GLES 3).
   Since 2026-09-28 the Hypoland Arch package is installed there (it replaced `hyprland` 0.56.2-3, which is still in
   `/var/cache/pacman/pkg`) and the X200 boots like a normal Omarchy install: disk password, SDDM autologin,
-  `omarchy.desktop` -> `uwsm start ... hyprland.desktop` -> `/usr/bin/start-hypoland` -> `/usr/bin/Hypoland`.
+  `omarchy.desktop` -> `uwsm start ... hyprland.desktop` -> `/usr/bin/start-hypoland` -> `/usr/bin/hypoland`.
   Update it with `makepkg -f` in `packaging/arch`, `pacman -U` as root on the X200 and `systemctl restart sddm`
   (SDDM logs in again). See the testing pitfalls for the test loop setup.
 - X200 access: `ssh x200` (ssh config alias -> 192.168.95.91, user `a`, uid 1000, key auth works).
@@ -41,13 +41,15 @@ Hypoland's renderer and shaders are GLES 2.0 / GLSL ES 1.00 only; that port is d
   `cmake/aquamarine.cmake`, not by its own CMakeLists.txt. Its generated `wl_*_interface` symbols are
   weakened with objcopy because the compositor defines the same tables. Update with
   `git subtree pull --prefix=subprojects/aquamarine aquamarine gles2-support --squash`.
-- Rename status: binaries are `Hypoland` and `start-hypoland`, with `hypoland` and `start-hyprland` installed
-  as symlinks. The `Hyprland` and `hyprland` symlinks were removed on 2026-09-28 by decision of the user. CMake target names, the session file name `hyprland.desktop`
+- Rename status: binaries are `hypoland` and `start-hypoland`, with `start-hyprland` installed as a symlink.
+  All binaries and commands are lower case (decided by the user on 2026-09-28, the binary was `Hypoland` before,
+  so the process name is `hypoland` now: `pkill -x hypoland`). "Hypoland" stays capitalized as a name in text.
+  The `Hyprland` and `hyprland` symlinks were removed on 2026-09-28 by decision of the user. CMake target names, the session file name `hyprland.desktop`
   (Omarchy's session runs `uwsm start ... hyprland.desktop`) and the `hyprctl version` text are intentionally
   unchanged. The files in `systemd/` are `hypoland-session.target` (the compositor starts it,
   `hyprland-session.target` is installed as an alias) and `hypoland-uwsm.desktop`.
-  The man page is `Hypoland(1)` (`docs/Hypoland.1.rst`, built with `make man`, needs pandoc), installed with
-  `hypoland.1` as a symlink. `hyprctl(1)` keeps its name.
+  The man page is `hypoland(1)` (`docs/hypoland.1.rst`, built with `make man`, needs pandoc).
+  `hyprctl(1)` keeps its name.
 - Versions (decided by the user on 2026-09-28): `VERSION` is the version of Hypoland (0.1.0, the package
   version), `VERSION_HYPRLAND` the Hyprland version it is based on (0.56.0). `HYPRLAND_VERSION` stays the Hyprland
   version, because tools and configs compare it with Hyprland releases: the first line of `hyprctl version`, the
@@ -146,8 +148,8 @@ Prefer compile-time flags (e.g. `-DNO_ANIMATIONS`) so removed code isn't built.
 ## Testing workflow
 
 1. Build on the desktop, `rsync` into a prefix on the X200 (e.g. `~/hypoland/`). Never touch system packages.
-2. X200 autologins on tty1 into a loop script that runs `~/hypoland/bin/Hypoland` and restarts it on exit
-   (a compositor started over SSH can't take the display). Restart with `pkill Hypoland`.
+2. X200 autologins on tty1 into a loop script that runs `~/hypoland/bin/hypoland` and restarts it on exit
+   (a compositor started over SSH can't take the display). Restart with `pkill -x hypoland`.
    Do not reboot for recovery, see the pitfalls below.
 3. Over SSH, with `XDG_RUNTIME_DIR=/run/user/<uid>` set:
    - control: `hyprctl`
@@ -172,9 +174,9 @@ Prefer compile-time flags (e.g. `-DNO_ANIMATIONS`) so removed code isn't built.
   `test-x200.sh`, `bench.sh` and `profile.sh` do not work as they are. `setup-root.sh --undo` was run (SDDM on,
   tty1 autologin drop-in and passwordless `sudo reboot` removed) and `~/hypoland/run-loop.sh` is not executable.
   The hook in `~/.bash_profile` is still there: SDDM's session script starts a login shell on tty1, so an
-  executable `run-loop.sh` takes over the SDDM session with `~/hypoland/bin/Hypoland`. `setup-root.sh --undo`
+  executable `run-loop.sh` takes over the SDDM session with the compositor in `~/hypoland/bin`. `setup-root.sh --undo`
   does not handle that yet. To get the loop back: `sudo ./setup-root.sh` and `chmod +x ~/hypoland/run-loop.sh`.
-  With the loop, restart the compositor with `pkill -x Hypoland`; if the loop dies,
+  With the loop, restart the compositor with `pkill -x hypoland`; if the loop dies,
   `ssh root@x200 systemctl restart getty@tty1`. `ssh root@x200` works in both setups.
 - Killing the loop's compositor leaves `graphical-session.target` active, and uwsm then refuses to start
   ("A compositor or graphical-session* target is already active"). Stop it with
@@ -240,7 +242,7 @@ Tools:
   without root the governor is left alone), `--no-deploy` measures the compositor that is running,
   `--workloads a,b` picks workloads and `--client name=command` measures any client as one more workload.
   The work on the machine under test is `scripts/bench/measure.sh`, which is sent over ssh on stdin. It takes the
-  compositor (`Hypoland`, then `Hyprland`), its user, prefix, instance and Wayland socket from the running process
+  compositor (`hypoland`, then `Hypoland` of older builds, then `Hyprland`), its user, prefix, instance and Wayland socket from the running process
   and its `hyprland.lock`, starts clients with the environment of the compositor, skips workloads whose client
   is not installed and only touches the Omarchy idle flags where Omarchy is installed.
   `scripts/bench/target.sh` holds the ssh part. Build, deploy and restart still go through `test-x200.sh`
@@ -392,7 +394,7 @@ Open decisions for the user:
 
 Work that is left from the plan above:
 - Remove screen shaders.
-- The X200 loop starts `Hypoland` directly, so the "started without start-hypoland" notification shows.
+- The X200 loop starts `hypoland` directly, so the "started without start-hypoland" notification shows.
 
 # Code guidelines
 

@@ -273,7 +273,7 @@ add_library(hyprland_lib STATIC ${SRCFILES})
 add_executable(Hyprland src/main.cpp)
 target_link_libraries(Hyprland hyprland_lib)
 # only the binary is renamed, the cmake target keeps its upstream name
-set_target_properties(Hyprland PROPERTIES OUTPUT_NAME Hypoland)
+set_target_properties(Hyprland PROPERTIES OUTPUT_NAME hypoland)
 
 target_include_directories(hyprland_lib PUBLIC ${deps_INCLUDE_DIRS} ${LUA_INCLUDE_DIRS})
 target_include_directories(Hyprland PUBLIC ${deps_INCLUDE_DIRS} ${LUA_INCLUDE_DIRS})
@@ -577,16 +577,9 @@ set(CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS
     GROUP_READ GROUP_EXECUTE
     WORLD_READ WORLD_EXECUTE)
 
-# binary and symlink
+# binary, all commands are lower case
 install(TARGETS Hyprland)
 
-# lowercase hypoland is installed as a symlink
-install(
-  CODE "execute_process( \
-        COMMAND ${CMAKE_COMMAND} -E create_symlink \
-        Hypoland \
-        \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/hypoland\" \
-        )")
 # session file
 configure_file(
     ${CMAKE_SOURCE_DIR}/example/hyprland.desktop.in
@@ -619,13 +612,6 @@ install(FILES ${CMAKE_SOURCE_DIR}/assets/hyprland-portals.conf
 # man pages
 file(GLOB_RECURSE MANPAGES "docs/*.1")
 install(FILES ${MANPAGES} DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
-# the lowercase name of the binary leads to the same page
-install(
-  CODE "execute_process( \
-      COMMAND ${CMAKE_COMMAND} -E create_symlink \
-      Hypoland.1 \
-      \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_MANDIR}/man1/hypoland.1\" \
-      )")
 
 if(BUILD_TESTING OR WITH_TESTS)
   message(STATUS "Building tests")

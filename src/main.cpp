@@ -27,7 +27,7 @@ using namespace Hyprutils::Memory;
 #include <filesystem>
 
 static void help() {
-    std::println("usage: Hypoland [arg [...]].\n");
+    std::println("usage: hypoland [arg [...]].\n");
     std::println(R"#(Arguments:
     --help              -h       - Show this message again
     --config FILE       -c FILE  - Specify config file to use

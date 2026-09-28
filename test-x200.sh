@@ -52,8 +52,8 @@ INSTANCE=\$(ls -1t \$XDG_RUNTIME_DIR/hypr 2>/dev/null | head -1)
 export HYPRLAND_INSTANCE_SIGNATURE=\$INSTANCE
 WL=\$(ls -1t \$XDG_RUNTIME_DIR/hypr/\$INSTANCE/../../wayland-[0-9] 2>/dev/null | head -1)
 export WAYLAND_DISPLAY=\$(basename "\${WL:-wayland-1}")
-BIN=\$(ls \$HOME/$X200_PREFIX/bin/Hypoland \$HOME/$X200_PREFIX/bin/Hyprland 2>/dev/null | head -1)
-BINNAME=\$(basename "\${BIN:-Hypoland}")
+BIN=\$(ls \$HOME/$X200_PREFIX/bin/hypoland \$HOME/$X200_PREFIX/bin/Hypoland \$HOME/$X200_PREFIX/bin/Hyprland 2>/dev/null | head -1)
+BINNAME=\$(basename "\${BIN:-hypoland}")
 # nothing on the X200 may hang the test run
 hyprctl() { timeout 10 \$HOME/$X200_PREFIX/bin/hyprctl "\$@"; }
 grim() { timeout 20 /usr/bin/grim "\$@"; }

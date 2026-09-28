@@ -31,13 +31,13 @@ uninstall:
 	xargs rm < ./build/install_manifest.txt
 
 man:
-	pandoc ./docs/Hypoland.1.rst \
+	pandoc ./docs/hypoland.1.rst \
 		--standalone \
 		--variable=header:"Hypoland User Manual" \
 		--variable=date:"${DATE}" \
 		--variable=section:1 \
 		--from rst \
-		--to man > ./docs/Hypoland.1
+		--to man > ./docs/hypoland.1
 
 	pandoc ./docs/hyprctl.1.rst \
 		--standalone \
@@ -49,8 +49,8 @@ man:
 
 asan:
 	@echo -en "!!WARNING!!\nOnly run this in the TTY.\n"
-	@pidof Hypoland > /dev/null && echo -ne "Refusing to run with Hypoland running.\n" || echo ""
-	@pidof Hypoland > /dev/null && exit 1 || echo ""
+	@pidof hypoland > /dev/null && echo -ne "Refusing to run with Hypoland running.\n" || echo ""
+	@pidof hypoland > /dev/null && exit 1 || echo ""
 
 	rm -rf ./wayland
 	#git reset --hard
@@ -69,7 +69,7 @@ asan:
 	cmake --build ./build --config Debug --target all
 	@echo "Hyprland done"
 
-	ASAN_OPTIONS="detect_odr_violation=0,log_path=asan.log" HYPRLAND_NO_CRASHREPORTER=1 ./build/Hypoland -c ~/.config/hypr/hyprland.lua
+	ASAN_OPTIONS="detect_odr_violation=0,log_path=asan.log" HYPRLAND_NO_CRASHREPORTER=1 ./build/hypoland -c ~/.config/hypr/hyprland.lua
 
 format-check:
 	@find src hyprctl start tests hyprtester -type f \( -name "*.cpp" -o -name "*.hpp" -o -name "*.h" \) \
@@ -87,4 +87,4 @@ format-fix:
 
 test:
 	$(MAKE) debug
-	./build/hyprtester/hyprtester -c hyprtester/test.lua -b ./build/Hypoland $(TESTS)
+	./build/hyprtester/hyprtester -c hyprtester/test.lua -b ./build/hypoland $(TESTS)

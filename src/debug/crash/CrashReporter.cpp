@@ -183,7 +183,7 @@ void CrashReporter::createAndSaveCrash(int sig) {
     const auto FPATH = std::filesystem::canonical(exe);
 #elif defined(__OpenBSD__)
     // Neither KERN_PROC_PATHNAME nor /proc are supported
-    const auto FPATH = std::filesystem::canonical("/usr/local/bin/Hypoland");
+    const auto FPATH = std::filesystem::canonical("/usr/local/bin/hypoland");
 #else
     const auto FPATH = std::filesystem::canonical("/proc/self/exe");
 #endif

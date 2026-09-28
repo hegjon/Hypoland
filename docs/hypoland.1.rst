@@ -4,12 +4,12 @@
 NAME
 ====
 
-Hypoland - Dynamic tiling Wayland compositor for OpenGL ES 2.0 graphics
+hypoland - Dynamic tiling Wayland compositor for OpenGL ES 2.0 graphics
 
 SYNOPSIS
 ========
 
-**Hypoland** [*arg [...]*].
+**hypoland** [*arg [...]*].
 
 DESCRIPTION
 ===========
@@ -21,8 +21,6 @@ It is an independent project and not affiliated with or endorsed by Hyprland.
 
 You can launch Hypoland by either going into a TTY and
 executing **start-hypoland**, or with a login manager.
-
-The command **hypoland** starts the same program.
 
 COMPATIBILITY
 =============
