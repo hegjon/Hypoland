@@ -84,11 +84,13 @@ Hypoland's renderer and shaders are GLES 2.0 / GLSL ES 1.00 only; that port is d
   flag of `hyprctl version`). `start-hypoland` still accepts `--no-nixgl` and `--force-nixgl` and ignores them.
   A build downloads nothing any more. The Nix files of the embedded aquamarine are left alone, they are part of
   the subtree.
-- Logo: `assets/logo/` (a potato: `hypoland.svg`, `hypoland-mono.svg`, `header.svg`, PNG exports).
-  The README uses the pre-2000 style banner `assets/logo/retro/header-retro.svg` (bitmap lettering
-  whose O is a pixel potato hanging below the baseline, since hypo- means "under"), generated with
-  `scripts/logo/retro.py scripts/logo/potato-mask.txt assets/logo/retro`. The Hyprland banner and screenshots
-  were removed from `assets/`, the Hyprland wallpapers `wall0-2.png` and the wallpaper code on 2026-09-28
+- Logo: the pixel potato in `assets/logo/retro/` (icon `hypoland-retro.svg` with PNG exports, and the pre-2000
+  style banner `header-retro.svg` used by the README: bitmap lettering whose O is a pixel potato hanging below
+  the baseline, since hypo- means "under"), generated with
+  `scripts/logo/retro.py scripts/logo/potato-mask.txt assets/logo/retro`. `web/` has copies of the icon and banner.
+  The smooth potato logos were removed on 2026-09-28 by decision of the user.
+  The README shows two X200 screenshots from `assets/screenshots/` (real, unmodified program output).
+  The Hyprland banner and screenshots were removed from `assets/`, the Hyprland wallpapers `wall0-2.png` and the wallpaper code on 2026-09-28
   (`misc:force_default_wallpaper` is a no-op). The screens shown when the lock screen app dies
   (`assets/install/lockdead*.png`) are generated from the retro banner with `scripts/logo/lockdead.py`.
   `assets/hyprland-portals.conf` keeps its name, xdg-desktop-portal finds it through `XDG_CURRENT_DESKTOP=Hyprland`.
@@ -389,8 +391,6 @@ Known issues:
 ## Next steps
 
 Open decisions for the user:
-- Pick the icon: the smooth potato in `assets/logo/` or the pixel potato in `assets/logo/retro/` (the README
-  banner is the retro one).
 - Keep the X200 on the package and SDDM, or bring the test loop back for `test-x200.sh` and the benchmarks.
 
 Work that is left from the plan above:
