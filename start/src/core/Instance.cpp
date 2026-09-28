@@ -1,7 +1,6 @@
 #include "Instance.hpp"
 #include "State.hpp"
 #include "../helpers/Logger.hpp"
-#include "../helpers/Nix.hpp"
 
 #include <cstdlib>
 #include <cstring>
@@ -58,12 +57,7 @@ void CHyprlandInstance::runHyprlandThread(bool safeMode, bool lockedCrash) {
         procctl(P_PID, getpid(), PROC_PDEATHSIG_CTL, &sig);
 #endif
 
-        if (Nix::shouldUseNixGL()) {
-            argsStd.insert(argsStd.begin(), g_state->customPath.value_or("Hypoland"));
-            args.insert(args.begin(), strdup(argsStd.front().c_str()));
-            execvp("nixGL", args.data());
-        } else
-            execvp(g_state->customPath.value_or("Hypoland").c_str(), args.data());
+        execvp(g_state->customPath.value_or("Hypoland").c_str(), args.data());
 
         g_logger->log(Hyprutils::CLI::LOG_ERR, "fork(): execvp failed: {}", strerror(errno));
         std::fflush(stdout);

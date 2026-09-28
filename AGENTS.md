@@ -62,6 +62,11 @@ Hypoland's renderer and shaders are GLES 2.0 / GLSL ES 1.00 only; that port is d
 - Both machines have identical hypr* library versions (hyprutils 0.14.2, hyprlang 0.6.8, hyprcursor 0.1.13,
   hyprgraphics 0.5.1), so a desktop build links cleanly on the X200. Keep them in sync. The system aquamarine
   is not used.
+- Removed on 2026-09-28: Tracy (submodule and the `USE_TRACY` build options), glaze (the only real use was in
+  `start-hypoland`) and Nix support (`flake.nix`, `nix/`, the Nix workflows, nixGL in `start-hypoland`, the `nix`
+  flag of `hyprctl version`). `start-hypoland` still accepts `--no-nixgl` and `--force-nixgl` and ignores them.
+  A build downloads nothing any more. The Nix files of the embedded aquamarine are left alone, they are part of
+  the subtree.
 - Logo: `assets/logo/` (a potato: `hypoland.svg`, `hypoland-mono.svg`, `header.svg`, PNG exports).
   The README uses the pre-2000 style banner `assets/logo/retro/header-retro.svg` (bitmap lettering
   whose O is a pixel potato hanging below the baseline, since hypo- means "under"), generated with

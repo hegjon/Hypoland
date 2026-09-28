@@ -55,7 +55,7 @@ Source: <https://github.com/hegjon/Hypoland>
 
 ## Building
 
-Dependencies are the same as for Hyprland, except aquamarine (embedded) and udis86 (not needed). See the
+Dependencies are the same as for Hyprland, except aquamarine (embedded), udis86 and glaze (not needed). See the
 [Hyprland wiki](https://wiki.hypr.land/Getting-Started/Installation/).
 
 ```sh

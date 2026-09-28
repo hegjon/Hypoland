@@ -57,7 +57,7 @@ depends=(
   xcb-util-wm
   xorg-xwayland
 )
-# glaze is fetched by cmake when it is not installed, hyprland-protocols is a git submodule
+# hyprland-protocols is a git submodule
 makedepends=(
   binutils
   cmake

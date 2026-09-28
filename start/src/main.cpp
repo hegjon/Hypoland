@@ -3,7 +3,6 @@
 #include <print>
 
 #include "helpers/Logger.hpp"
-#include "helpers/Nix.hpp"
 #include "core/State.hpp"
 #include "core/Instance.hpp"
 
@@ -21,8 +20,6 @@ Any arguments after -- are passed to Hyprland. For Hyprland help, run start-hypr
 
 Additional arguments for start-hyprland:
  --path [path]       -> Override Hyprland path
- --no-nixgl          -> Force disable nixGL
- --force-nixgl       -> Force enable nixGL
 )#";
 
 //
@@ -76,14 +73,9 @@ int main(int argc, const char** argv, const char** envp) {
             g_state->customPath = argv[++i];
             continue;
         }
-        if (arg == "--no-nixgl") {
-            g_state->noNixGl = true;
+        // Nix support is removed, the options of start-hyprland for it are accepted and do nothing
+        if (arg == "--no-nixgl" || arg == "--force-nixgl")
             continue;
-        }
-        if (arg == "--force-nixgl") {
-            g_state->forceNixGl = true;
-            continue;
-        }
     }
 
     if (startArgv != -1)
@@ -91,15 +83,6 @@ int main(int argc, const char** argv, const char** envp) {
 
     if (!g_state->rawArgvNoBinPath.empty())
         g_logger->log(Hyprutils::CLI::LOG_WARN, "Arguments after -- are passed to Hypoland");
-
-    // check if our environment is OK
-    if (const auto RET = Nix::nixEnvironmentOk(); !RET) {
-        g_logger->log(Hyprutils::CLI::LOG_ERR, "Nix environment check failed:\n{}", RET.error());
-        return 1;
-    }
-
-    if (Nix::shouldUseNixGL())
-        g_logger->log(Hyprutils::CLI::LOG_DEBUG, "Hyprland was compiled with Nix - will use nixGL");
 
     bool safeMode    = false;
     bool lockedCrash = false;

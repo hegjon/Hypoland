@@ -20,7 +20,6 @@ runs:
           clang \
           cmake \
           git \
-          glaze \
           glm \
           glslang \
           go \

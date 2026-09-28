@@ -17,8 +17,6 @@
 #include <cairo.h>
 #include <cstdint>
 #include <fcntl.h>
-#include <glaze/core/context.hpp>
-#include <glaze/util/parse.hpp>
 #include <hyprlang.hpp>
 #include <hyprutils/memory/SharedPtr.hpp>
 #include <libeis.h>

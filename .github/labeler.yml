@@ -10,10 +10,6 @@ hyprctl:
   - changed-files:
       - any-glob-to-any-file: "hyprctl/**"
 
-nix:
-  - changed-files:
-      - any-glob-to-any-file: "nix/**"
-
 protocols:
   - changed-files:
       - any-glob-to-any-file: ["protocols/**", "src/protocols/**"]

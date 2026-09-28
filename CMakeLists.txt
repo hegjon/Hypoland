@@ -112,20 +112,6 @@ find_package(Threads REQUIRED)
 set(GLES_VERSION "GLES2")
 find_package(OpenGL REQUIRED COMPONENTS ${GLES_VERSION})
 
-find_package(glaze QUIET)
-if(NOT glaze_FOUND)
-  set(GLAZE_VERSION v7.2.0)
-  message(STATUS "glaze dependency not found, retrieving ${GLAZE_VERSION} with FetchContent")
-  include(FetchContent)
-  FetchContent_Declare(
-    glaze
-    GIT_REPOSITORY https://github.com/stephenberry/glaze.git
-    GIT_TAG ${GLAZE_VERSION}
-    GIT_SHALLOW TRUE
-    EXCLUDE_FROM_ALL)
-  FetchContent_MakeAvailable(glaze)
-endif()
-
 set(HYPRLANG_MINIMUM_VERSION 0.6.7)
 set(HYPRCURSOR_MINIMUM_VERSION 0.1.7)
 set(HYPRUTILS_MINIMUM_VERSION 0.14.0)
@@ -285,7 +271,6 @@ set_target_properties(Hyprland PROPERTIES OUTPUT_NAME Hypoland)
 
 target_include_directories(hyprland_lib PUBLIC ${deps_INCLUDE_DIRS} ${LUA_INCLUDE_DIRS})
 target_include_directories(Hyprland PUBLIC ${deps_INCLUDE_DIRS} ${LUA_INCLUDE_DIRS})
-target_link_libraries(hyprland_lib PRIVATE glaze::glaze)
 
 set(USE_GPROF OFF)
 
@@ -305,10 +290,6 @@ if(CMAKE_BUILD_TYPE MATCHES Debug OR CMAKE_BUILD_TYPE MATCHES DEBUG)
     add_compile_options(-pg)
     add_link_options(-pg)
   endif()
-endif()
-
-if(BUILT_WITH_NIX)
-  add_compile_definitions(BUILT_WITH_NIX)
 endif()
 
 check_include_file("execinfo.h" EXECINFOH)
