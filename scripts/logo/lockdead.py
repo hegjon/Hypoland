@@ -2,7 +2,7 @@
 # Generates the screens the compositor shows when the lock screen app dies, in assets/install:
 #   lockdead.png   the lock app is gone: banner and instructions to unlock from another tty
 #   lockdead2.png  a lock surface still exists: a dim banner only
-# The banner is the retro one (assets/logo/retro/header-retro.svg), recolored for a dark background.
+# The banner is assets/logo/header.svg, recolored for a dark background.
 # Usage: scripts/logo/lockdead.py [REPO]   (needs pycairo, draws with the system "sans" and "monospace" fonts)
 import re
 import sys
@@ -19,7 +19,7 @@ CODE = (0.85, 0.63, 0.36)
 # the lettering face was dark grey for a light background
 RECOLOR = {'#8a8f98': '#c8ccd3'}
 
-svg = (repo / 'assets/logo/retro/header-retro.svg').read_text()
+svg = (repo / 'assets/logo/header.svg').read_text()
 RECTS = [(float(x), float(y), float(w), float(h), RECOLOR.get(c, c))
          for x, y, w, h, c in re.findall(r'<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)" fill="(#[0-9a-f]{6})"/>', svg)]
 
