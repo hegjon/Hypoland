@@ -78,14 +78,14 @@ BUGS
 ====
 
 Submit bug reports and request features online at:
-    <*https://github.com/hegjon/Hypoland/issues*>
+    <*https://github.com/hegjon/hypoland/issues*>
 
 SEE ALSO
 ========
 
 **hyprctl**\(1)
 
-Sources at: <*https://github.com/hegjon/Hypoland*>
+Sources at: <*https://github.com/hegjon/hypoland*>
 
 COPYRIGHT
 =========

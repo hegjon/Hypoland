@@ -26,7 +26,8 @@ Hypoland's renderer and shaders are GLES 2.0 / GLSL ES 1.00 only; that port is d
 ## Repository
 
 - Repo lives in `/home/jonny/Work/hypoland`. The default branch is `master`.
-- Remotes: `origin` = github.com/hegjon/Hypoland (the user's fork, renamed from hegjon/Hyprland),
+- Remotes: `origin` = github.com/hegjon/hypoland (the user's fork, renamed from hegjon/Hyprland to hegjon/Hypoland
+  and on 2026-09-28 to lower case),
   `upstream` = hyprwm/Hyprland, `aquamarine` = github.com/hegjon/aquamarine.
 - History: `master` is based on the user's commit `5fafec87` on upstream main (v0.56.0+141, formerly the branch
   `gles2-legacy-renderer`),

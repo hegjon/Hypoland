@@ -22,7 +22,7 @@ Only the most recent release and `master` are supported.
 
 ## How to report security issues
 
-Use [Report a vulnerability](https://github.com/hegjon/Hypoland/security/advisories/new) on GitHub.
+Use [Report a vulnerability](https://github.com/hegjon/hypoland/security/advisories/new) on GitHub.
 
 Most of Hypoland's code comes from [Hyprland](https://github.com/hyprwm/Hyprland). If the issue is in code
 that Hypoland shares with Hyprland, it probably affects Hyprland too: please also report it to Hyprland,

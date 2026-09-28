@@ -55,7 +55,7 @@ Hypoland is meant to be a drop-in replacement, everything that talks to Hyprland
 
 Use the `hyprctl` built from this repository, so the versions match.
 
-Source: <https://github.com/hegjon/Hypoland>
+Source: <https://github.com/hegjon/hypoland>
 
 ## Building
 
