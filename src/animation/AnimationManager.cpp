@@ -150,10 +150,10 @@ static void handleUpdate(CAnimatedVariable<VarType>& av, bool warp) {
     av.onUpdate();
 }
 
-void CHyprAnimationManager::tick() {
-    static std::chrono::time_point lastTick = std::chrono::high_resolution_clock::now();
-    m_lastTickTimeMs                        = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - lastTick).count() / 1000.0;
-    lastTick                                = std::chrono::high_resolution_clock::now();
+void CHyprAnimationManager::tick(const Time::steady_tp& now) {
+    static Time::steady_tp lastTick = now;
+    m_lastTickTimeMs                = std::chrono::duration_cast<std::chrono::microseconds>(now - lastTick).count() / 1000.0;
+    lastTick                        = now;
 
     static auto PANIMENABLED = CConfigValue<Config::INTEGER>("animations:enabled");
 
@@ -348,11 +348,14 @@ void CHyprAnimationManager::frameTick() {
     if UNLIKELY (!g_pCompositor->m_sessionActive || !std::ranges::any_of(State::monitorState()->monitors(), [](const auto& mon) { return mon->m_enabled && mon->m_output; }))
         return;
 
-    if (!m_lastTickValid || m_lastTickTimer.getMillis() >= 1.0f) {
-        m_lastTickTimer.reset();
+    // One clock read for the whole tick. Without a usable TSC (the X200's Core 2) every read is a system call and an
+    // HPET read, and ticks come at the refresh rate while something animates.
+    const auto NOW = Time::steadyNow();
+    if (!m_lastTickValid || std::chrono::duration<float, std::milli>(NOW - m_lastTick).count() >= 1.0f) {
+        m_lastTick      = NOW;
         m_lastTickValid = true;
 
-        tick();
+        tick(NOW);
         Event::bus()->m_events.tick.emit();
     } else if (MANUALTICK)
         m_manualTickRequested = true;

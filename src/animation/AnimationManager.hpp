@@ -7,6 +7,7 @@
 #include "../helpers/AnimatedVariable.hpp"
 #include "../desktop/DesktopTypes.hpp"
 #include "../helpers/time/Timer.hpp"
+#include "../helpers/time/Time.hpp"
 #include "../managers/eventLoop/EventLoopTimer.hpp"
 
 namespace Animation {
@@ -15,7 +16,7 @@ namespace Animation {
       public:
         CHyprAnimationManager();
 
-        void         tick();
+        void         tick(const Time::steady_tp& now);
         void         frameTick();
         void         requestTick();
         virtual void scheduleTick();
@@ -64,10 +65,10 @@ namespace Animation {
         float               m_lastTickTimeMs;
 
       private:
-        bool   m_tickScheduled       = false;
-        bool   m_manualTickRequested = false;
-        bool   m_lastTickValid       = false;
-        CTimer m_lastTickTimer;
+        bool            m_tickScheduled       = false;
+        bool            m_manualTickRequested = false;
+        bool            m_lastTickValid       = false;
+        Time::steady_tp m_lastTick;
     };
 
     UP<CHyprAnimationManager>& mgr();
