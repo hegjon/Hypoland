@@ -543,7 +543,7 @@ void CCompositor::cleanEnvironment() {
     if (m_aqBackend->hasSession() && !Env::envEnabled("HYPRLAND_NO_SD_VARS") && !getenv("MANAGERPID")) {
 #ifdef USES_SYSTEMD
         if (m_sdSessionTarget)
-            // stopping hyprland-session doesn't wait for dependent services; this does
+            // stopping hypoland-session doesn't wait for dependent services; this does
             Config::Supplementary::executor()->spawn("systemctl --user stop graphical-session.target");
 #endif
         const auto CMD =
@@ -796,7 +796,7 @@ void CCompositor::startCompositor() {
 #ifdef USES_SYSTEMD
         if (!Env::envEnabled("HYPRLAND_NO_SD_TARGET")) {
             m_sdSessionTarget = true;
-            Config::Supplementary::executor()->spawn("systemctl --user start hyprland-session.target");
+            Config::Supplementary::executor()->spawn("systemctl --user start hypoland-session.target");
         }
 #endif
     }

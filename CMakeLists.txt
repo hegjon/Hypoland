@@ -354,15 +354,22 @@ else()
   message(STATUS "SYSTEMD support is requested (NO_SYSTEMD not defined)...")
   add_compile_definitions(USES_SYSTEMD)
 
-  install(FILES ${CMAKE_SOURCE_DIR}/systemd/hyprland-session.target
+  install(FILES ${CMAKE_SOURCE_DIR}/systemd/hypoland-session.target
           DESTINATION ${CMAKE_INSTALL_LIBDIR}/systemd/user)
+  # hyprland-session.target is an alias, for user services that are wanted by it
+  install(
+    CODE "execute_process( \
+          COMMAND ${CMAKE_COMMAND} -E create_symlink \
+          hypoland-session.target \
+          \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/systemd/user/hyprland-session.target\" \
+          )")
 
   # session file -uwsm
   if(NO_UWSM)
     message(STATUS "UWSM support is disabled...")
   else()
     message(STATUS "UWSM support is enabled (NO_UWSM not defined)...")
-    install(FILES ${CMAKE_SOURCE_DIR}/systemd/hyprland-uwsm.desktop
+    install(FILES ${CMAKE_SOURCE_DIR}/systemd/hypoland-uwsm.desktop
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/wayland-sessions)
   endif()
 endif()

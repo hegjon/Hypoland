@@ -38,8 +38,10 @@ Hypoland's renderer and shaders are GLES 2.0 / GLSL ES 1.00 only; that port is d
   weakened with objcopy because the compositor defines the same tables. Update with
   `git subtree pull --prefix=subprojects/aquamarine aquamarine gles2-support --squash`.
 - Rename status: binaries are `Hypoland` and `start-hypoland`, with `hypoland` and `start-hyprland` installed
-  as symlinks. The `Hyprland` and `hyprland` symlinks were removed on 2026-09-28 by decision of the user. CMake target names, session file names (`hyprland.desktop`,
-  `hyprland-uwsm.desktop`) and the `hyprctl version` text are intentionally unchanged.
+  as symlinks. The `Hyprland` and `hyprland` symlinks were removed on 2026-09-28 by decision of the user. CMake target names, the session file name `hyprland.desktop`
+  (Omarchy's session runs `uwsm start ... hyprland.desktop`) and the `hyprctl version` text are intentionally
+  unchanged. The files in `systemd/` are `hypoland-session.target` (the compositor starts it,
+  `hyprland-session.target` is installed as an alias) and `hypoland-uwsm.desktop`.
   The man page is `Hypoland(1)` (`docs/Hypoland.1.rst`, built with `make man`, needs pandoc), installed with
   `hypoland.1` as a symlink. `hyprctl(1)` keeps its name.
 - GLES3 code is removed, the renderer is GLES2 only (no runtime switch):
