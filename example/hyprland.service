@@ -6,7 +6,7 @@ Upholds     = swaybg@333333.service
 
 [Service]
 Type            = notify
-ExecStart       = /usr/bin/Hyprland
+ExecStart       = /usr/bin/Hypoland
 
 [Install]
 WantedBy = default.target

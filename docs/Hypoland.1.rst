@@ -22,7 +22,7 @@ It is an independent project and not affiliated with or endorsed by Hyprland.
 You can launch Hypoland by either going into a TTY and
 executing **start-hypoland**, or with a login manager.
 
-The commands **hypoland**, **Hyprland** and **hyprland** start the same program.
+The command **hypoland** starts the same program.
 
 COMPATIBILITY
 =============

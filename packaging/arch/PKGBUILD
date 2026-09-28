@@ -4,7 +4,7 @@
 #   cd packaging/arch && makepkg -f
 #
 # The package replaces hyprland: it provides the same config path, IPC sockets,
-# session files and the Hyprland / hyprland / start-hyprland command names.
+# session files and the start-hyprland command name. There is no Hyprland / hyprland command.
 
 pkgname=hypoland
 pkgver=0.56.0.r543.gccc91ecb

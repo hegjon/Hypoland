@@ -17,8 +17,9 @@ Hypoland is an independent project. It is not affiliated with or endorsed by Hyp
 - The renderer runs on OpenGL ES 2.0, with shaders in GLSL ES 1.00.
 - [aquamarine](https://github.com/hyprwm/aquamarine) is embedded (`subprojects/aquamarine`) and linked
   statically. Its DRM renderer uses OpenGL ES 2.0 only. The system aquamarine is not used.
-- The binaries are named `Hypoland` and `start-hypoland`. `hypoland`, `Hyprland`, `hyprland` and
-  `start-hyprland` are installed as symlinks.
+- The binaries are named `Hypoland` and `start-hypoland`. `hypoland` and `start-hyprland` are installed as
+  symlinks. There is no `Hyprland` or `hyprland` command, start the compositor with `start-hypoland` (or
+  `Hypoland`).
 - Color management, HDR and motion blur are removed. Their config options stay registered and are ignored,
   so existing configs keep loading.
 - The blur variants ripple, water, fluid_jar, prism and acrylic are removed, selecting one gives the normal

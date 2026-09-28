@@ -49,8 +49,8 @@ man:
 
 asan:
 	@echo -en "!!WARNING!!\nOnly run this in the TTY.\n"
-	@pidof Hyprland > /dev/null && echo -ne "Refusing to run with Hyprland running.\n" || echo ""
-	@pidof Hyprland > /dev/null && exit 1 || echo ""
+	@pidof Hypoland > /dev/null && echo -ne "Refusing to run with Hypoland running.\n" || echo ""
+	@pidof Hypoland > /dev/null && exit 1 || echo ""
 
 	rm -rf ./wayland
 	#git reset --hard
