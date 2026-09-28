@@ -205,7 +205,8 @@ if(Git_FOUND)
     execute_process(COMMAND ${GIT_EXECUTABLE} show -s --format=%cd --date=local --no-show-signature
       WORKING_DIRECTORY ${GIT_TOPLEVEL}
       OUTPUT_VARIABLE GIT_COMMIT_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
-    execute_process(COMMAND ${GIT_EXECUTABLE} diff-index --quiet HEAD --
+    # makepkg writes pkgver into the PKGBUILD before it builds, that alone is not a dirty tree
+    execute_process(COMMAND ${GIT_EXECUTABLE} diff-index --quiet HEAD -- . ":(exclude)packaging/arch/PKGBUILD"
       WORKING_DIRECTORY ${GIT_TOPLEVEL}
       RESULT_VARIABLE GIT_DIRTY_RESULT)
     if(NOT GIT_DIRTY_RESULT EQUAL 0)
