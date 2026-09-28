@@ -8,6 +8,14 @@
 #
 #   --rounds N         how often the workloads are repeated (default 3)
 #   --settle N         age of the compositor in seconds before memory is measured (default 60)
+#   --energy           measure the power each workload costs and the instructions the compositor executes,
+#                      with the governor left alone (workloads of 30 s). Without RAPL (the X200) the meter
+#                      is the battery: unplug the charger first
+#   --meter M          auto, rapl, battery or none (only instructions and cycles), with --energy
+#   --idle N           length of the idle baseline before and after every workload (default 10), with --energy
+#   --min-battery N    stop below N percent battery (default 30), with --energy
+#   --powercap DIR, --power-supply DIR
+#                      where the meters are on the machine under test (default /sys/class/...)
 # TARGET_HELP
 #
 # Writes test-results/bench-<time>-<label>/values.txt with "<key> <median> <min> <max>" per line.
@@ -36,7 +44,13 @@ compare() {
             if (noise < floor)
                 noise = floor
             mark = ""
-            if ($1 ~ /^(cpu\..*\.percent|mem\..*_kB|binary\.size_kB)$/ && (d > noise || d < -noise) && d != 0)
+            # the power of the whole machine drifts, a guess until real runs show how much
+            if ($1 ~ /^power\./ && noise < 0.3)
+                noise = 0.3
+            # instructions repeat to about a percent
+            if ($1 ~ /^perf\./ && noise < base[$1] / 50)
+                noise = base[$1] / 50
+            if ($1 ~ /^(cpu\..*\.percent|mem\..*_kB|binary\.size_kB|power\.(baseline\.W|.*\.net_W)|perf\..*\.Minstructions)$/ && (d > noise || d < -noise) && d != 0)
                 mark = (d < 0) ? "better" : "WORSE"
             if ($1 ~ /^fps\./ && d < -1)
                 mark = "WORSE"
@@ -54,12 +68,14 @@ compare() {
     fi
 }
 
-ROUNDS=3 LABEL="" SECONDS_SET=0
+ROUNDS=3 LABEL="" SECONDS_SET=0 MODE=bench
 while [ $# -gt 0 ]; do
     case $1 in
         --compare) [ $# -eq 3 ] || { usage; exit 2; }; compare "$2" "$3"; exit 0 ;;
         --rounds) ROUNDS=$2; shift ;;
         --settle) MEASURE_ARGS+=(--settle "$2"); shift ;;
+        --energy) MODE=energy ;;
+        --meter | --idle | --min-battery | --powercap | --power-supply) MEASURE_ARGS+=("$1" "$2"); shift ;;
         -h | --help) usage; exit 0 ;;
         -*)
             [ "$1" = --seconds ] && SECONDS_SET=1
@@ -70,8 +86,12 @@ while [ $# -gt 0 ]; do
     esac
     shift
 done
-[ $SECONDS_SET = 1 ] || MEASURE_ARGS+=(--seconds 20)
+if [ $SECONDS_SET = 0 ]; then
+    # a battery reports a new discharge rate every few seconds, energy needs longer windows
+    if [ $MODE = energy ]; then MEASURE_ARGS+=(--seconds 30); else MEASURE_ARGS+=(--seconds 20); fi
+fi
 
+[ $MODE = energy ] && LABEL=-energy$LABEL
 OUT=test-results/bench-$(date +%Y%m%d-%H%M%S)$LABEL
 mkdir -p "$OUT"
 { git rev-parse HEAD; git status --short; } >"$OUT/source.txt" 2>&1
@@ -83,7 +103,7 @@ if [ $DEPLOY = 1 ] && ! target_deploy "$OUT/test.log" "${DEPLOY_ARGS[@]}"; then
     exit 1
 fi
 
-target_run scripts/bench/measure.sh --mode bench --rounds "$ROUNDS" "${MEASURE_ARGS[@]}" | tee "$OUT/bench.txt" | grep --line-buffered -v "^@"
+target_run scripts/bench/measure.sh --mode $MODE --rounds "$ROUNDS" "${MEASURE_ARGS[@]}" | tee "$OUT/bench.txt" | grep --line-buffered -v "^@"
 if ! grep -q "^@ .* mem.end" "$OUT/bench.txt"; then
     echo "the measurement did not finish, see $OUT/bench.txt"
     exit 1
@@ -102,5 +122,5 @@ grep "^@" "$OUT/bench.txt" | sort -k3,3 -k4,4g | awk '
 
 echo
 column -t -N key,median,min,max "$OUT/values.txt"
-grep -q "^invalid" "$OUT/values.txt" && echo "NOT VALID: a screensaver, a lock or a compositor restart got in the way"
+grep -q "^invalid" "$OUT/values.txt" && echo "NOT VALID: a screensaver, a lock, a compositor restart, the charger or a low battery got in the way"
 echo "values: $OUT/values.txt"

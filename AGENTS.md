@@ -217,6 +217,18 @@ Tools:
   is not installed and only touches the Omarchy idle flags where Omarchy is installed.
   `scripts/bench/target.sh` holds the ssh part. Build, deploy and restart still go through `test-x200.sh`
   (`BENCH_DEPLOY` names another script).
+- `./bench.sh --energy <label>` measures energy instead of speed (added 2026-09-28, after omacom/ttfx#46): the
+  power the machine draws under each workload, net of an idle baseline taken before and after it (`power.*.net_W`,
+  `energy.*.net_J`, with the drift of the baseline as `pm_W`), the idle session itself (`power.baseline.W`) and
+  the instructions and cycles of the compositor from `perf stat` (`perf.*.Minstructions`, within about 1% from
+  run to run, the steadiest figure to compare builds by). The governor is left alone, energy depends on it.
+  The meter is RAPL where the CPU has it (the desktop: AMD package counter, root only) and otherwise the battery's
+  discharge rate, which covers the whole machine including the screen and reads only on battery. The X200 has no
+  RAPL, so it has to run unplugged: its battery showed 26%, 7.3 V (design 11.1 V) and `Not charging` on the
+  charger, check it before trusting it with a run. The run stops below `--min-battery` (30%) and when the charger
+  is plugged in, since a flat battery means a reboot and the disk password. `--meter none` only counts
+  instructions and cycles and works on the charger. Tested with fake meters only so far (`--power-supply`,
+  `--powercap`); the 0.3 W noise floor of `--compare` for power is a guess until real runs.
 - `HYPOLAND_NO_DIRECT_RENDER=1` makes every frame go through the work buffer, for comparing the two paths.
 
 Performance (X200, `HYPOLAND_PROFILE_PASS`, GPU time per frame, 4 windows plus a 60 fps client):
