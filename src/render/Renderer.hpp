@@ -236,7 +236,6 @@ namespace Render {
             return false;
         };
 
-        SP<ITexture>         getBackground(PHLMONITOR pMonitor);
         virtual SP<ITexture> getBlurTexture(PHLMONITORREF pMonitor);
 
         SP<ITexture>         m_lockDeadTexture;
@@ -262,23 +261,20 @@ namespace Render {
         void renderSessionLockPrimer(PHLMONITOR pMonitor);
         void renderSessionLockMissing(PHLMONITOR pMonitor);
         void renderBackground(PHLMONITOR pMonitor);
-        void requestBackgroundResource();
-        std::string                       resolveAssetPath(const std::string& file);
-        void                              initMissingAssetTexture();
-        void                              initAssets();
-        SP<ITexture>                      m_missingAssetTexture;
-        ASP<Hyprgraphics::CImageResource> m_backgroundResource;
-        bool                              m_backgroundResourceFailed = false;
+        std::string             resolveAssetPath(const std::string& file);
+        void                    initMissingAssetTexture();
+        void                    initAssets();
+        SP<ITexture>            m_missingAssetTexture;
 
-        bool                              m_cursorHidden            = false;
-        bool                              m_cursorHiddenByCondition = false;
-        bool                              m_cursorHasSurface        = false;
-        SP<Aquamarine::IBuffer>           m_currentBuffer           = nullptr;
-        eRenderMode                       m_renderMode              = RENDER_MODE_NORMAL;
-        bool                              m_nvidia                  = false;
-        bool                              m_intel                   = false;
-        bool                              m_software                = false;
-        bool                              m_mgpu                    = false;
+        bool                    m_cursorHidden            = false;
+        bool                    m_cursorHiddenByCondition = false;
+        bool                    m_cursorHasSurface        = false;
+        SP<Aquamarine::IBuffer> m_currentBuffer           = nullptr;
+        eRenderMode             m_renderMode              = RENDER_MODE_NORMAL;
+        bool                    m_nvidia                  = false;
+        bool                    m_intel                   = false;
+        bool                    m_software                = false;
+        bool                    m_mgpu                    = false;
 
         struct {
             bool hiddenOnTouch    = false;

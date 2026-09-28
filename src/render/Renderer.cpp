@@ -1272,127 +1272,12 @@ void IHyprRenderer::renderIME(PHLMONITOR pMonitor, const Time::steady_tp& now, c
     }
 }
 
-SP<ITexture> IHyprRenderer::getBackground(PHLMONITOR pMonitor) {
-
-    if (m_backgroundResourceFailed)
-        return nullptr;
-
-    if (!m_backgroundResource) {
-        // queue the asset to be created
-        requestBackgroundResource();
-        return nullptr;
-    }
-
-    if (!m_backgroundResource->m_ready)
-        return nullptr;
-
-    Log::logger->log(Log::DEBUG, "Creating a texture for BGTex");
-    SP<ITexture> backgroundTexture = createTexture(m_backgroundResource->m_asset.cairoSurface->cairo());
-
-    if (!backgroundTexture || !backgroundTexture->ok())
-        return nullptr;
-
-    Log::logger->log(Log::DEBUG, "BGTex created for monitor {}", pMonitor->m_name);
-
-    const int monW  = (int)std::round(pMonitor->m_transformedSize.x);
-    const int monH  = (int)std::round(pMonitor->m_transformedSize.y);
-    const int origW = backgroundTexture->m_size.x;
-    const int origH = backgroundTexture->m_size.y;
-
-    if (monW > 0 && monH > 0) {
-        const double scaleX = (double)monW / origW;
-        const double scaleY = (double)monH / origH;
-        const double scale  = std::max(scaleX, scaleY);
-
-        // scale the background if it's larger than the monitor
-        if (scale < 1.0) {
-            auto fb = createFB("BGTex scale");
-            fb->alloc(monW, monH);
-
-            auto       guard = bindTempFB(fb);
-
-            const auto oldProjType     = m_renderData.projectionType;
-            const auto oldFbSize       = m_renderData.fbSize;
-            const auto oldTransformDmg = m_renderData.transformDamage;
-
-            m_renderData.fbSize = Vector2D{monW, monH};
-            setProjectionType(RPT_EXPORT);
-            m_renderData.transformDamage = false;
-            setViewport(0, 0, monW, monH);
-
-            draw(CClearPassElement::SClearData{{0.F, 0.F, 0.F, 0.F}});
-
-            const double texW = origW * scale;
-            const double texH = origH * scale;
-            const double offX = (monW - texW) / 2.0;
-            const double offY = (monH - texH) / 2.0;
-
-            CRegion      fullDamage = {0, 0, monW, monH};
-            draw(CTexPassElement::SRenderData{.tex = backgroundTexture, .box = CBox{offX, offY, texW, texH}, .damage = fullDamage}, fullDamage);
-
-            m_renderData.fbSize          = oldFbSize;
-            m_renderData.transformDamage = oldTransformDmg;
-            setProjectionType(oldProjType);
-            setViewport(0, 0, (int)m_renderData.currentFB->m_size.x, (int)m_renderData.currentFB->m_size.y);
-
-            backgroundTexture = fb->getTexture();
-
-            Log::logger->log(Log::INFO, "BGTex scaled from {}x{} to {}x{} for monitor {}", origW, origH, monW, monH, pMonitor->m_name);
-        }
-    }
-
-    // clear the resource after we're done using it
-    g_pEventLoopManager->doLater([this] { m_backgroundResource.reset(); });
-
-    // set the animation to start for fading this background in nicely
-    pMonitor->m_backgroundOpacity->setValueAndWarp(0.F);
-    *pMonitor->m_backgroundOpacity = 1.F;
-
-    return backgroundTexture;
-}
-
 void IHyprRenderer::renderBackground(PHLMONITOR pMonitor) {
-    // Hypoland ships no Hyprland artwork, misc:disable_hyprland_logo is accepted and ignored
-    static constexpr bool PRENDERTEXVAL    = true;
-    static auto           PRENDERTEX       = &PRENDERTEXVAL;
-    static auto           PBACKGROUNDCOLOR = CConfigValue<Config::INTEGER>("misc:background_color");
-    static auto           PNOSPLASH        = CConfigValue<Config::INTEGER>("misc:disable_splash_rendering");
+    // Hypoland ships no wallpaper and no logo, misc:disable_hyprland_logo and misc:force_default_wallpaper are ignored
+    static auto PBACKGROUNDCOLOR = CConfigValue<Config::INTEGER>("misc:background_color");
+    static auto PNOSPLASH        = CConfigValue<Config::INTEGER>("misc:disable_splash_rendering");
 
-    if (*PRENDERTEX /* inverted cfg flag */ || pMonitor->m_backgroundOpacity->isBeingAnimated())
-        m_renderPass.add(makeUnique<CClearPassElement>(CClearPassElement::SClearData{CHyprColor(*PBACKGROUNDCOLOR)}));
-
-    if (!*PRENDERTEX) {
-        static auto PBACKGROUNDCOLOR = CConfigValue<Config::INTEGER>("misc:background_color");
-
-        if (!pMonitor->m_background)
-            pMonitor->m_background = getBackground(pMonitor);
-
-        if (!pMonitor->m_background)
-            m_renderPass.add(makeUnique<CClearPassElement>(CClearPassElement::SClearData{CHyprColor(*PBACKGROUNDCOLOR)}));
-        else {
-            CTexPassElement::SRenderData data;
-            const double                 MONRATIO = m_renderData.pMonitor->m_transformedSize.x / m_renderData.pMonitor->m_transformedSize.y;
-            const double                 WPRATIO  = pMonitor->m_background->m_size.x / pMonitor->m_background->m_size.y;
-            Vector2D                     origin;
-            double                       scale = 1.0;
-
-            if (MONRATIO > WPRATIO) {
-                scale    = m_renderData.pMonitor->m_transformedSize.x / pMonitor->m_background->m_size.x;
-                origin.y = (m_renderData.pMonitor->m_transformedSize.y - pMonitor->m_background->m_size.y * scale) / 2.0;
-            } else {
-                scale    = m_renderData.pMonitor->m_transformedSize.y / pMonitor->m_background->m_size.y;
-                origin.x = (m_renderData.pMonitor->m_transformedSize.x - pMonitor->m_background->m_size.x * scale) / 2.0;
-            }
-
-            if (MONRATIO != WPRATIO)
-                m_renderPass.add(makeUnique<CClearPassElement>(CClearPassElement::SClearData{CHyprColor(*PBACKGROUNDCOLOR)}));
-
-            data.box = {origin, pMonitor->m_background->m_size * scale};
-            data.a   = m_renderData.pMonitor->m_backgroundOpacity->value();
-            data.tex = pMonitor->m_background;
-            m_renderPass.add(makeUnique<CTexPassElement>(std::move(data)));
-        }
-    }
+    m_renderPass.add(makeUnique<CClearPassElement>(CClearPassElement::SClearData{CHyprColor(*PBACKGROUNDCOLOR)}));
 
     if (!*PNOSPLASH) {
         auto monitorSize = pMonitor->m_transformedSize;
@@ -1407,62 +1292,6 @@ void IHyprRenderer::renderBackground(PHLMONITOR pMonitor) {
             m_renderPass.add(makeUnique<CTexPassElement>(std::move(data)));
         }
     }
-}
-
-void IHyprRenderer::requestBackgroundResource() {
-    if (m_backgroundResource)
-        return;
-
-    // Hypoland ships no Hyprland artwork, misc:disable_hyprland_logo is accepted and ignored
-    static constexpr bool PNOWALLPAPERVAL = true;
-    static auto           PNOWALLPAPER    = &PNOWALLPAPERVAL;
-    static auto           PFORCEWALLPAPER = CConfigValue<Config::INTEGER>("misc:force_default_wallpaper");
-
-    const auto            FORCEWALLPAPER = std::clamp(*PFORCEWALLPAPER, sc<int64_t>(-1), sc<int64_t>(2));
-
-    if (*PNOWALLPAPER)
-        return;
-
-    static bool        once    = true;
-    static std::string texPath = "wall";
-
-    if (once) {
-        // get the adequate tex
-        if (FORCEWALLPAPER == -1) {
-            std::mt19937_64                 engine(time(nullptr));
-            std::uniform_int_distribution<> distribution(0, 2);
-
-            texPath += std::to_string(distribution(engine));
-        } else
-            texPath += std::to_string(std::clamp(*PFORCEWALLPAPER, sc<int64_t>(0), sc<int64_t>(2)));
-
-        texPath += ".png";
-
-        texPath = resolveAssetPath(texPath);
-
-        once = false;
-    }
-
-    if (texPath.empty()) {
-        m_backgroundResourceFailed = true;
-        return;
-    }
-
-    m_backgroundResource = makeAtomicShared<Hyprgraphics::CImageResource>(texPath);
-
-    // doesn't have to be ASP as it's passed
-    SP<CMainLoopExecutor> executor = makeShared<CMainLoopExecutor>([this] {
-        for (const auto& m : State::monitorState()->monitors()) {
-            damageMonitor(m);
-        }
-    });
-
-    m_backgroundResource->m_events.finished.listenStatic([executor] {
-        // this is in the worker thread.
-        executor->signal();
-    });
-
-    g_pAsyncResourceGatherer->enqueue(m_backgroundResource);
 }
 
 std::string IHyprRenderer::resolveAssetPath(const std::string& filename) {

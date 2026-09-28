@@ -599,8 +599,7 @@ install(FILES ${CMAKE_SOURCE_DIR}/example/hyprland.desktop
 # allow Hyprland to find assets
 add_compile_definitions(DATAROOTDIR="${CMAKE_INSTALL_FULL_DATAROOTDIR}")
 
-# installable assets
-# the wall*.png backgrounds are Hyprland artwork and are not installed
+# installable assets: the screens shown when the lock screen app dies, made by scripts/logo/lockdead.py
 file(GLOB_RECURSE INSTALLABLE_ASSETS "assets/install/lockdead*")
 install(FILES ${INSTALLABLE_ASSETS}
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/hypr)

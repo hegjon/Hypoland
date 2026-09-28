@@ -128,7 +128,6 @@ namespace Monitor {
         Config::CMonitorRule        m_activeMonitorRule;
 
         SP<Render::ITexture>        m_splash;
-        SP<Render::ITexture>        m_background;
 
         // explicit sync
         Hyprutils::OS::CFileDescriptor m_inFence; // TODO: remove when aq uses CFileDescriptor
@@ -166,7 +165,6 @@ namespace Monitor {
         PHLANIMVAR<float> m_cursorZoom;
 
         // for fading in the wallpaper because it doesn't happen instantly (it's loaded async)
-        PHLANIMVAR<float> m_backgroundOpacity;
 
         // for initial zoom anim
         PHLANIMVAR<float> m_zoomAnimProgress;

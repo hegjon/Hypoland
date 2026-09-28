@@ -85,7 +85,10 @@ Hypoland's renderer and shaders are GLES 2.0 / GLSL ES 1.00 only; that port is d
   The README uses the pre-2000 style banner `assets/logo/retro/header-retro.svg` (bitmap lettering
   whose O is a pixel potato hanging below the baseline, since hypo- means "under"), generated with
   `scripts/logo/retro.py scripts/logo/potato-mask.txt assets/logo/retro`. The Hyprland banner and screenshots
-  were removed from `assets/`.
+  were removed from `assets/`, the Hyprland wallpapers `wall0-2.png` and the wallpaper code on 2026-09-28
+  (`misc:force_default_wallpaper` is a no-op). The screens shown when the lock screen app dies
+  (`assets/install/lockdead*.png`) are generated from the retro banner with `scripts/logo/lockdead.py`.
+  `assets/hyprland-portals.conf` keeps its name, xdg-desktop-portal finds it through `XDG_CURRENT_DESKTOP=Hyprland`.
 - Baseline failure of stock Hyprland 0.56.2 is saved in `docs/baseline/stock-hyprland-0.56.2-crash.txt`:
   `eglCreateContext failed with both GLES 3.2 and GLES 3.0` (EGL_BAD_MATCH), then an assert in
   `CHyprOpenGLImpl::CHyprOpenGLImpl()`. Aquamarine's own `CDRMRenderer` also wants GLES 3, but that is
