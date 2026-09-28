@@ -16,7 +16,7 @@
 #   --settle N          age of the compositor in seconds before memory is measured (default 60)
 #   --keep-governor     leave the CPU frequency governor alone
 #   --stages REGEX      functions whose inclusive time perf mode prints
-#   --out DIR           directory for raw data on this machine (default /tmp/hypoland-measure-<uid>)
+#   --out DIR           directory for raw data on this machine (default: a new one from mktemp -d)
 #   --meter auto|rapl|battery|none
 #                       energy meter (default auto: RAPL when the CPU has it, else the battery). none only
 #                       counts instructions and cycles
@@ -36,7 +36,7 @@
 # baseline around a workload is subtracted, so the net power is what the workload adds: the client and
 # the compositor drawing it. Two builds differ only in the compositor's part.
 
-MODE=bench SECONDS_PER_RUN=12 ROUNDS=1 SETTLE=60 PROCESS="" KEEP_GOVERNOR=0 OUT=/tmp/hypoland-measure-$(id -u)
+MODE=bench SECONDS_PER_RUN=12 ROUNDS=1 SETTLE=60 PROCESS="" KEEP_GOVERNOR=0 OUT=""
 METER=auto IDLE=10 MIN_BATTERY=30 POWERCAP=/sys/class/powercap POWER_SUPPLY=/sys/class/power_supply
 WORKLOADS=idle,gpu-client,terminal-scroll,shm-fullwindow,workspace-switch
 STAGES='Render::IHyprRenderer::renderMonitor|Render::GL::CHyprGLRenderer::endRender|Render::GL::CHyprGLRenderer::beginRenderInternal|Render::GL::CEGLSync::create|Render::CRenderPass::render|Render::GL::CHyprOpenGLImpl::end\(\)|Render::GL::CGLFramebuffer::internalAlloc|Render::GL::CGLTexture::update|Aquamarine::CDRMOutput::commitState|drmModeAtomicCommit|Aquamarine::getDRMProp|Aquamarine::getDRMPropBlob|__x64_sys_ioctl|clock_gettime|read_hpet|_CWlSurfaceCommit|shmem_alloc_and_add_folio|drm_clflush_sg|Render::IHyprRenderer::renderLayer|Render::IHyprRenderer::renderAllClientsForWorkspace|Monitor::CMonitor::scheduleFrame|Animation::CHyprAnimationManager::tick|CInputManager::[A-Za-z]+|CPointerManager::[A-Za-z]+'
@@ -120,7 +120,7 @@ client() { # seconds to live, command
     local ttl=$1 pidfile
     shift
     CLIENTS=$((CLIENTS + 1))
-    pidfile=$OUT/client.$CLIENTS.pid
+    pidfile=$CLIENTDIR/client.$CLIENTS.pid
     rm -f "$pidfile"
     asuser setsid sh -c 'echo $$ >"$0"; exec timeout "$1" sh -c "$2"' "$pidfile" "$ttl" "$*" >/dev/null 2>&1 &
     for _ in 1 2 3 4 5 6 7 8 9 10; do
@@ -130,9 +130,14 @@ client() { # seconds to live, command
 }
 stop_clients() {
     local pidfile
-    for pidfile in "$OUT"/client.*.pid; do
-        [ -s "$pidfile" ] && kill -- "-$(cat "$pidfile")" 2>/dev/null
+    local pid
+    for pidfile in "$CLIENTDIR"/client.*.pid; do
+        pid=$(cat "$pidfile" 2>/dev/null)
         rm -f "$pidfile"
+        # the clients' directory belongs to the compositor user: only signal a process group of that user
+        [[ $pid =~ ^[0-9]+$ ]] && [ "$pid" -gt 1 ] || continue
+        [ "$(ps -o uid= -p "$pid" 2>/dev/null | tr -d ' ')" = "$(id -u "$TESTUSER")" ] || continue
+        kill -- "-$pid" 2>/dev/null
     done
 }
 
@@ -341,9 +346,18 @@ if [ -n "$OMARCHY" ]; then
 fi
 dispatch 'hl.dsp.dpms({action=[[on]]})' "dpms on"
 
-rm -rf "$OUT"
-mkdir -p "$OUT"
-chmod 777 "$OUT"
+# root writes its data into a directory only it can write to, the clients (run as the compositor user) into
+# one they own below it. Others may only pass through (711) to reach the clients' directory.
+if [ -z "$OUT" ]; then
+    OUT=$(mktemp -d /tmp/hypoland-measure.XXXXXX)
+else
+    mkdir -p "$OUT"
+fi
+chmod 711 "$OUT"
+CLIENTDIR=$OUT/clients
+rm -rf "$CLIENTDIR"
+mkdir -m 700 "$CLIENTDIR"
+[ $ROOT = 1 ] && chown "$TESTUSER" "$CLIENTDIR"
 
 echo "machine: $(uname -n), $(uname -r), $(nproc) cores, $(awk '/MemTotal/ {printf "%d MiB", $2 / 1024}' /proc/meminfo)"
 echo "compositor: $BINARY, pid $P, user $TESTUSER, instance $SIG"
@@ -463,7 +477,7 @@ workload_idle() {
 
 needs_gpu_client="weston-simple-egl"
 workload_gpu_client() {
-    local log=$OUT/fps.log
+    local log=$CLIENTDIR/fps.log
     rm -f "$log"
     client $((SECONDS_PER_RUN + 10)) "exec stdbuf -oL weston-simple-egl >$log 2>&1"
     sleep 4
@@ -484,7 +498,7 @@ workload_terminal_scroll() {
 needs_shm_fullwindow="chromium"
 workload_shm_fullwindow() {
     local page="data:text/html,<body style='background:linear-gradient(90deg,red,blue)'><marquee scrollamount=20 style='font:60px sans-serif;color:white'>Hypoland</marquee><div style='animation:s 2s linear infinite;width:200px;height:200px;background:lime'></div><style>@keyframes s{to{transform:translateX(900px) rotate(360deg)}}</style>"
-    client $((SECONDS_PER_RUN + 40)) "exec chromium --ozone-platform=wayland --no-first-run --user-data-dir=$OUT/chromium \"$page\""
+    client $((SECONDS_PER_RUN + 40)) "exec chromium --ozone-platform=wayland --no-first-run --user-data-dir=$CLIENTDIR/chromium \"$page\""
     sleep 24
     rec shm-fullwindow
     stop_clients

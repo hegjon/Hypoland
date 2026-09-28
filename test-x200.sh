@@ -199,12 +199,14 @@ while [ $i -lt 120 ]; do
 done
 sleep 30
 MAGENTA
-scp -q "$OUT/magenta.sh" "$X200_HOST:/tmp/hypoland-magenta.sh"
-remote 'chmod +x /tmp/hypoland-magenta.sh; hyprctl dispatch "hl.dsp.exec_cmd([[foot -e /tmp/hypoland-magenta.sh]])" >/dev/null; sleep 4'
+# test files go into the user's runtime directory (mode 700), not into /tmp where others could plant them
+RUNDIR=$(remote 'echo $XDG_RUNTIME_DIR' | tail -1)
+scp -q "$OUT/magenta.sh" "$X200_HOST:$RUNDIR/hypoland-magenta.sh"
+remote 'chmod +x $XDG_RUNTIME_DIR/hypoland-magenta.sh; hyprctl dispatch "hl.dsp.exec_cmd([[foot -e $XDG_RUNTIME_DIR/hypoland-magenta.sh]])" >/dev/null; sleep 4'
 AFTER=$(remote 'hyprctl clients -j | grep -c "\"address\""')
 if [ "${AFTER:-0}" -gt "${BEFORE:-0}" ]; then pass "foot window mapped"; else fail "foot window did not map"; fi
 
-if remote 'grim /tmp/hypoland-shot.png' >"$OUT/grim.log" && scp -q "$X200_HOST:/tmp/hypoland-shot.png" "$OUT/screenshot.png"; then
+if remote 'grim $XDG_RUNTIME_DIR/hypoland-shot.png' >"$OUT/grim.log" && scp -q "$X200_HOST:$RUNDIR/hypoland-shot.png" "$OUT/screenshot.png"; then
     pass "screenshot: $OUT/screenshot.png"
 else
     fail "screenshot (see $OUT/grim.log)"
