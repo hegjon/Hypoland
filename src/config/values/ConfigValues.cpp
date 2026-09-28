@@ -498,7 +498,7 @@ std::vector<SP<IValue>> Values::getConfigValues() {
          */
 
         MS<Bool>("group:insert_after_current", "whether new windows in a group spawn after current or at group tail", true),
-        MS<Bool>("group:focus_removed_window", "whether Hyprland should focus on the window that has just been moved out of the group", true),
+        MS<Bool>("group:focus_removed_window", "whether Hypoland should focus on the window that has just been moved out of the group", true),
         MS<Bool>("group:merge_groups_on_drag", "whether window groups can be dragged into other groups", true),
         MS<Bool>("group:merge_groups_on_groupbar", "whether one group will be merged with another when dragged into its groupbar", true),
         MS<Gradient>("group:col.border_active", "active group border color", CHyprColor{0x66ffff00}, {.refresh = Supplementary::REFRESH_GRADIENTS_GROUPBAR}),
@@ -575,7 +575,7 @@ std::vector<SP<IValue>> Values::getConfigValues() {
         MS<Bool>("misc:enable_swallow", "Enable window swallowing", false),
         MS<String>("misc:swallow_regex", "The class regex to be used for windows that should be swallowed.", STRVAL_EMPTY),
         MS<String>("misc:swallow_exception_regex", "The title regex to be used for windows that should not be swallowed.", STRVAL_EMPTY),
-        MS<Bool>("misc:focus_on_activate", "Whether Hyprland should focus an app that requests to be focused.", false),
+        MS<Bool>("misc:focus_on_activate", "Whether Hypoland should focus an app that requests to be focused.", false),
         MS<Bool>("misc:mouse_move_focuses_monitor", "Whether mouse moving into a different monitor should focus it", true),
         MS<Bool>("misc:allow_session_lock_restore", "if true, will allow you to restart a lockscreen app in case it crashes.", false),
         MS<Bool>("misc:session_lock_xray", "keep rendering workspaces below your lockscreen", false),
@@ -708,8 +708,8 @@ std::vector<SP<IValue>> Values::getConfigValues() {
          * ecosystem:
          */
 
-        MS<Bool>("ecosystem:no_update_news", "disable the popup that shows up when you update hyprland to a new version.", false),
-        MS<Bool>("ecosystem:no_donation_nag", "disable the popup that shows up twice a year encouraging to donate.", false),
+        MS<Bool>("ecosystem:no_update_news", "no-op, Hypoland shows no update news", false),
+        MS<Bool>("ecosystem:no_donation_nag", "no-op, Hypoland shows no donation popup", false),
         MS<Bool>("ecosystem:enforce_permissions", "whether to enable permission control.", false),
 
         /*
@@ -723,7 +723,7 @@ std::vector<SP<IValue>> Values::getConfigValues() {
         MS<Bool>("debug:disable_time", "disables time logging", true),
         MS<Int>("debug:damage_tracking", "redraw only the needed bits of the display.", 2, {.min = 0, .max = 2, .map = OptionMap{{"disable", 0}, {"monitor", 1}, {"full", 2}}}),
         MS<Bool>("debug:enable_stdout_logs", "enables logging to stdout", false),
-        MS<Int>("debug:manual_crash", "set to 1 and then back to 0 to crash Hyprland.", 0, {.min = 0, .max = 1}),
+        MS<Int>("debug:manual_crash", "set to 1 and then back to 0 to crash Hypoland.", 0, {.min = 0, .max = 1}),
         MS<Bool>("debug:suppress_errors", "if true, do not display config file parsing errors.", false),
         MS<Bool>("debug:disable_scale_checks", "disables verification of the scale factors.", false),
         MS<Int>("debug:error_limit", "limits the number of displayed config file parsing errors.", 5, {.min = 0, .max = 20}),
@@ -735,7 +735,7 @@ std::vector<SP<IValue>> Values::getConfigValues() {
         MS<Bool>("debug:ds_handle_same_buffer", "Special case for DS with unmodified buffer", true),
         MS<Bool>("debug:ds_handle_same_buffer_fifo", "Special case for DS with unmodified buffer unlocks fifo", true),
         MS<Bool>("debug:render_solitary_wo_damage", "Render solitary window with empty damage", false),
-        MS<Bool>("debug:vfr", "controls the VFR status of Hyprland. Do not turn off unless debugging", true),
+        MS<Bool>("debug:vfr", "controls the VFR status of Hypoland. Do not turn off unless debugging", true),
         MS<Int>("debug:invalidate_buffers", "allow buffer invalidation.", 1, {.min = 0, .max = 1, .map = OptionMap{{"disable", 0}, {"enable", 1}}}),
         MS<Int>("debug:invalidate_fp16", "allow fp16 buffer invalidation.", 1,
                 {.min               = 0,

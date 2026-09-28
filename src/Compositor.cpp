@@ -18,8 +18,6 @@
 #include "managers/TokenManager.hpp"
 #include "pointer/PointerManager.hpp"
 #include "managers/SeatManager.hpp"
-#include "managers/VersionKeeperManager.hpp"
-#include "managers/DonationNagManager.hpp"
 #include "managers/ANRManager.hpp"
 #include "managers/eventLoop/EventLoopManager.hpp"
 #include "managers/permissions/DynamicPermissionManager.hpp"
@@ -57,7 +55,6 @@
 #include "animation/AnimationManager.hpp"
 #include "ipc/s2/S2.hpp"
 #include "managers/ProtocolManager.hpp"
-#include "managers/WelcomeManager.hpp"
 #include "render/AsyncResourceGatherer.hpp"
 #include "errorOverlay/Overlay.hpp"
 #include "notification/NotificationOverlay.hpp"
@@ -625,9 +622,6 @@ void CCompositor::cleanup() {
     g_pSeatManager.reset();
     IPC::Socket1::sock().reset();
     g_pEventLoopManager.reset();
-    g_pVersionKeeperMgr.reset();
-    g_pDonationNagManager.reset();
-    g_pWelcomeManager.reset();
     g_pANRManager.reset();
     Config::watcher().reset();
     g_pAsyncResourceGatherer.reset();
@@ -739,15 +733,6 @@ void CCompositor::initManagers(eManagersInitStage stage) {
 
             Log::logger->log(Log::DEBUG, "Creating the CursorManager!");
             Pointer::Cursor::mgr() = makeUnique<Pointer::Cursor::CCursorManager>();
-
-            Log::logger->log(Log::DEBUG, "Creating the VersionKeeper!");
-            g_pVersionKeeperMgr = makeUnique<CVersionKeeperManager>();
-
-            Log::logger->log(Log::DEBUG, "Creating the DonationNag!");
-            g_pDonationNagManager = makeUnique<CDonationNagManager>();
-
-            Log::logger->log(Log::DEBUG, "Creating the WelcomeManager!");
-            g_pWelcomeManager = makeUnique<CWelcomeManager>();
 
             Log::logger->log(Log::DEBUG, "Creating the ANRManager!");
             g_pANRManager = makeUnique<CANRManager>();
