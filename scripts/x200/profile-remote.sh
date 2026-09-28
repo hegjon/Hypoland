@@ -71,6 +71,12 @@ memory() { # name
         /^(Rss|Pss|Pss_Anon|Pss_File|Anonymous|AnonHugePages|Private_Clean|Private_Dirty):/ {sub(":", "", $1); printf "@ %s mem.%s.%s_kB %s\n", r, n, $1, $2}
     ' /proc/$P/smaps_rollup
     value "mem.$1.heap_kB" "$(awk '/\[heap\]/ {h = 1; next} h && /^Rss:/ {print $2; exit}' /proc/$P/smaps)"
+    # GPU buffers are system memory on this hardware and in no process statistic
+    cat /proc/$P/fdinfo/* 2>/dev/null | awk -v r=$ROUND -v n="$1" '
+        /^drm-client-id:/ {id = $2}
+        /^drm-total-system0:/ && !(id in seen) {t += $2}
+        /^drm-shared-system0:/ && !(id in seen) {s += $2; seen[id] = 1}
+        END {printf "@ %s mem.%s.gpu_kB %d\n@ %s mem.%s.gpu_private_kB %d\n", r, n, t, r, n, t - s}'
     value "mem.$1.threads" "$(awk '/^Threads:/ {print $2}' /proc/$P/status)"
 }
 
