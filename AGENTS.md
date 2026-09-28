@@ -12,8 +12,12 @@ Hypoland's renderer and shaders are GLES 2.0 / GLSL ES 1.00 only; that port is d
 
 - **Dev machine:** this desktop. All editing and compiling happens here.
 - **Test machine:** ThinkPad X200 on the same LAN (GM45 / GMA 4500MHD, Core 2 Duo, Mesa `crocus` driver,
-  i915 kernel driver). It runs Omarchy 4 on Hypoland from `~/hypoland`. Stock Hyprland fails to start on it
-  (no GLES 3) and is still the installed system package; the Hypoland package has not been installed there.
+  i915 kernel driver). It runs Omarchy 4 on Hypoland. Stock Hyprland fails to start on it (no GLES 3).
+  Since 2026-09-28 the Hypoland Arch package is installed there (it replaced `hyprland` 0.56.2-3, which is still in
+  `/var/cache/pacman/pkg`) and the X200 boots like a normal Omarchy install: disk password, SDDM autologin,
+  `omarchy.desktop` -> `uwsm start ... hyprland.desktop` -> `/usr/bin/start-hypoland` -> `/usr/bin/Hypoland`.
+  Update it with `makepkg -f` in `packaging/arch`, `pacman -U` as root on the X200 and `systemctl restart sddm`
+  (SDDM logs in again). See the testing pitfalls for the test loop setup.
 - X200 access: `ssh x200` (ssh config alias -> 192.168.95.91, user `a`, uid 1000, key auth works).
   6 GB RAM, 2 cores, Arch kernel 7.1.x, Mesa 26.2, stock `hyprland` 0.56.2 installed, 100 GB free in `/home`.
 - Root on the X200: `ssh root@x200` (key auth). Test tools are installed: `waybar`, `weston-simple-egl`,
@@ -161,10 +165,17 @@ Prefer compile-time flags (e.g. `-DNO_ANIMATIONS`) so removed code isn't built.
 - **Never reboot the X200** (no `sudo reboot`, no `systemctl reboot`, no `test-x200.sh --reboot`) unless the user
   is present and says so: the disk is encrypted and the password must be typed at boot. For a GPU hang, restart
   the compositor or `getty@tty1` instead and report it.
-- `scripts/x200/setup-root.sh` has been applied (2026-09-27): SDDM is disabled, tty1 autologins user `a`, whose
-  `~/.bash_profile` starts `~/hypoland/run-loop.sh`. `sudo reboot` is passwordless for `a`, and `ssh root@x200` works.
-  Restart the compositor with `pkill -x Hypoland`. If the loop itself dies: `ssh root@x200 systemctl restart getty@tty1`.
-  Undo with `setup-root.sh --undo`.
+- The test loop is switched off since 2026-09-28 (the X200 boots the package through SDDM, see Hardware), so
+  `test-x200.sh`, `bench.sh` and `profile.sh` do not work as they are. `setup-root.sh --undo` was run (SDDM on,
+  tty1 autologin drop-in and passwordless `sudo reboot` removed) and `~/hypoland/run-loop.sh` is not executable.
+  The hook in `~/.bash_profile` is still there: SDDM's session script starts a login shell on tty1, so an
+  executable `run-loop.sh` takes over the SDDM session with `~/hypoland/bin/Hypoland`. `setup-root.sh --undo`
+  does not handle that yet. To get the loop back: `sudo ./setup-root.sh` and `chmod +x ~/hypoland/run-loop.sh`.
+  With the loop, restart the compositor with `pkill -x Hypoland`; if the loop dies,
+  `ssh root@x200 systemctl restart getty@tty1`. `ssh root@x200` works in both setups.
+- Killing the loop's compositor leaves `graphical-session.target` active, and uwsm then refuses to start
+  ("A compositor or graphical-session* target is already active"). Stop it with
+  `systemctl --user -M a@ stop graphical-session.target graphical-session-pre.target` before restarting SDDM.
 - llvmpipe accepts GLSL that real GLES2 rejects (e.g. a leftover `in` declaration). A shader change is only
   verified once the X200 log has no `Failed to link shader` line and the screenshot shows windows.
 - Embedded shader sources (`src/render/shaders/*.inc`) are generated at configure time, so re-run cmake
@@ -368,7 +379,7 @@ Known issues:
 Open decisions for the user:
 - Pick the icon: the smooth potato in `assets/logo/` or the pixel potato in `assets/logo/retro/` (the README
   banner is the retro one).
-- Install the Arch package on the X200 (replaces the system `hyprland`).
+- Keep the X200 on the package and SDDM, or bring the test loop back for `test-x200.sh` and the benchmarks.
 
 Work that is left from the plan above:
 - Remove screen shaders.
