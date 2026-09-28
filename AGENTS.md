@@ -297,6 +297,18 @@ Overnight run 2026-09-28 (branch `overnight/ram-cpu`, journal in `test-results/o
   3 to 9% CPU time, `-Os` for everything except render / helpers / output costs 4% in workspace switching.
 - Not worth it: the GSettings cursor sync leaves 4 glib threads in the compositor, moving it into a child saves
   0.2 MiB. `malloc_trim` alone finds nothing, the heap is not fragmented. Idle is 3 wakeups per second.
+- GPU buffers are system memory on Gen4 and in no process statistic; read them from `/proc/<pid>/fdinfo`
+  (`drm-total-system0`), the benchmark reports them as `mem.*.gpu_kB`. The compositor held 100.4 MiB 60 s after the
+  start of the benchmark (73.5 MiB after a plain restart), more than its Pss. Now 65 to 74 MiB in the benchmark and
+  53.2 MiB after a plain restart (Pss 49.7 MiB, anonymous 20.8 MiB there). The totals vary by up to 8 MiB between runs because
+  `test-x200.sh` switches blur on and takes a screenshot (blur and mirror framebuffers).
+  - The group bar kept four gradient textures of the size of the monitor (15.6 MiB), also without any window
+    group. They are one pixel wide now, the picture is identical.
+  - Unused work buffers were only dropped when the next one was requested, which never happens while the monitor
+    renders directly. `CMonitorResources` releases them with a timer now (8 MiB).
+  - The swapchain has two screen buffers instead of three, three with `render:new_render_scheduling`.
+  - A framebuffer that was allocated but never drawn into costs nothing, i915 allocates pages on first use.
+    Allocating the blur framebuffer lazily gains nothing.
 - The Chromium workload is bimodal, a round is either about 9.0% or about 10.5%. Look at the rounds in `bench.txt`.
 - Open: `CHyprBorderDecoration::damageEntire()` is about 7% of the compositor's time while windows animate.
   Keyboards with the same rules compile their own keymap each (5 on the X200, about 0.9 MiB together).
