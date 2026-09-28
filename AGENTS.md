@@ -195,11 +195,21 @@ Tools:
   sharing, which makes the compositor use the work buffer copy path instead of direct rendering. The read takes
   about 80 ms and the compositor draws into that buffer again a few frames later, so an animating client can
   show up half drawn in the capture; freeze it (`pkill -STOP`) for exact results.
-- `./bench-x200.sh <label>` measures a change on the normal build: memory 60 s after the start and after the
-  workloads, CPU time of the five workloads of `profile-x200.sh`, three rounds, into
-  `test-results/bench-<time>-<label>/values.txt`. `./bench-x200.sh --compare <dir> <dir>` prints the difference.
-  It runs with the `performance` governor, so its CPU numbers are lower than the ones below (GPU client 3.7%
-  instead of 7-10%). The brief for unattended optimization runs is `docs/overnight-ram-cpu.md`.
+- `./bench.sh <label>` measures a change on the normal build: memory 60 s after the start and after the
+  workloads, CPU time of five workloads, three rounds, into `test-results/bench-<time>-<label>/values.txt`.
+  `./bench.sh --compare <dir> <dir>` prints the difference. It runs with the `performance` governor, so its CPU
+  numbers are lower than the ones below (GPU client 3.7% instead of 7-10%). The brief for unattended optimization
+  runs is `docs/overnight-ram-cpu.md`.
+- `bench.sh` and `profile.sh` are not tied to the X200 (they were `bench-x200.sh` and `profile-x200.sh` until
+  2026-09-28). `--host <ssh host>` or `--host local` picks the machine, `--login` the ssh login (root by default,
+  without root the governor is left alone), `--no-deploy` measures the compositor that is running,
+  `--workloads a,b` picks workloads and `--client name=command` measures any client as one more workload.
+  The work on the machine under test is `scripts/bench/measure.sh`, which is sent over ssh on stdin. It takes the
+  compositor (`Hypoland`, then `Hyprland`), its user, prefix, instance and Wayland socket from the running process
+  and its `hyprland.lock`, starts clients with the environment of the compositor, skips workloads whose client
+  is not installed and only touches the Omarchy idle flags where Omarchy is installed.
+  `scripts/bench/target.sh` holds the ssh part. Build, deploy and restart still go through `test-x200.sh`
+  (`BENCH_DEPLOY` names another script).
 - `HYPOLAND_NO_DIRECT_RENDER=1` makes every frame go through the work buffer, for comparing the two paths.
 
 Performance (X200, `HYPOLAND_PROFILE_PASS`, GPU time per frame, 4 windows plus a 60 fps client):
@@ -222,7 +232,7 @@ Performance (X200, `HYPOLAND_PROFILE_PASS`, GPU time per frame, 4 windows plus a
   With opaque windows the occlusion pass skips what is underneath.
 - Quickshell's notification overlay is a transparent fullscreen layer that is blended over every damaged area.
 
-CPU profile: run `./profile-x200.sh`. It builds with frame pointers in `build-prof`, deploys, switches the
+CPU profile: run `./profile.sh`. It builds with frame pointers in `build-prof`, deploys, switches the
 Omarchy screensaver and idle lock off, records five workloads with `perf` as root, prints the report to
 `test-results/profile-*/profile.txt` and puts the normal build back. Use `--keep` to leave the profiling build
 on the X200; `perf report` on the saved data only resolves symbols while that build is installed.
@@ -271,7 +281,7 @@ Memory (X200, idle Omarchy session 60 s after start, `heaptrack` and `/proc/<pid
 - The "started without start-hypoland" notification loads fontconfig and pango (about 1.5 MiB heap) on the X200
   loop, a normal start does not.
 
-Overnight run 2026-09-28 (journal in `test-results/overnight/journal.md`), measured with `./bench-x200.sh`
+Overnight run 2026-09-28 (journal in `test-results/overnight/journal.md`), measured with `./bench.sh`
 (`performance` governor), before -> after:
 
 | | before | after |

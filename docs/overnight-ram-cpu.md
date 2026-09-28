@@ -38,12 +38,12 @@ Not allowed, write them down as proposals in the journal instead:
 
 ## How to measure
 
-`./bench-x200.sh <label>` builds, deploys, restarts, runs `./test-x200.sh` (has to pass) and measures on the
+`./bench.sh <label>` builds, deploys, restarts, runs `./test-x200.sh` (has to pass) and measures on the
 normal build: memory 60 s after the start and again after the workloads, CPU time of five workloads
 (idle, GPU client at 60 fps, terminal scrolling, Chromium over shm, workspace switching), three rounds of 20 s
 each. It takes about 10 minutes. Results go to `test-results/bench-<time>-<label>/values.txt`.
 
-`./bench-x200.sh --compare <baseline dir> <candidate dir>` prints the difference and marks what is outside the
+`./bench.sh --compare <baseline dir> <candidate dir>` prints the difference and marks what is outside the
 spread of the rounds.
 
 - The baseline of `master` was measured twice, see `test-results/bench-*-baseline-a` and `-b`. The difference
@@ -56,7 +56,7 @@ spread of the rounds.
   (measured with `schedutil`). Compare benchmark numbers only with benchmark numbers.
 - `fps.gpu-client` has to stay at about 60. Less CPU time with fewer frames is not a gain.
 - A run with an `invalid.*` line (screensaver, lock, compositor restart or crash) does not count.
-- For finding where the time or the memory goes: `./profile-x200.sh` (perf, separate build with frame pointers),
+- For finding where the time or the memory goes: `./profile.sh` (perf, separate build with frame pointers),
   `heaptrack` and `/proc/<pid>/smaps` on the X200. Wrap remote commands in `timeout`.
 - A change to rendering is only verified on the X200: no `Failed to link shader` in `~/hypoland/loop.log`, the
   screenshot of `test-x200.sh` shows the window. Look at the screenshot.

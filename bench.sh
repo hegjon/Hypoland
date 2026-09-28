@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+# Measures CPU time and memory of the compositor on the machine under test, to compare a change against a
+# baseline. Builds, deploys and restarts through test-x200.sh, which has to pass, then runs the workloads
+# of scripts/bench/measure.sh. With --no-deploy or --host local it measures the compositor that is running.
+#
+# Usage: ./bench.sh [options] [label]
+#        ./bench.sh --compare <baseline dir> <candidate dir>
+#
+#   --rounds N         how often the workloads are repeated (default 3)
+#   --settle N         age of the compositor in seconds before memory is measured (default 60)
+# TARGET_HELP
+#
+# Writes test-results/bench-<time>-<label>/values.txt with "<key> <median> <min> <max>" per line.
+
+set -u
+cd "$(dirname "$(readlink -f "$0")")" || exit 1
+. scripts/bench/target.sh
+
+usage() {
+    sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//' | while IFS= read -r line; do
+        if [ "$line" = TARGET_HELP ]; then echo "$TARGET_HELP"; else echo "$line"; fi
+    done
+}
+
+compare() {
+    [ -f "$1/values.txt" ] && [ -f "$2/values.txt" ] || { echo "no values.txt in $1 or $2" >&2; exit 2; }
+    awk '
+        NR == FNR {base[$1] = $2; lo[$1] = $3; hi[$1] = $4; next}
+        !($1 in base) {next}
+        {
+            d = $2 - base[$1]
+            # a change inside the spread of the rounds of either run is noise
+            noise = (hi[$1] - lo[$1] > $4 - $3) ? hi[$1] - lo[$1] : $4 - $3
+            # two starts of the same build differ by up to 1.2 MiB and 0.2 points of CPU time
+            floor = ($1 ~ /^mem\./) ? 1500 : 0.3
+            if (noise < floor)
+                noise = floor
+            mark = ""
+            if ($1 ~ /^(cpu\..*\.percent|mem\..*_kB|binary\.size_kB)$/ && (d > noise || d < -noise) && d != 0)
+                mark = (d < 0) ? "better" : "WORSE"
+            if ($1 ~ /^fps\./ && d < -1)
+                mark = "WORSE"
+            printf "%-38s %10s %10s %+10.2f  %s\n", $1, base[$1], $2, d, mark
+        }
+    ' "$1/values.txt" "$2/values.txt"
+    grep -h "^invalid" "$1/values.txt" "$2/values.txt" | sed 's/^/NOT VALID: /'
+    # values of different machines or workloads say nothing about a change
+    local a b
+    a=$(grep -h "^machine:" "$1/bench.txt" 2>/dev/null)
+    b=$(grep -h "^machine:" "$2/bench.txt" 2>/dev/null)
+    if [ -n "$a" ] && [ -n "$b" ] && [ "$a" != "$b" ]; then
+        echo "NOTE: the two runs are from different machines or kernels:"
+        printf '  %s\n  %s\n' "$a" "$b"
+    fi
+}
+
+ROUNDS=3 LABEL="" SECONDS_SET=0
+while [ $# -gt 0 ]; do
+    case $1 in
+        --compare) [ $# -eq 3 ] || { usage; exit 2; }; compare "$2" "$3"; exit 0 ;;
+        --rounds) ROUNDS=$2; shift ;;
+        --settle) MEASURE_ARGS+=(--settle "$2"); shift ;;
+        -h | --help) usage; exit 0 ;;
+        -*)
+            [ "$1" = --seconds ] && SECONDS_SET=1
+            target_option "$@" || { echo "unknown argument: $1" >&2; exit 2; }
+            shift $((TARGET_SHIFT - 1))
+            ;;
+        *) LABEL=-$1 ;;
+    esac
+    shift
+done
+[ $SECONDS_SET = 1 ] || MEASURE_ARGS+=(--seconds 20)
+
+OUT=test-results/bench-$(date +%Y%m%d-%H%M%S)$LABEL
+mkdir -p "$OUT"
+{ git rev-parse HEAD; git status --short; } >"$OUT/source.txt" 2>&1
+git diff HEAD >"$OUT/source.diff" 2>&1
+
+if [ $DEPLOY = 1 ] && ! target_deploy "$OUT/test.log" "${DEPLOY_ARGS[@]}"; then
+    echo "$BENCH_DEPLOY failed, nothing was measured:"
+    grep -E "^(PASS|FAIL)" "$OUT/test.log"
+    exit 1
+fi
+
+target_run scripts/bench/measure.sh --mode bench --rounds "$ROUNDS" "${MEASURE_ARGS[@]}" | tee "$OUT/bench.txt" | grep --line-buffered -v "^@"
+if ! grep -q "^@ .* mem.end" "$OUT/bench.txt"; then
+    echo "the measurement did not finish, see $OUT/bench.txt"
+    exit 1
+fi
+
+# median, min and max over the rounds
+grep "^@" "$OUT/bench.txt" | sort -k3,3 -k4,4g | awk '
+    function flush() {
+        if (n) printf "%s %s %s %s\n", key, v[int((n + 1) / 2)], v[1], v[n]
+        n = 0
+    }
+    $3 != key {flush(); key = $3}
+    {v[++n] = $4}
+    END {flush()}
+' >"$OUT/values.txt"
+
+echo
+column -t -N key,median,min,max "$OUT/values.txt"
+grep -q "^invalid" "$OUT/values.txt" && echo "NOT VALID: a screensaver, a lock or a compositor restart got in the way"
+echo "values: $OUT/values.txt"
