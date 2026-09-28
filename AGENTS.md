@@ -298,7 +298,7 @@ Findings:
   (`shmem_alloc_and_add_folio`, `drm_clflush_sg`), about 23% is the `memcpy`.
 - Terminal scrolling fast (foot, shm), 15% CPU: `CGLTexture::update` 74%, the same upload cost as Chromium.
 - Workspace switching with three windows and animations, 15% CPU: only 30% is `renderMonitor`. Clock reads are
-  17% (`read_hpet` 12%), the rest is spread over animation ticks, layout and damage.
+  17% (`read_hpet` 12%), the rest is spread over animation ticks, layout and damage. Fixed on 2026-09-29, see below.
 - Hypoland's own code is flat, no function has more than about 1% self time.
 - The X200 uses the HPET clocksource (the TSC is marked unstable), so every clock read is a slow syscall.
 - Fixed: uploading into a shm texture the GPU still reads from made crocus allocate, clear and cache-flush a
@@ -308,9 +308,6 @@ Findings:
 - Fixed: the event loop read the clock once per timer when rescheduling and when timers fire; it reads it once
   per pass now. Workspace switching 14.9% -> 12.7%.
 - Checked on 2026-09-27, not worth optimizing:
-  - `read_hpet` / `clock_gettime` look big in perf (up to 14% while animating), but that is sampling skid on the
-    slow uncached HPET read. A call costs 1.5 us and the compositor makes about 270 per second while animating,
-    about 0.04% of a core.
   - The shm upload (`glTexSubImage2D`, crocus copies through a GTT mapping) runs at the memory bus limit:
     1.64 ms for a full 1280x800 frame with glibc memcpy. SSE2 non-temporal stores are the same through the GTT,
     `rep movsb` is slower, and the best case (own WC mapped linear buffer) is 1.45 ms. Hand-written copies or
@@ -374,9 +371,44 @@ Overnight run 2026-09-28 (journal in `test-results/overnight/journal.md`), measu
   - A framebuffer that was allocated but never drawn into costs nothing, i915 allocates pages on first use.
     Allocating the blur framebuffer lazily gains nothing.
 - The Chromium workload is bimodal, a round is either about 9.0% or about 10.5%. Look at the rounds in `bench.txt`.
-- Open: `CHyprBorderDecoration::damageEntire()` is about 7% of the compositor's time while windows animate.
-  Keyboards with the same rules compile their own keymap each (5 on the X200, about 0.9 MiB together).
-  The XCursor theme is loaded completely (0.6 MiB).
+- Open: `CHyprBorderDecoration::damageEntire()` was about 7% of the compositor's time while windows animate,
+  measured before the tick change of 2026-09-29 below.
+
+Overnight run 2026-09-29 (branch `overnight/startup`, journal in `test-results/overnight-startup/journal.md`),
+startup and CPU time with animations. Measured on the X200 with the SDDM session, `schedutil` governor:
+
+| | master 8ae8a37c0 | overnight/startup |
+|---|---|---|
+| startup: compositor instructions in the first 11 s | 938 M | 783 M |
+| startup: compositor CPU in the first 12 s | 730-760 ms | 590-620 ms |
+| startup: IPC answers after exec | 0.73-0.82 s | 0.68-0.74 s |
+| workspace switching with animations, CPU | 14.2% | 6.1% |
+| GPU client at 60 fps, terminal scrolling, Chromium over shm | 6.3 / 10.7 / 11.2% | unchanged |
+
+- Animations ticked every millisecond: after upstream 2b0fd417d the animation timer was re-armed with 1 ms after
+  every tick, although every rendered frame ticks right before it draws. The whole tick (all animated variables and
+  their damage) ran up to 16 times per 60 Hz frame. Continuous ticking now uses the frame interval of the fastest
+  monitor, a requested tick still comes after 1 ms. Same page flips, less than half the CPU.
+- Clock reads are not sampling skid (that note of 2026-09-27 was wrong): with the HPET clocksource every read is a
+  system call and an MMIO read, about 1.2% of the compositor's time per read and tick while animating. The tick
+  reads the clock once now. `Time::fromTimespec()` still makes four reads per presented frame (about 1% of the
+  GPU client's compositor time) because it does not trust `steady_clock` to be `CLOCK_MONOTONIC`, and Mesa's
+  `__crocus_bo_unreference` reads it for every buffer it caches (0.7%).
+- Startup, instructions of the main thread: keyboards with the same rules share one keymap (-5%), the "screen
+  share denied" text is rendered on first use so pango and fontconfig (about 130 ms of CPU and a thread) are not
+  loaded at all (-3%), XCursor shapes are loaded on first use (-6%).
+- Startup profile (compositor, about 0.6 s of CPU until IPC): the Mesa driver load in `CGBMAllocator` is 116 ms
+  (`dlopen` 72 ms, drirc XML 15 ms, `crocus_screen_create` 12 ms), the first frame about 75 ms of which 44 ms are
+  buffer allocations, Omarchy's Lua event handlers 37 ms, `libinput_udev_assign_seat` 51 ms, GSettings sync 23 ms.
+  The very first frame takes a work buffer, later ones render directly. The black screen after that is Quickshell
+  and Omarchy's login scripts (uwsm, powerprofilesctl, udiskie, hidden-entries, pacman, find on both cores).
+- `libgallium` links `libLLVM`, which crocus does not use at runtime; loading it costs 19-27 ms per GL process.
+  A crocus-only Mesa without LLVM needs `mesa_clc` at build time (LLVM, `libclc`, `LLVMSPIRVLib`), see the journal.
+- Not worth it: `GALLIUM_THREAD=0` for the compositor (-1% on the GPU client only); glFlush waits for Mesa's
+  threaded context on every frame anyway (`_tc_sync`).
+- Measuring from the desktop: long ssh sessions end early, run measurements detached on the X200. `tl2.sh` (one
+  startup timeline with instructions) and `abrun.sh` (A/B of packages with page flips) are in the journal's
+  directory, they call `scripts/bench/measure.sh` copied to the X200.
 
 Fixed upstream bugs that showed on this hardware:
 - `IHyprRenderer::renderText(STextResourceData&&)` queued the text on the hyprgraphics worker and blocked in
