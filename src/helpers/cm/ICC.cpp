@@ -67,7 +67,7 @@ static std::expected<std::optional<SVCGTTable16>, std::string> readVCGT16(cmsHPR
     // 8 ... 11: gammaType (0 = table)
     uint32_t gammaType = bigEndianU32(raw.data() + 8);
     if (gammaType != 0)
-        return std::unexpected("VCGT formula type is not supported by Hyprland");
+        return std::unexpected("VCGT formula type is not supported by Hypoland");
 
     SVCGTTable16 table;
     table.channels  = bigEndianU16(raw.data() + 12);

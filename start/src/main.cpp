@@ -15,11 +15,11 @@ using namespace Hyprutils::CLI;
         std::abort();                                                                                                                                                              \
     }
 
-constexpr const char* HELP_INFO = R"#(start-hyprland - A binary to properly start Hyprland via a watchdog process.
-Any arguments after -- are passed to Hyprland. For Hyprland help, run start-hyprland -- --help or Hyprland --help
+constexpr const char* HELP_INFO = R"#(start-hypoland - A binary to properly start Hypoland via a watchdog process.
+Any arguments after -- are passed to Hypoland. For Hypoland help, run start-hypoland -- --help or Hypoland --help
 
-Additional arguments for start-hyprland:
- --path [path]       -> Override Hyprland path
+Additional arguments for start-hypoland:
+ --path [path]       -> Override Hypoland path
 )#";
 
 //

@@ -212,6 +212,12 @@ Findings worth keeping:
 - Omarchy 4 locks with its Quickshell shell, `hyprlock` / `hypridle` are not installed.
 - Defaults changed: blur, shadows, animations and hyprcursor off; logo background and splash are gone
   (`misc:disable_hyprland_logo` is a no-op); hyprpm is removed.
+- Removed on 2026-09-28 so Hypoland does not speak for Hyprland: the welcome app, update news and donation popup
+  (`WelcomeManager`, `VersionKeeperManager`, `DonationNagManager`; `ecosystem:no_update_news` and
+  `ecosystem:no_donation_nag` are no-ops), upstream's GitHub funding, issue / discussion / PR templates and the
+  vouch, close-issues, labeler and translation workflows. User-facing text, translations, help texts and the
+  example config say Hypoland. Kept for compatibility: the seat name `Hyprland`, the X11 WM name `Hyprland :D`,
+  the first line of `hyprctl version`, event names like `hyprland.start` and debug log lines.
 - Packaging: `packaging/arch/PKGBUILD` builds from the working tree (`makepkg -f`).
 
 Tools:
@@ -386,7 +392,6 @@ Open decisions for the user:
 
 Work that is left from the plan above:
 - Remove screen shaders.
-- Translated strings in `src/i18n/` still say Hyprland.
 - The X200 loop starts `Hypoland` directly, so the "started without start-hypoland" notification shows.
 
 # Code guidelines

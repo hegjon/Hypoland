@@ -24,7 +24,7 @@ commands:
     globalshortcuts     → Lists all global shortcuts
     hyprpaper ...       → Issue a hyprpaper request
     hyprsunset ...      → Issue a hyprsunset request
-    instances           → Lists all running instances of Hyprland with
+    instances           → Lists all running instances of Hypoland with
                           their info
     keyword <name> <value> → Issue a keyword to call a config keyword
                           dynamically
@@ -35,7 +35,7 @@ commands:
     layouts             → Lists all layouts available (including plugin'd ones)
     monitors            → Lists active outputs with their properties,
                           'monitors all' lists active and inactive outputs
-    notify ...          → Sends a notification using the built-in Hyprland
+    notify ...          → Sends a notification using the built-in Hypoland
                           notification system
     output ...          → Allows you to add and remove fake outputs to your
                           preferred backend
@@ -50,14 +50,14 @@ commands:
                           manager
     seterror <color> <message...> → Sets the hyprctl error string. Color has
                           the same format as in colors in config. Will reset
-                          when Hyprland's config is reloaded
+                          when Hypoland's config is reloaded
     setprop ...         → Sets a window property
     getprop ...         → Gets a window property
     splash              → Get the current splash
     status              → Get internal status information
     switchxkblayout ... → Sets the xkb layout index for a keyboard
     systeminfo          → Get system info
-    version             → Prints the hyprland version, meaning flags, commit
+    version             → Prints the Hypoland version, meaning flags, commit
                           and branch of build.
     workspacerules      → Lists all workspace rules
     workspaces          → Lists all workspaces with their properties

@@ -224,7 +224,7 @@ int request(std::string_view arg, int minArgs = 0, bool needRoll = false, bool i
     }
 
     if (instanceSignature.empty()) {
-        log("HYPRLAND_INSTANCE_SIGNATURE was not set! (Is Hyprland running?) (3)");
+        log("HYPRLAND_INSTANCE_SIGNATURE was not set! (Is Hypoland running?) (3)");
         return 3;
     }
 
@@ -261,7 +261,7 @@ int request(std::string_view arg, int minArgs = 0, bool needRoll = false, bool i
             if (errno == EINTR)
                 continue;
             if (errno == EWOULDBLOCK)
-                log("Hyprland IPC didn't respond in time\n");
+                log("Hypoland IPC didn't respond in time\n");
             log("Couldn't read (6)");
             return 6;
         }
@@ -297,7 +297,7 @@ int requestIPC(std::string_view filename, std::string_view arg) {
     }
 
     if (instanceSignature.empty()) {
-        log("HYPRLAND_INSTANCE_SIGNATURE was not set! (Is Hyprland running?)");
+        log("HYPRLAND_INSTANCE_SIGNATURE was not set! (Is Hypoland running?)");
         return 2;
     }
 

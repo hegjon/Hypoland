@@ -99,7 +99,7 @@ int main(int argc, char** argv) {
             std::string_view value = *it;
 
             if (value == "--i-am-really-stupid" && !ignoreSudo) {
-                std::println("[ WARNING ] Running Hyprland with superuser privileges might damage your system");
+                std::println("[ WARNING ] Running Hypoland with superuser privileges might damage your system");
 
                 ignoreSudo = true;
             } else if (value == "--socket") {
@@ -246,7 +246,7 @@ int main(int argc, char** argv) {
         g_pCompositor                       = makeUnique<CCompositor>(verifyConfig);
         g_pCompositor->m_explicitConfigPath = configPath;
     } catch (const std::exception& e) {
-        std::println(stderr, "Hyprland threw in ctor: {}\nCannot continue.", e.what());
+        std::println(stderr, "Hypoland threw in ctor: {}\nCannot continue.", e.what());
         return 1;
     }
 

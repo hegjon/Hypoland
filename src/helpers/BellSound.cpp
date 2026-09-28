@@ -52,7 +52,7 @@ void CBellSound::initializeSoundContext() {
     if UNLIKELY (result != CA_SUCCESS)
         Log::logger->log(Log::ERR, "bell: failed to create canberra context, '{}'", ca_strerror(result));
 
-    ca_context_change_props(m_context, CA_PROP_APPLICATION_NAME, "Hyprland", CA_PROP_MEDIA_NAME, "System Bell", CA_PROP_EVENT_DESCRIPTION, "Wayland system bell",
+    ca_context_change_props(m_context, CA_PROP_APPLICATION_NAME, "Hypoland", CA_PROP_MEDIA_NAME, "System Bell", CA_PROP_EVENT_DESCRIPTION, "Wayland system bell",
                             CA_PROP_MEDIA_ROLE, "event", CA_PROP_MEDIA_ICON_NAME, "preferences-system-notifications", CA_PROP_CANBERRA_CACHE_CONTROL, "permanent", nullptr);
 }
 

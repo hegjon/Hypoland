@@ -32,6 +32,9 @@ Hypoland is an independent project. It is not affiliated with or endorsed by Hyp
   are installed.
 - The logo background and splash text are removed, `misc:disable_hyprland_logo` and
   `misc:disable_splash_rendering` are ignored.
+- Hypoland does not start Hyprland's welcome app, update news or donation popup
+  (`hyprland-welcome`, `hyprland-update-screen`, `hyprland-donate-screen`). `ecosystem:no_update_news` and
+  `ecosystem:no_donation_nag` are ignored.
 
 ### Changed defaults
 

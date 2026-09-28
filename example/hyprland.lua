@@ -1,5 +1,5 @@
--- This is an example Hyprland Lua config file.
--- Refer to the wiki for more information.
+-- This is an example Hypoland Lua config file.
+-- Hypoland reads the same config as Hyprland, so the Hyprland wiki documents the options.
 -- https://wiki.hypr.land/Configuring/Start/
 
 -- Please note not all available settings / options are set here.
@@ -64,7 +64,7 @@ hl.env("HYPRCURSOR_SIZE", "24")
 -----------------------
 
 -- See https://wiki.hypr.land/Configuring/Advanced-and-Cool/Permissions/
--- Please note permission changes here require a Hyprland restart and are not applied on-the-fly
+-- Please note permission changes here require a Hypoland restart and are not applied on-the-fly
 -- for security reasons
 
 -- hl.config({
@@ -202,12 +202,9 @@ hl.config({
 ----  MISC  ----
 ----------------
 
-hl.config({
-    misc = {
-        force_default_wallpaper = -1,    -- Set to 0 or 1 to disable the anime mascot wallpapers
-        disable_hyprland_logo   = false, -- If true disables the random hyprland logo / anime girl background. :(
-    },
-})
+-- Hypoland has no default wallpaper or logo background, misc.force_default_wallpaper and
+-- misc.disable_hyprland_logo are accepted and ignored. misc.background_color sets the color
+-- shown where no window or wallpaper covers the screen.
 
 
 ---------------
