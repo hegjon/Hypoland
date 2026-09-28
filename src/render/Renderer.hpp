@@ -149,9 +149,9 @@ namespace Render {
                                                              uint32_t                fmt); // TODO? move to protected and fix CPointerManager::renderHWCursorBuffer
         bool                         commitPendingAndDoExplicitSync(PHLMONITOR pMonitor);  // TODO? move to protected and fix CMonitorFrameScheduler::onPresented
         SRenderData                  m_renderData;                                         // TODO? move to protected and fix CRenderPass
-        SP<ITexture>                 m_screencopyDeniedTexture;                            // TODO? make readonly
-        uint                         m_failedAssetsNo     = 0;                             // TODO? make readonly
-        bool                         m_reloadScreenShader = true;                          // at launch it can be set
+        SP<ITexture>                 screencopyDeniedTexture();
+        uint                         m_failedAssetsNo     = 0;    // TODO? make readonly
+        bool                         m_reloadScreenShader = true; // at launch it can be set
         CTimer                       m_globalTimer;
 
         void                         draw(WP<IPassElement> element, const CRegion& damage = {});
@@ -264,6 +264,7 @@ namespace Render {
         std::string             resolveAssetPath(const std::string& file);
         void                    initMissingAssetTexture();
         void                    initAssets();
+        SP<ITexture>            m_screencopyDeniedTexture;
         SP<ITexture>            m_missingAssetTexture;
 
         bool                    m_cursorHidden            = false;

@@ -364,8 +364,9 @@ void CScreenshareFrame::render() {
     bool windowShareDenied = m_session->m_type == SHARE_WINDOW && m_session->m_window->m_ruleApplicator && m_session->m_window->m_ruleApplicator->noScreenShare().valueOrDefault();
     g_pHyprRenderer->startRenderPass();
     if (PERM == PERMISSION_RULE_ALLOW_MODE_DENY || windowShareDenied) {
-        CBox texbox = CBox{m_bufferSize / 2.F, g_pHyprRenderer->m_screencopyDeniedTexture->m_size}.translate(-g_pHyprRenderer->m_screencopyDeniedTexture->m_size / 2.F);
-        g_pHyprRenderer->draw(CTexPassElement::SRenderData{.tex = g_pHyprRenderer->m_screencopyDeniedTexture, .box = texbox}, texbox);
+        const auto TEX    = g_pHyprRenderer->screencopyDeniedTexture();
+        CBox       texbox = CBox{m_bufferSize / 2.F, TEX->m_size}.translate(-TEX->m_size / 2.F);
+        g_pHyprRenderer->draw(CTexPassElement::SRenderData{.tex = TEX, .box = texbox}, texbox);
         return;
     }
 

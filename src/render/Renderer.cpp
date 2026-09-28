@@ -1395,8 +1395,15 @@ void IHyprRenderer::initMissingAssetTexture() {
 
 void IHyprRenderer::initAssets() {
     initMissingAssetTexture();
+}
 
-    m_screencopyDeniedTexture = renderText("Permission denied to share screen", Colors::WHITE, 20);
+// Rendered on first use: text loads pango and fontconfig, which cost about 130 ms of CPU and a thread at startup on
+// the X200, and most sessions never deny a screen share.
+SP<ITexture> IHyprRenderer::screencopyDeniedTexture() {
+    if (!m_screencopyDeniedTexture)
+        m_screencopyDeniedTexture = renderText("Permission denied to share screen", Colors::WHITE, 20);
+
+    return m_screencopyDeniedTexture;
 }
 
 SP<ITexture> IHyprRenderer::renderText(const std::string& text, CHyprColor col, int pt, bool italic, const std::string& fontFamily, int maxWidth, int weight) {
