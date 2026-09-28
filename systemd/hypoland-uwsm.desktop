@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=Hypoland (uwsm-managed)
-Comment=A fork of Hyprland for OpenGL ES 2.0 hardware
-Exec=uwsm start -e -D Hyprland hyprland.desktop
+Comment=Hypoland, a Wayland compositor for OpenGL ES 2.0 hardware
+Exec=uwsm start -e -D Hyprland -N Hypoland -C "Hypoland, a Wayland compositor for OpenGL ES 2.0 hardware" start-hypoland
 TryExec=uwsm
 DesktopNames=Hyprland
 Type=Application
