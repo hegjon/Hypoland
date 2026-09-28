@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hypoland: Hyprland for GPUs that stop at OpenGL ES 2.0</title>
+<meta name="description" content="Hypoland is a fork of the Hyprland tiling Wayland compositor for old GPUs that only support OpenGL ES 2.0, such as the Intel GMA 4500MHD in the ThinkPad X200.">
+<meta name="theme-color" content="#efe6d2">
+<meta property="og:title" content="Hypoland">
+<meta property="og:description" content="Hyprland for GPUs that stop at OpenGL ES 2.0. Runs a full Omarchy desktop on a 2008 ThinkPad X200.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://hypoland.org/">
+<meta property="og:image" content="https://hypoland.org/og.png">
+<link rel="canonical" href="https://hypoland.org/">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+<style>
+:root {
+  --desk: #efe6d2;
+  --dot: #e0d4b8;
+  --paper: #fffdf7;
+  --ink: #22252b;
+  --muted: #5b606a;
+  --frame: #3a3f48;
+  --frame-dim: #8a8f98;
+  --potato: #d9a05b;
+  --potato-dark: #b07a3c;
+  --peel: #4a2a10;
+  --light: #f2cd98;
+  --term: #1d1f23;
+  --term-ink: #d8dbe0;
+  --ok: #7fb069;
+  --bad: #e06c5b;
+  --mono: ui-monospace, "DejaVu Sans Mono", "Liberation Mono", Menlo, Consolas, monospace;
+  --gap: 10px;
+}
+* { box-sizing: border-box; }
+html { background: var(--desk); }
+body {
+  margin: 0;
+  color: var(--ink);
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", "DejaVu Sans", sans-serif;
+  background-color: var(--desk);
+  background-image: radial-gradient(var(--dot) 1px, transparent 1px);
+  background-size: 8px 8px;
+}
+a { color: var(--peel); text-decoration-thickness: 2px; text-underline-offset: 2px; }
+a:hover { background: var(--light); }
+code, pre, kbd { font-family: var(--mono); font-size: 0.9em; }
+code { background: #f3ead6; padding: 0 3px; }
+
+/* Status bar, drawn like a Waybar */
+.bar {
+  position: sticky; top: 0; z-index: 2;
+  display: flex; align-items: center; gap: 14px;
+  padding: 4px 12px;
+  background: var(--frame); color: #e8e3d8;
+  font: 13px/1.6 var(--mono);
+}
+.bar a { color: inherit; text-decoration: none; }
+.bar a:hover { background: none; color: var(--light); }
+.ws { display: flex; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.ws a { display: block; padding: 0 8px; }
+.ws a.on { background: var(--potato); color: var(--peel); }
+.bar .right { margin-left: auto; display: flex; gap: 14px; white-space: nowrap; }
+.bar .right span:before { content: "| "; color: var(--frame-dim); }
+.bar .right span:first-child:before { content: ""; }
+
+/* The tiled "desktop" */
+.desk {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: var(--gap);
+  display: grid;
+  gap: var(--gap);
+  grid-template-columns: repeat(6, 1fr);
+}
+.win {
+  grid-column: span 3;
+  display: flex; flex-direction: column;
+  background: var(--paper);
+  border: 2px solid var(--frame-dim);
+  box-shadow: 4px 4px 0 rgba(58, 63, 72, 0.25);
+  min-width: 0;
+  scroll-margin-top: 40px;
+}
+.win:hover, .win:target { border-color: var(--potato); }
+.win.full { grid-column: 1 / -1; }
+.win.third { grid-column: span 2; }
+.title {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0; padding: 3px 10px;
+  background: #e7dcc4; border-bottom: 2px solid var(--frame-dim);
+  font: 600 13px/1.6 var(--mono); color: var(--frame);
+}
+.win:hover .title, .win:target .title { background: var(--light); border-color: var(--potato); }
+.title:after {
+  content: ""; margin-left: auto;
+  width: 10px; height: 10px; border: 2px solid currentColor;
+}
+.body { padding: 14px 18px 18px; flex: 1; }
+.body > :first-child { margin-top: 0; }
+.body > :last-child { margin-bottom: 0; }
+h2 { font-size: 1.15em; margin: 1.2em 0 0.4em; }
+ul { padding-left: 1.2em; }
+li { margin: 0.25em 0; }
+
+/* Hero */
+.hero .body { display: grid; grid-template-columns: 1fr; justify-items: center; text-align: center; padding: 24px 18px 28px; }
+.hero img { width: 100%; max-width: 760px; height: auto; image-rendering: pixelated; }
+.tagline { font-size: 1.45em; line-height: 1.3; margin: 8px 0 6px; font-weight: 700; max-width: 30em; }
+.sub { color: var(--muted); max-width: 38em; margin: 0 0 18px; }
+.buttons { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.btn {
+  display: inline-block; padding: 7px 16px;
+  font: 600 14px/1.4 var(--mono); text-decoration: none;
+  color: var(--peel); background: var(--potato);
+  border: 2px solid var(--peel); box-shadow: 3px 3px 0 var(--peel);
+}
+.btn:hover { background: var(--light); }
+.btn:active { transform: translate(3px, 3px); box-shadow: none; }
+.btn.alt { background: var(--paper); }
+
+/* Terminal windows */
+.term { background: var(--term); color: var(--term-ink); }
+.term .title { background: #2c2f35; color: #c8ccd3; border-color: #50555e; }
+.term.win { border-color: #50555e; }
+.term:hover .title { background: #3a3f48; color: var(--light); }
+.term pre { margin: 0; white-space: pre; overflow-x: auto; font-size: 13.5px; line-height: 1.5; }
+.p { color: var(--potato); }
+.c { color: #8a8f98; }
+.e { color: var(--bad); }
+.g { color: var(--ok); }
+
+/* Numbers */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--gap); margin: 0 0 12px; }
+.stat { border: 2px dashed var(--frame-dim); padding: 10px 12px; }
+.stat b { display: block; font: 700 1.7em/1.1 var(--mono); color: var(--peel); }
+.stat span { font-size: 0.88em; color: var(--muted); }
+.note { font-size: 0.88em; color: var(--muted); }
+
+table { border-collapse: collapse; width: 100%; font-size: 0.93em; }
+th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid #e3d9c3; vertical-align: top; }
+th { font-family: var(--mono); font-size: 0.9em; color: var(--muted); font-weight: 600; }
+.yes { color: #3f7a2e; font-weight: 700; }
+.no { color: #a8402f; font-weight: 700; }
+td.yes, td.no { white-space: nowrap; }
+.scroll { overflow-x: auto; }
+
+.pixel-list { list-style: none; padding: 0; }
+.pixel-list li { padding-left: 20px; position: relative; }
+.pixel-list li:before {
+  content: ""; position: absolute; left: 2px; top: 0.55em;
+  width: 8px; height: 8px; background: var(--potato); box-shadow: 2px 2px 0 var(--peel);
+}
+
+details { border-top: 1px solid #e3d9c3; padding: 8px 0; }
+details:first-child { border-top: 0; padding-top: 0; }
+summary { cursor: pointer; font-weight: 600; }
+summary::marker { color: var(--potato-dark); }
+details p { margin: 6px 0 2px; }
+
+footer { max-width: 1120px; margin: 0 auto; padding: 8px var(--gap) 40px; font-size: 0.85em; color: var(--muted); text-align: center; }
+footer img { vertical-align: middle; image-rendering: pixelated; }
+
+@media (max-width: 860px) {
+  .win, .win.third { grid-column: 1 / -1; }
+  .bar .right span.opt { display: none; }
+}
+@media (max-width: 480px) {
+  td code { word-break: break-all; }
+  th, td { padding: 5px 4px; }
+  body { font-size: 15px; }
+  .tagline { font-size: 1.2em; }
+  .body { padding: 12px 14px 14px; }
+  .bar .right { display: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .btn { transition: background 0.1s; }
+}
+</style>
+</head>
+<body>
+
+<nav class="bar" aria-label="Sections">
+  <ul class="ws">
+    <li><a class="on" href="#top">1</a></li>
+    <li><a href="#why">2</a></li>
+    <li><a href="#numbers">3</a></li>
+    <li><a href="#compat">4</a></li>
+    <li><a href="#build">5</a></li>
+    <li><a href="#faq">6</a></li>
+  </ul>
+  <div class="right">
+    <span class="opt">GLES 2.0</span>
+    <span class="opt">GLSL ES 1.00</span>
+    <span><a href="https://github.com/hegjon/Hypoland">github</a></span>
+  </div>
+</nav>
+
+<main class="desk" id="top">
+
+  <section class="win full hero" aria-labelledby="t-hero">
+    <h1 class="title" id="t-hero">hypoland.org</h1>
+    <div class="body">
+      <img src="header.svg" width="760" height="240" alt="Hypoland">
+      <p class="tagline">Hyprland for GPUs that stop at OpenGL&nbsp;ES&nbsp;2.0.</p>
+      <p class="sub">
+        Hypoland is a fork of the Hyprland tiling Wayland compositor with a renderer rewritten for
+        GLES&nbsp;2.0. It runs a complete desktop on a 2008 ThinkPad X200 at 60&nbsp;fps, and your
+        Hyprland config, <code>hyprctl</code> and scripts keep working.
+      </p>
+      <div class="buttons">
+        <a class="btn" href="https://github.com/hegjon/Hypoland">Source on GitHub</a>
+        <a class="btn alt" href="#build">Build it</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="win term" id="why" aria-labelledby="t-why">
+    <h2 class="title" id="t-why">foot: ~ on a ThinkPad X200</h2>
+    <div class="body">
+<pre><span class="p">$</span> Hyprland
+<span class="e">eglCreateContext failed with both GLES 3.2 and GLES 3.0</span>
+<span class="e">Hyprland received signal 6(ABRT)</span>
+<span class="c">Have you tried asking Hyprland politely
+not to crash?</span>
+
+<span class="p">$</span> Hypoland
+<span class="g">Using: OpenGL ES 2.0 Mesa 26.2.3</span>
+<span class="c"># bar, wallpaper, notifications, windows,
+# Xwayland. At 60 fps.</span></pre>
+    </div>
+  </section>
+
+  <section class="win" aria-labelledby="t-what">
+    <h2 class="title" id="t-what">why: the short version</h2>
+    <div class="body">
+      <p>
+        Hyprland needs OpenGL ES 3.0. Plenty of laptops that still work fine top out at GLES&nbsp;2.0,
+        and on them Hyprland does not start at all.
+      </p>
+      <p>
+        Hypoland keeps the compositor and replaces what the GPU can't do: the renderer and all shaders are
+        GLES&nbsp;2.0 / GLSL&nbsp;ES&nbsp;1.00, and the GPU-heavy extras are either gone or off by default.
+        <a href="https://github.com/hyprwm/aquamarine">aquamarine</a>, Hyprland's rendering backend library,
+        is modified the same way so that it runs on GLES&nbsp;2.0, and ships built into Hypoland.
+      </p>
+      <p>
+        The name: <em>hypo-</em> means "under". The O in the logo is a potato, hanging below the line.
+      </p>
+    </div>
+  </section>
+
+  <section class="win full" id="numbers" aria-labelledby="t-num">
+    <h2 class="title" id="t-num">btop: ThinkPad X200, Core 2 Duo, GMA 4500MHD, 1280x800</h2>
+    <div class="body">
+      <div class="stats">
+        <div class="stat"><b>0.1%</b><span>compositor CPU on an idle desktop</span></div>
+        <div class="stat"><b>60 fps</b><span>GPU client, compositor at 3&ndash;9% CPU</span></div>
+        <div class="stat"><b>58&ndash;60</b><span>fps with 4 windows, blur, shadows, rounding and animations on</span></div>
+        <div class="stat"><b>55 MiB</b><span>compositor PSS on an idle Omarchy desktop</span></div>
+        <div class="stat"><b>127</b><span><code>glmark2-es2-wayland</code> score</span></div>
+      </div>
+      <p class="note">
+        Measured on the test machine running the full <a href="https://omarchy.org/">Omarchy</a> session
+        (Quickshell bar, wallpaper, notifications). Stock Hyprland 0.56.2 aborts at startup on the same machine.
+        Hypoland's own optimizations for this hardware include drawing straight into the scanout buffer,
+        clearing only damaged areas and double-buffered shm uploads.
+      </p>
+    </div>
+  </section>
+
+  <section class="win third" aria-labelledby="t-hw">
+    <h2 class="title" id="t-hw">lspci: target hardware</h2>
+    <div class="body">
+      <ul class="pixel-list">
+        <li>Intel GMA 4500MHD / GM45 (Gen4.5), the tested target</li>
+        <li>Intel GMA X3100 / 965GM (Gen4)</li>
+        <li>Other GPUs with OpenGL ES 2.0 under Mesa should work, but are untested</li>
+      </ul>
+      <p class="note">Developed on a ThinkPad X200 with Mesa's <code>crocus</code> driver.</p>
+    </div>
+  </section>
+
+  <section class="win third" aria-labelledby="t-off">
+    <h2 class="title" id="t-off">removed</h2>
+    <div class="body">
+      <ul class="pixel-list">
+        <li>Color management and HDR</li>
+        <li>Motion blur</li>
+        <li>Blur variants other than dual Kawase</li>
+        <li>Plugins and <code>hyprpm</code></li>
+        <li>Logo background and splash</li>
+      </ul>
+      <p class="note">Their config options stay registered and are ignored, so your config loads without errors.</p>
+    </div>
+  </section>
+
+  <section class="win third" aria-labelledby="t-defaults">
+    <h2 class="title" id="t-defaults">changed defaults</h2>
+    <div class="body">
+      <ul class="pixel-list">
+        <li>Blur, shadows and animations are off, turn them on if you like</li>
+        <li>XCursor themes instead of hyprcursor</li>
+        <li><code>quirks:skip_non_kms_dmabuf_formats</code> is off, so transparent clients work on Gen4</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="win full" id="compat" aria-labelledby="t-compat">
+    <h2 class="title" id="t-compat">compat: a drop-in replacement</h2>
+    <div class="body">
+      <div class="scroll"><table>
+        <thead><tr><th>What</th><th>In Hypoland</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>Config</td><td><code>~/.config/hypr/hyprland.lua</code>, same options</td><td class="yes">same</td></tr>
+          <tr><td>IPC</td><td><code>hyprctl</code>, sockets, command names, JSON output, events</td><td class="yes">same</td></tr>
+          <tr><td>Desktop name</td><td><code>XDG_CURRENT_DESKTOP=Hyprland</code>, so the portal and apps detect it</td><td class="yes">same</td></tr>
+          <tr><td>Protocols</td><td>The Hyprland Wayland protocols (Quickshell, portals, global shortcuts)</td><td class="yes">same</td></tr>
+          <tr><td>Binary</td><td><code>Hypoland</code>, with <code>Hyprland</code> and <code>hyprland</code> as symlinks</td><td class="yes">works</td></tr>
+          <tr><td>Screen shaders</td><td>Must be GLSL ES 1.00, Hyprland's GLSL ES 3.00 shaders do not compile</td><td class="no">differs</td></tr>
+          <tr><td>Plugins</td><td>Not supported, <code>hl.plugin.load()</code> warns and does nothing</td><td class="no">gone</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <section class="win term" id="build" aria-labelledby="t-build">
+    <h2 class="title" id="t-build">foot: ~/src</h2>
+    <div class="body">
+<pre><span class="c"># same dependencies as Hyprland, but aquamarine
+# is embedded and udis86 is not needed</span>
+<span class="p">$</span> git clone https://github.com/hegjon/Hypoland
+<span class="p">$</span> cd Hypoland
+<span class="p">$</span> cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+<span class="p">$</span> cmake --build build -j$(nproc)
+
+<span class="c"># or, on Arch: a package that replaces hyprland</span>
+<span class="p">$</span> cd packaging/arch &amp;&amp; makepkg -f</pre>
+    </div>
+  </section>
+
+  <section class="win" aria-labelledby="t-build-notes">
+    <h2 class="title" id="t-build-notes">README: building</h2>
+    <div class="body">
+      <p>
+        See the <a href="https://wiki.hypr.land/Getting-Started/Installation/">Hyprland wiki</a> for the
+        dependency list. Hypoland builds <a href="https://github.com/hyprwm/aquamarine">aquamarine</a> from
+        its own tree, patched for GLES&nbsp;2.0, and never uses the system one.
+      </p>
+      <p>
+        Build on a fast machine and copy the result over? Target baseline <code>x86-64</code>. Do not use
+        <code>-march=native</code>, your desktop CPU knows instructions a Core&nbsp;2 Duo doesn't.
+      </p>
+      <p>
+        The Arch package <code>provides</code> and <code>conflicts</code> with <code>hyprland</code>, and
+        ships its own <code>hyprctl</code> so the versions match.
+      </p>
+    </div>
+  </section>
+
+  <section class="win full" id="faq" aria-labelledby="t-faq">
+    <h2 class="title" id="t-faq">man hypoland: questions</h2>
+    <div class="body">
+      <details open>
+        <summary>Will it run on my GPU?</summary>
+        <p>
+          If Hyprland dies with <code>eglCreateContext failed</code> and <code>eglinfo</code> shows
+          OpenGL ES 2.0 but no 3.0, Hypoland is meant for you. Gen4 Intel is tested; anything else is
+          untested, and reports are welcome.
+        </p>
+      </details>
+      <details>
+        <summary>I have a modern GPU. Should I use it?</summary>
+        <p>
+          No, use Hyprland. It has color management, HDR, plugins and more effects. Hypoland only exists
+          because those machines can't run it.
+        </p>
+      </details>
+      <details>
+        <summary>Does Omarchy work?</summary>
+        <p>
+          Yes. Omarchy 4 is what the test machine runs: the Quickshell bar, notifications,
+          wallpaper, windows and Xwayland all work. Chromium runs, but falls back to software rendering because it wants
+          GLES&nbsp;3 itself.
+        </p>
+      </details>
+      <details>
+        <summary>Can I keep blur?</summary>
+        <p>
+          Yes, dual Kawase blur is kept and costs about 1% CPU on the X200. It is off by default, turn it on in
+          your config. The same goes for shadows, rounding and animations.
+        </p>
+      </details>
+      <details>
+        <summary>Is this an official Hyprland project?</summary>
+        <p>
+          No. Hypoland is an independent fork, not affiliated with or endorsed by Hyprland or its developers.
+          All credit for the compositor goes to <a href="https://github.com/hyprwm/Hyprland">Hyprland</a> and
+          its contributors.
+        </p>
+      </details>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p>
+    <img src="favicon.png" width="16" height="16" alt="">
+    Hypoland is BSD 3-Clause licensed, like Hyprland.
+    <a href="https://github.com/hegjon/Hypoland">Source</a> &middot;
+    <a href="https://github.com/hegjon/Hypoland/issues">Issues</a> &middot;
+    <a href="https://github.com/hegjon/Hypoland/blob/master/LICENSE">License</a>
+  </p>
+  <p>This page has no JavaScript, no web fonts and no trackers. It should load fine on an X200 too.</p>
+</footer>
+
+</body>
+</html>
