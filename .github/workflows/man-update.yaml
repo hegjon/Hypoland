@@ -8,6 +8,9 @@ on:
     branches:
       - 'master'
 
+permissions:
+  contents: write
+
 jobs:
   main:
     name: Build man pages
@@ -18,8 +21,6 @@ jobs:
 
     - name: Clone repository
       uses: actions/checkout@v6
-      with:
-        token: ${{ secrets.PAT }}
 
     - name: Build man pages
       run: make man
