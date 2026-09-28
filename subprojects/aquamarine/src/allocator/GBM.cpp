@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cstring>
 #include <aquamarine/allocator/GBM.hpp>
 #include <aquamarine/backend/Backend.hpp>
 #include <aquamarine/backend/DRM.hpp>
@@ -247,10 +248,20 @@ Aquamarine::CGBMBuffer::CGBMBuffer(const SAllocatorBufferParams& params, Hypruti
                                         drmModifierToName(attrs.modifier)));
 
     if (params.scanout && !MULTIGPU && swapchain->backendImpl->type() == AQ_BACKEND_DRM) {
-        // clear the buffer using the DRM renderer to avoid uninitialized mem
+        // clear the buffer to avoid scanning out uninitialized memory (old frames, other processes' data).
+        // The DRM renderer only exists when a secondary GPU needs it, otherwise clear through a CPU mapping,
+        // which costs one write of the buffer when it is allocated.
         auto impl = (CDRMBackend*)swapchain->backendImpl.get();
         if (impl->rendererState.renderer)
             impl->rendererState.renderer->clearBuffer(this);
+        else if (attrs.planes == 1) {
+            auto [ptr, format, size] = beginDataPtr(GBM_BO_TRANSFER_WRITE);
+            if (ptr)
+                memset(ptr, 0, size);
+            else
+                allocator->backend->log(AQ_LOG_ERROR, "GBM: cannot map a new scanout buffer to clear it");
+            endDataPtr();
+        }
     }
 }
 
