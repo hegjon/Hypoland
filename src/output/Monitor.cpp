@@ -2719,13 +2719,19 @@ bool CMonitorState::updateSwapchain() {
         return true;
     }
 
-    if (OPTIONS.format == m_owner->m_drmFormat && OPTIONS.scanout && OPTIONS.length == 3 && OPTIONS.size == MODE->pixelSize)
+    // A frame is rendered after the one before it was presented, so the buffer on screen and the one being
+    // rendered are enough. Only the new render scheduling starts a frame while the last one still waits for its
+    // page-flip. Each buffer less is 4 MiB at 1280x800 and one frame less of damage to repaint.
+    static auto  PNEWSCHEDULING = CConfigValue<Config::INTEGER>("render:new_render_scheduling");
+    const size_t LENGTH         = *PNEWSCHEDULING ? 3 : 2;
+
+    if (OPTIONS.format == m_owner->m_drmFormat && OPTIONS.scanout && OPTIONS.length == LENGTH && OPTIONS.size == MODE->pixelSize)
         return true;
 
     auto options    = OPTIONS;
     options.format  = m_owner->m_drmFormat;
     options.scanout = true;
-    options.length  = 3;
+    options.length  = LENGTH;
     options.size    = MODE->pixelSize;
     return m_owner->m_output->swapchain->reconfigure(options);
 }
