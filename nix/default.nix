@@ -231,7 +231,6 @@ customStdenv.mkDerivation (finalAttrs: {
     "NO_SYSTEMD" = !withSystemd;
     "CMAKE_DISABLE_PRECOMPILE_HEADERS" = true;
     "NO_UWSM" = !withSystemd;
-    "TRACY_ENABLE" = false;
     "WITH_TESTS" = withTests;
   };
 

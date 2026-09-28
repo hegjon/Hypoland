@@ -32,7 +32,6 @@
 #include <hyprutils/os/FileDescriptor.hpp>
 #include <hyprgraphics/resource/resources/ImageResource.hpp>
 
-#include "../debug/TracyDefines.hpp"
 #include "../protocols/core/Compositor.hpp"
 #include "ShaderLoader.hpp"
 #include "gl/GLFramebuffer.hpp"

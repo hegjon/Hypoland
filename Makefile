@@ -65,7 +65,7 @@ asan:
 	@echo "Wayland done"
 
 	patch -p1 < ./scripts/hyprlandStaticAsan.diff
-	cmake --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Debug -DWITH_ASAN:STRING=True -DUSE_TRACY:STRING=False -DUSE_TRACY_GPU:STRING=False -S . -B ./build
+	cmake --no-warn-unused-cli -DCMAKE_BUILD_TYPE:STRING=Debug -DWITH_ASAN:STRING=True -S . -B ./build
 	cmake --build ./build --config Debug --target all
 	@echo "Hyprland done"
 

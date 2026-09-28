@@ -23,7 +23,6 @@ void CGLElementRenderer::draw(WP<CClearPassElement> element, const CRegion& dama
     const auto& color = element->m_data.color;
     RASSERT(g_pHyprRenderer->m_renderData.pMonitor, "Tried to render without begin()!");
 
-    TRACY_GPU_ZONE("RenderClear");
     const std::array<GLfloat, 4> c = {sc<GLfloat>(color.r), sc<GLfloat>(color.g), sc<GLfloat>(color.b), sc<GLfloat>(color.a)};
 
     const auto clearBuffer = [&c]() {

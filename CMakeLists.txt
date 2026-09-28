@@ -277,14 +277,8 @@ file(GLOB_RECURSE SRCFILES "src/*.cpp")
 get_filename_component(FULL_MAIN_PATH ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp ABSOLUTE)
 list(REMOVE_ITEM SRCFILES "${FULL_MAIN_PATH}")
 
-set(TRACY_CPP_FILES "")
-if(USE_TRACY)
-  set(TRACY_CPP_FILES "subprojects/tracy/public/TracyClient.cpp")
-  message(STATUS "Tracy enabled, TRACY_CPP_FILES: " ${TRACY_CPP_FILES})
-endif()
-
 add_library(hyprland_lib STATIC ${SRCFILES})
-add_executable(Hyprland src/main.cpp ${TRACY_CPP_FILES})
+add_executable(Hyprland src/main.cpp)
 target_link_libraries(Hyprland hyprland_lib)
 # only the binary is renamed, the cmake target keeps its upstream name
 set_target_properties(Hyprland PROPERTIES OUTPUT_NAME Hypoland)
@@ -310,23 +304,6 @@ if(CMAKE_BUILD_TYPE MATCHES Debug OR CMAKE_BUILD_TYPE MATCHES DEBUG)
   if(USE_GPROF)
     add_compile_options(-pg)
     add_link_options(-pg)
-  endif()
-endif()
-
-if(USE_TRACY)
-  message(STATUS "Tracy is turned on")
-
-  option(TRACY_ENABLE "" ON)
-  option(TRACY_ON_DEMAND "" ON)
-  add_subdirectory(subprojects/tracy)
-
-  add_compile_options(-fno-omit-frame-pointer)
-
-  target_link_libraries(hyprland_lib PUBLIC Tracy::TracyClient)
-
-  if(USE_TRACY_GPU)
-    message(STATUS "Tracy GPU Profiling is turned on")
-    add_compile_definitions(USE_TRACY_GPU)
   endif()
 endif()
 

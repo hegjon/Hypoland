@@ -202,7 +202,6 @@ void IElementRenderer::drawHints(WP<CRendererHintsPassElement> element, const CR
 }
 
 void IElementRenderer::drawPreBlur(WP<CPreBlurElement> element, const CRegion& damage) {
-    TRACY_GPU_ZONE("RenderPreBlurForCurrentMonitor");
     auto&      m_renderData = g_pHyprRenderer->m_renderData;
 
     const auto SAVEDRENDERMODIF = m_renderData.renderModif;
@@ -252,8 +251,6 @@ void IElementRenderer::drawSurface(WP<CSurfacePassElement> element, const CRegio
     }
 
     const auto INTERACTIVERESIZEINPROGRESS = m_data.pWindow && g_layoutManager->dragController()->target() && g_layoutManager->dragController()->mode() == MBIND_RESIZE;
-    TRACY_GPU_ZONE("RenderSurface");
-
     auto        PSURFACE = Desktop::View::CWLSurface::fromResource(m_data.surface);
 
     const float ALPHA         = m_data.alpha * m_data.fadeAlpha * (PSURFACE ? PSURFACE->m_alphaModifier : 1.F);

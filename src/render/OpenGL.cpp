@@ -80,7 +80,7 @@ CBox Render::GL::resolveBlurUV(const CBox& destinationBox, const Vector2D& textu
 static inline void loadGLProc(void* pProc, const char* name) {
     void* proc = rc<void*>(eglGetProcAddress(name));
     if (proc == nullptr) {
-        Log::logger->log(Log::CRIT, "[Tracy GPU Profiling] eglGetProcAddress({}) failed", name);
+        Log::logger->log(Log::CRIT, "eglGetProcAddress({}) failed", name);
         abort();
     }
     *sc<void**>(pProc) = proc;
@@ -390,16 +390,6 @@ CHyprOpenGLImpl::CHyprOpenGLImpl() : m_drmFD(g_pCompositor->m_drmRenderNode.fd >
     Log::logger->log(Log::WARN, "Forcefully disabling explicit sync: BSD is missing support for proper timeline export");
 #endif
 
-#ifdef USE_TRACY_GPU
-
-    loadGLProc(&glQueryCounter, "glQueryCounterEXT");
-    loadGLProc(&glGetQueryObjectiv, "glGetQueryObjectivEXT");
-    loadGLProc(&glGetQueryObjectui64v, "glGetQueryObjectui64vEXT");
-
-#endif
-
-    TRACY_GPU_CONTEXT;
-
     initDRMFormats();
 
     RASSERT(eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT), "Couldn't unset current EGL!");
@@ -669,8 +659,6 @@ EGLImageKHR CHyprOpenGLImpl::createEGLImage(const Aquamarine::SDMABUFAttrs& attr
 void CHyprOpenGLImpl::beginSimple(PHLMONITOR pMonitor, const CRegion& damage, SP<IRenderbuffer> rb, SP<IFramebuffer> fb) {
     g_pHyprRenderer->m_renderData.pMonitor = pMonitor;
 
-    TRACY_GPU_ZONE("RenderBeginSimple");
-
     const auto FBO = rb ? rb->getFB() : fb;
 
     setViewport(0, 0, FBO->m_size.x, FBO->m_size.y);
@@ -701,8 +689,6 @@ void CHyprOpenGLImpl::makeEGLCurrent() {
 
 void CHyprOpenGLImpl::begin(PHLMONITOR pMonitor, const CRegion& damage_, SP<IFramebuffer> fb, std::optional<CRegion> finalDamage) {
     g_pHyprRenderer->m_renderData.pMonitor = pMonitor;
-
-    TRACY_GPU_ZONE("RenderBegin");
 
     setViewport(0, 0, pMonitor->m_transformedSize.x, pMonitor->m_transformedSize.y);
 
@@ -793,7 +779,6 @@ void CHyprOpenGLImpl::end() {
     static auto PZOOMDISABLEAA = CConfigValue<Config::INTEGER>("cursor:zoom_disable_aa");
     auto&       m_renderData   = g_pHyprRenderer->m_renderData;
     const auto  PMONITOR       = m_renderData.pMonitor;
-    TRACY_GPU_ZONE("RenderEnd");
 
     g_pHyprRenderer->m_renderData.currentWindow.reset();
     g_pHyprRenderer->m_renderData.surface.reset();
@@ -1171,8 +1156,6 @@ void CHyprOpenGLImpl::renderRectWithDamageInternal(const CBox& box, const CHyprC
     RASSERT((box.width > 0 && box.height > 0), "Tried to render rect with width/height < 0!");
     RASSERT(m_renderData.pMonitor, "Tried to render rect without begin()!");
 
-    TRACY_GPU_ZONE("RenderRectWithDamage");
-
     CBox newBox = box;
     g_pHyprRenderer->m_renderData.renderModif.applyToBox(newBox);
 
@@ -1427,8 +1410,6 @@ void CHyprOpenGLImpl::renderTextureInternal(SP<ITexture> tex, const CBox& box, c
     RASSERT(tex, "Attempted to draw nullptr texture!");
     RASSERT(tex->ok(), "Attempted to draw invalid texture!");
 
-    TRACY_GPU_ZONE("RenderTextureInternalWithDamage");
-
     if (data.damage->empty())
         return;
 
@@ -1592,8 +1573,6 @@ void CHyprOpenGLImpl::renderTexturePrimitive(SP<ITexture> tex, const CBox& box) 
     RASSERT(g_pHyprRenderer->m_renderData.pMonitor, "Tried to render texture without begin()!");
     RASSERT((tex->ok()), "Attempted to draw nullptr texture!");
 
-    TRACY_GPU_ZONE("RenderTexturePrimitive");
-
     if (g_pHyprRenderer->m_renderData.damage.empty())
         return;
 
@@ -1635,8 +1614,6 @@ void CHyprOpenGLImpl::renderTextureMatte(SP<ITexture> tex, const CBox& box, SP<I
     RASSERT(g_pHyprRenderer->m_renderData.pMonitor, "Tried to render texture without begin()!");
     RASSERT((tex->ok()), "Attempted to draw nullptr texture!");
 
-    TRACY_GPU_ZONE("RenderTextureMatte");
-
     CBox newBox = box;
     g_pHyprRenderer->m_renderData.renderModif.applyToBox(newBox);
 
@@ -1670,8 +1647,6 @@ void CHyprOpenGLImpl::renderTextureMatte(SP<ITexture> tex, const CBox& box, SP<I
 void CHyprOpenGLImpl::renderTextureWithBlurInternal(SP<ITexture> tex, const CBox& box, const STextureRenderData& data) {
     auto& m_renderData = g_pHyprRenderer->m_renderData;
     RASSERT(m_renderData.pMonitor, "Tried to render texture with blur without begin()!");
-
-    TRACY_GPU_ZONE("RenderTextureWithBlur");
 
     static auto PBLEND        = CConfigValue<Config::INTEGER>("render:use_shader_blur_blend");
     const auto  NEEDS_STENCIL = data.discardMode != 0 && (!data.blockBlurOptimization || (data.discardMode & DISCARD_ALPHA));
@@ -1799,8 +1774,6 @@ void CHyprOpenGLImpl::renderBorder(const CBox& box, const Config::CGradientValue
     RASSERT((box.width > 0 && box.height > 0), "Tried to render rect with width/height < 0!");
     RASSERT(m_renderData.pMonitor, "Tried to render rect without begin()!");
 
-    TRACY_GPU_ZONE("RenderBorder");
-
     if (g_pHyprRenderer->m_renderData.damage.empty())
         return;
 
@@ -1873,8 +1846,6 @@ void CHyprOpenGLImpl::renderBorder(const CBox& box, const Config::CGradientValue
     auto& m_renderData = g_pHyprRenderer->m_renderData;
     RASSERT((box.width > 0 && box.height > 0), "Tried to render rect with width/height < 0!");
     RASSERT(m_renderData.pMonitor, "Tried to render rect without begin()!");
-
-    TRACY_GPU_ZONE("RenderBorder2");
 
     if (g_pHyprRenderer->m_renderData.damage.empty())
         return;
@@ -1959,8 +1930,6 @@ void CHyprOpenGLImpl::renderRoundedShadow(const CBox& box, int round, float roun
 
     if (g_pHyprRenderer->m_renderData.damage.empty())
         return;
-
-    TRACY_GPU_ZONE("RenderShadow");
 
     CBox newBox = box;
     g_pHyprRenderer->m_renderData.renderModif.applyToBox(newBox);
@@ -2072,8 +2041,6 @@ void CHyprOpenGLImpl::renderInnerGlow(const CBox& box, int round, float rounding
 
     if (g_pHyprRenderer->m_renderData.damage.empty())
         return;
-
-    TRACY_GPU_ZONE("RenderInnerGlow");
 
     CBox newBox = box;
     g_pHyprRenderer->m_renderData.renderModif.applyToBox(newBox);

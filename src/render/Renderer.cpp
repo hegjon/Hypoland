@@ -558,8 +558,6 @@ void IHyprRenderer::renderWindow(PHLWINDOW pWindow, PHLMONITOR pMonitor, const T
     if (!pWindow->mapped())
         return;
 
-    TRACY_GPU_ZONE("RenderWindow");
-
     const auto PWORKSPACE = pWindow->m_workspace;
     const auto REALPOS =
         pWindow->position(Desktop::View::IGeometric::GEOMETRIC_CURRENT) + ((pWindow->m_state & WINDOW_STATE_PINNED) ? Vector2D{} : PWORKSPACE->m_renderOffset->value());
@@ -946,8 +944,6 @@ void IHyprRenderer::renderLayer(PHLLS pLayer, PHLMONITOR pMonitor, const Time::s
         m_renderPass.add(makeUnique<CRectPassElement>(data));
     }
 
-    TRACY_GPU_ZONE("RenderLayer");
-
     const auto                       REALPOS = pLayer->position(Desktop::View::IGeometric::GEOMETRIC_CURRENT);
     const auto                       REALSIZ = pLayer->size(Desktop::View::IGeometric::GEOMETRIC_CURRENT);
 
@@ -1247,8 +1243,6 @@ void IHyprRenderer::renderAllClientsForWorkspace(PHLMONITOR pMonitor, PHLWORKSPA
 void IHyprRenderer::renderIME(PHLMONITOR pMonitor, const Time::steady_tp& now, const CBox& geometry) {
     Vector2D translate = {geometry.x, geometry.y};
     float    scale     = sc<float>(geometry.width) / pMonitor->m_transformedSize.x;
-
-    TRACY_GPU_ZONE("RenderIME");
 
     if (!DELTALESSTHAN(sc<double>(geometry.width) / sc<double>(geometry.height), pMonitor->m_transformedSize.x / pMonitor->m_transformedSize.y, 0.01)) {
         Log::logger->log(Log::ERR, "Ignoring geometry in renderIME: aspect ratio mismatch");
@@ -1663,8 +1657,6 @@ void IHyprRenderer::ensureLockTexturesRendered(bool load) {
 }
 
 void IHyprRenderer::renderLockscreen(PHLMONITOR pMonitor, const Time::steady_tp& now, const CBox& geometry) {
-    TRACY_GPU_ZONE("RenderLockscreen");
-
     const bool LOCKED = g_pSessionLockManager->isSessionLocked();
     if (!LOCKED) {
         ensureLockTexturesRendered(false);
@@ -2050,8 +2042,6 @@ void IHyprRenderer::renderMonitor(PHLMONITOR pMonitor, bool commit) {
     // TODO: this is getting called with extents being 0,0,0,0 should it be?
     // potentially can save on resources.
 
-    TRACY_GPU_ZONE("Render");
-
     static bool zoomLock = false;
     if (zoomLock && ZOOMFACTOR == 1.f) {
         Pointer::mgr()->unlockSoftwareAll();
@@ -2150,7 +2140,6 @@ void IHyprRenderer::renderMonitor(PHLMONITOR pMonitor, bool commit) {
     renderCursor = renderCursor && shouldRenderCursor();
 
     if (renderCursor) {
-        TRACY_GPU_ZONE("RenderCursor");
         Pointer::mgr()->renderSoftwareCursorsFor(pMonitor->m_self.lock(), NOW, m_renderData.damage);
     }
 
@@ -2165,8 +2154,6 @@ void IHyprRenderer::renderMonitor(PHLMONITOR pMonitor, bool commit) {
     Event::bus()->m_events.render.stage.emit(RENDER_LAST_MOMENT);
 
     endRender();
-
-    TRACY_GPU_COLLECT;
 
     if (!pMonitor->needsACopyFB())
         pMonitor->resources()->markMirrorFBStale(m_renderData.damage);
@@ -2421,8 +2408,6 @@ bool IHyprRenderer::commitPendingAndDoExplicitSync(PHLMONITOR pMonitor) {
 void IHyprRenderer::renderWorkspace(PHLMONITOR pMonitor, PHLWORKSPACE pWorkspace, const Time::steady_tp& now, const CBox& geometry) {
     Vector2D translate = {geometry.x, geometry.y};
     float    scale     = sc<float>(geometry.width) / pMonitor->m_transformedSize.x;
-
-    TRACY_GPU_ZONE("RenderWorkspace");
 
     if (!DELTALESSTHAN(sc<double>(geometry.width) / sc<double>(geometry.height), pMonitor->m_transformedSize.x / pMonitor->m_transformedSize.y, 0.01)) {
         Log::logger->log(Log::ERR, "Ignoring geometry in renderWorkspace: aspect ratio mismatch");
