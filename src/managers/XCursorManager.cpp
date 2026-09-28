@@ -119,49 +119,48 @@ void CXCursorManager::loadTheme(std::string const& name, int size, float scale) 
     m_themeName     = name.empty() ? "default" : name;
     m_defaultCursor.reset();
     m_cursors.clear();
+    m_missingShapes.clear();
+    m_themeDirs.clear();
 
     auto paths = themePaths(m_themeName);
     if (paths.empty()) {
         Log::logger->log(Log::ERR, "XCursor librarypath is empty loading standard XCursors");
         m_cursors = loadStandardCursors(m_themeName, m_lastLoadSize);
     } else {
+        // Shapes are loaded from these directories when they are first asked for. A theme has about a hundred
+        // files and only a few are ever shown, reading all of them took about 25 ms at startup on the X200.
         for (auto const& p : paths) {
-            try {
-                auto dirCursors = loadAllFromDir(p, m_lastLoadSize);
-                std::ranges::copy_if(dirCursors, std::back_inserter(m_cursors),
-                                     [this](auto const& p) { return std::ranges::none_of(m_cursors, [&p](auto const& dp) { return dp->shape == p->shape; }); });
-            } catch (std::exception& e) { Log::logger->log(Log::ERR, "XCursor path {} can't be loaded: threw error {}", p, e.what()); }
+            std::error_code ec;
+            if (std::filesystem::is_directory(p, ec))
+                m_themeDirs.push_back(p);
+        }
+
+        for (auto const& dir : m_themeDirs) {
+            m_defaultCursor = loadShape(dir, "left_ptr", "left_ptr");
+            if (!m_defaultCursor)
+                m_defaultCursor = loadShape(dir, "arrow", "arrow");
+            if (m_defaultCursor)
+                break;
+        }
+
+        // broken theme.. just use the first shape there is.
+        for (auto const& dir : m_themeDirs) {
+            if (m_defaultCursor)
+                break;
+
+            std::error_code ec;
+            for (const auto& entry : std::filesystem::directory_iterator(dir, ec)) {
+                m_defaultCursor = loadShape(dir, entry.path().filename().string(), entry.path().filename().string());
+                if (m_defaultCursor)
+                    break;
+            }
         }
     }
 
-    if (m_cursors.empty()) {
+    if (!m_defaultCursor) {
         Log::logger->log(Log::ERR, "XCursor failed finding any shapes in theme \"{}\".", m_themeName);
         m_defaultCursor = m_hyprCursor;
         return;
-    }
-
-    for (auto const& shape : CURSOR_SHAPE_NAMES) {
-        auto legacyName = getLegacyShapeName(shape);
-        if (legacyName.empty())
-            continue;
-
-        auto it = std::ranges::find_if(m_cursors, [&legacyName](auto const& c) { return c->shape == legacyName; });
-
-        if (it == m_cursors.end()) {
-            Log::logger->log(Log::DEBUG, "XCursor failed to find a legacy shape with name {}, skipping", legacyName);
-            continue;
-        }
-
-        if (std::ranges::any_of(m_cursors, [&shape](auto const& dp) { return dp->shape == shape; })) {
-            Log::logger->log(Log::DEBUG, "XCursor already has a shape {} loaded, skipping", shape);
-            continue;
-        }
-
-        auto cursor    = makeShared<SXCursors>();
-        cursor->images = it->get()->images;
-        cursor->shape  = shape;
-
-        m_cursors.emplace_back(cursor);
     }
 
     syncGsettings();
@@ -180,8 +179,59 @@ SP<SXCursors> CXCursorManager::getShape(std::string const& shape, int size, floa
         return c;
     }
 
+    if (!m_missingShapes.contains(shape)) {
+        if (auto cursor = loadShapeFromTheme(shape, shape))
+            return cursor;
+
+        // a cursor-shape-v1 name the theme does not have, use its legacy name
+        auto legacyName = std::ranges::contains(CURSOR_SHAPE_NAMES, shape) ? getLegacyShapeName(shape) : std::string();
+        if (!legacyName.empty()) {
+            if (auto cursor = loadShapeFromTheme(legacyName, shape))
+                return cursor;
+        }
+
+        m_missingShapes.emplace(shape);
+    }
+
     Log::logger->log(Log::WARN, "XCursor couldn't find shape {} , using default cursor instead", shape);
     return m_defaultCursor;
+}
+
+SP<SXCursors> CXCursorManager::loadShapeFromTheme(std::string const& file, std::string const& shape) {
+    for (auto const& dir : m_themeDirs) {
+        if (auto cursor = loadShape(dir, file, shape))
+            return cursor;
+    }
+
+    return nullptr;
+}
+
+SP<SXCursors> CXCursorManager::loadShape(std::string const& dir, std::string const& file, std::string const& shape) {
+    auto const full = dir + "/" + file;
+
+    using PcloseType = int (*)(FILE*);
+    const std::unique_ptr<FILE, PcloseType> f(fopen(full.c_str(), "r"), fclose);
+
+    if (!f)
+        return nullptr;
+
+    auto xImages = XcursorFileLoadImages(f.get(), m_lastLoadSize);
+
+    if (!xImages) {
+        Log::logger->log(Log::WARN, "XCursor failed to load image {}, trying size 24.", full);
+        xImages = XcursorFileLoadImages(f.get(), 24);
+
+        if (!xImages) {
+            Log::logger->log(Log::WARN, "XCursor failed to load image {}, skipping", full);
+            return nullptr;
+        }
+    }
+
+    auto cursor = createCursor(shape, xImages);
+    XcursorImagesDestroy(xImages);
+
+    m_cursors.emplace_back(cursor);
+    return cursor;
 }
 
 SP<SXCursors> CXCursorManager::createCursor(std::string const& shape, void* ximages) {
@@ -513,54 +563,6 @@ std::vector<SP<SXCursors>> CXCursorManager::loadStandardCursors(std::string cons
             m_defaultCursor = cursor;
 
         XcursorImagesDestroy(xImages);
-    }
-
-    // broken theme.. just set it.
-    if (!newCursors.empty() && !m_defaultCursor)
-        m_defaultCursor = newCursors.front();
-
-    return newCursors;
-}
-
-std::vector<SP<SXCursors>> CXCursorManager::loadAllFromDir(std::string const& path, int size) {
-    std::vector<SP<SXCursors>> newCursors;
-
-    if (std::filesystem::exists(path) && std::filesystem::is_directory(path)) {
-        for (const auto& entry : std::filesystem::directory_iterator(path)) {
-            std::error_code e1, e2;
-            if ((!entry.is_regular_file(e1) && !entry.is_symlink(e2)) || e1 || e2) {
-                Log::logger->log(Log::WARN, "XCursor failed to load shape {}: {}", entry.path().stem().string(), e1 ? e1.message() : e2.message());
-                continue;
-            }
-
-            auto const& full = entry.path().string();
-            using PcloseType = int (*)(FILE*);
-            const std::unique_ptr<FILE, PcloseType> f(fopen(full.c_str(), "r"), fclose);
-
-            if (!f)
-                continue;
-
-            auto xImages = XcursorFileLoadImages(f.get(), size);
-
-            if (!xImages) {
-                Log::logger->log(Log::WARN, "XCursor failed to load image {}, trying size 24.", full);
-                xImages = XcursorFileLoadImages(f.get(), 24);
-
-                if (!xImages) {
-                    Log::logger->log(Log::WARN, "XCursor failed to load image {}, skipping", full);
-                    continue;
-                }
-            }
-
-            auto const& shape  = entry.path().filename().string();
-            auto        cursor = createCursor(shape, xImages);
-            newCursors.emplace_back(cursor);
-
-            if (!m_defaultCursor && (shape == "left_ptr" || shape == "arrow"))
-                m_defaultCursor = cursor;
-
-            XcursorImagesDestroy(xImages);
-        }
     }
 
     // broken theme.. just set it.

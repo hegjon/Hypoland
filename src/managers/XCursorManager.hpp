@@ -34,12 +34,15 @@ class CXCursorManager {
     std::set<std::string>      themePaths(std::string const& theme);
     std::string                getLegacyShapeName(std::string const& shape);
     std::vector<SP<SXCursors>> loadStandardCursors(std::string const& name, int size);
-    std::vector<SP<SXCursors>> loadAllFromDir(std::string const& path, int size);
+    SP<SXCursors>              loadShapeFromTheme(std::string const& file, std::string const& shape);
+    SP<SXCursors>              loadShape(std::string const& dir, std::string const& file, std::string const& shape);
 
     int                        m_lastLoadSize  = 0;
     float                      m_lastLoadScale = 0;
     std::string                m_themeName     = "";
     SP<SXCursors>              m_defaultCursor;
     SP<SXCursors>              m_hyprCursor;
-    std::vector<SP<SXCursors>> m_cursors;
+    std::vector<SP<SXCursors>> m_cursors; // the shapes loaded so far
+    std::vector<std::string>   m_themeDirs;
+    std::set<std::string>      m_missingShapes;
 };
