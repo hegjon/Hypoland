@@ -4,14 +4,23 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to attach the source tarball to
+        required: true
 
 jobs:
   source-tarball:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
+          ref: ${{ env.RELEASE_TAG }}
           fetch-depth: 0
           submodules: recursive
 
@@ -20,7 +29,7 @@ jobs:
           git fetch --tags --unshallow || true
 
           COMMIT_HASH=$(git rev-parse HEAD)
-          BRANCH="${GITHUB_REF_NAME:-$(git rev-parse --abbrev-ref HEAD)}"
+          BRANCH="$RELEASE_TAG"
           COMMIT_MSG=$(git show -s --format=%s | sed 's/[&/]/\\&/g')
           COMMIT_DATE=$(git show -s --format=%cd --date=local)
           GIT_DIRTY=$(git diff-index --quiet HEAD -- && echo "clean" || echo "dirty")
@@ -51,6 +60,6 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: source.tar.gz
-          asset_name: hypoland-source-${{ github.event.release.tag_name || github.ref_name }}.tar.gz
-          tag: ${{ github.event.release.tag_name || github.ref_name }}
+          asset_name: hypoland-source-${{ env.RELEASE_TAG }}.tar.gz
+          tag: ${{ env.RELEASE_TAG }}
           overwrite: true
