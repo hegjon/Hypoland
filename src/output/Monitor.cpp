@@ -2573,10 +2573,6 @@ bool CMonitor::canNoShaderCM(bool forDSmode) {
     );
 }
 
-bool CMonitor::doesNoShaderCM() {
-    return m_noShaderCTM;
-}
-
 static std::vector<uint16_t> resampleInterleavedToKms(const SVCGTTable16& t, size_t gammaSize) {
     const size_t entries = sc<size_t>(t.entries);
 

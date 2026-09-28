@@ -65,8 +65,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "Гэта <b>абавязкова</b> створыць праблемы.");
     registerEntry("be_BY", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "Манітор {name} не змог наладзіць ніводны з запатрабаваных рэжымаў, аварыйна ўжыты рэжым {mode}.");
     registerEntry("be_BY", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Няверна зададзены маштаб для манітора {name}: {scale}, ужываецца прапанаваны маштаб: {fixed_scale}");
-    registerEntry("be_BY", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "Не атрымалася загрузіць плагін {name}: {error}");
-    registerEntry("be_BY", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "Не атрымалася перазагрузіць шэйдар CM, аварыйна ўжываецца rgba/rgbx.");
     registerEntry("be_BY", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Манітор {name}: пашыраны каляровы дыяпазон уключаны, але экран не ў рэжыме 10-біт.");
 
     // bn_BD (Bengali)
@@ -103,8 +101,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "এটি <b>অবশ্যই</b> সমস্যা সৃষ্টি করবে।");
     registerEntry("bn_BD", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "মনিটর {name} কোনো অনুরোধকৃত মোড সেট করতে পারেনি, মোড {mode} এ ফিরে যাচ্ছে।");
     registerEntry("bn_BD", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "মনিটর {name} এর জন্য অবৈধ স্কেল পাঠানো হয়েছে: {scale}, প্রস্তাবিত স্কেল ব্যবহার করা হচ্ছে: {fixed_scale}");
-    registerEntry("bn_BD", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "প্লাগইন {name} লোড করতে ব্যর্থ: {error}");
-    registerEntry("bn_BD", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "CM শেডার পুনরায় লোড করতে ব্যর্থ, rgba/rgbx এ ফিরে যাচ্ছে।");
     registerEntry("bn_BD", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "মনিটর {name}: ওয়াইড কালার গ্যামুট সক্রিয় কিন্তু স্ক্রিন 10-বিট মোডে নেই।");
     registerEntry("bn_BD", TXT_KEY_NOTIF_NO_WATCHDOG, "Hyprland start-hyprland ছাড়া চালু করা হয়েছে। এটি অত্যন্ত সুপারিশকৃত নয় যদি না আপনি ডিবাগিং পরিবেশে থাকেন।");
 
@@ -153,8 +149,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "mere. Dette <b>vil</b> skabe problemer.");
     registerEntry("da_DK", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "Skærm {name} kunne ikke indlæse nogen af de ønskede tilstande, vender tilbage til tilstand {mode}.");
     registerEntry("da_DK", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Ugyldig skalering sendt til skærm {name}: {scale}, bruger foreslået skalering: {fixed_scale}");
-    registerEntry("da_DK", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "Kunne ikke indlæse plugin {name}: {error}");
-    registerEntry("da_DK", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "Genindlæsning af CM-shader mislykkedes, går tilbage til rgba/rgbx.");
     registerEntry("da_DK", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Skærm {name}: wide color gamut er aktiveret men skærmen er ikke i 10-bit tilstand.");
 
     // el_GR (Greek)
@@ -194,8 +188,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "περισσότερα. Αυτό <b>θα</b> προκαλέσει προβλήματα.");
     registerEntry("el_GR", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "Η οθόνη {name} απέτυχε να ορίσει οποιαδήποτε ζητούμενη λειτουργία, επιστροφή στη λειτουργία {mode}.");
     registerEntry("el_GR", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Μη έγκυρη κλίμακα για την οθόνη {name}: {scale}, χρησιμοποιείται η προτεινόμενη κλίμακα: {fixed_scale}");
-    registerEntry("el_GR", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "Αποτυχία φόρτωσης πρόσθετου {name}: {error}");
-    registerEntry("el_GR", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "Η επαναφόρτωση του CM shader απέτυχε, επιστροφή σε rgba/rgbx.");
     registerEntry("el_GR", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Οθόνη {name}: η ευρεία γκάμα χρωμάτων είναι ενεργοποιημένη αλλά η οθόνη δεν βρίσκεται σε λειτουργία 10-bit.");
     registerEntry("el_GR", TXT_KEY_NOTIF_NO_WATCHDOG, "Το Hyprland εκκινήθηκε χωρίς το start-hyprland. Αυτό δεν συνιστάται εκτός αν βρίσκεστε σε περιβάλλον αποσφαλμάτωσης.");
 
@@ -247,8 +239,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "more. This <b>will</b> cause issues.");
     registerEntry("en_US", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "Monitor {name} failed to set any requested modes, falling back to mode {mode}.");
     registerEntry("en_US", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Invalid scale passed to monitor {name}: {scale}, using suggested scale: {fixed_scale}");
-    registerEntry("en_US", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "Failed to load plugin {name}: {error}");
-    registerEntry("en_US", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "CM shader reload failed, falling back to rgba/rgbx.");
     registerEntry("en_US", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Monitor {name}: wide color gamut is enabled but the display is not in 10-bit mode.");
     registerEntry("en_US", TXT_KEY_NOTIF_NO_WATCHDOG, "Hypoland was started without start-hypoland. This is strongly discouraged unless you are in a debugging environment.");
     registerEntry("en_US", TXT_KEY_NOTIF_DEPRECATED_CONFIG_OPTS, [](const Hyprutils::I18n::translationVarMap& vars) {
@@ -257,7 +247,6 @@ I18n::CI18nEngine::CI18nEngine() {
             return "You are using {count} deprecated config option. Run hyprctl deprecated-config to see more information.";
         return "You are using {count} deprecated config options. Run hyprctl deprecated-config to see more information.";
     });
-    registerEntry("en_US", TXT_KEY_NOTIF_NO_FP16, "Your GPU does not support rendering to FP16 buffers, some effects and CM settings might be unavailable.");
 
     registerEntry("en_US", TXT_KEY_SAFE_MODE_TITLE, "Safe Mode");
     registerEntry("en_US", TXT_KEY_SAFE_MODE_DESCRIPTION,
@@ -299,8 +288,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "<b>সমস্যাৰ</b> সৃষ্টি কৰিব।");
     registerEntry("as_IN", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "মনিটৰ {name}-এ কোনো অনুৰোধ কৰা মোড ছেট কৰাত অসফল হৈছে, মোড {mode}-লৈ ঘূৰি আহিছে।");
     registerEntry("as_IN", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "মনিটৰ {name}: {scale}-লৈ অবৈধ মাপন দিয়া হৈছে, পৰামৰ্শ দিয়া মাপন ব্যৱহাৰ কৰা যাব: {fixed_scale}");
-    registerEntry("as_IN", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "প্লাগিন {name} লোড কৰাত অসফল হৈছে: {error}");
-    registerEntry("as_IN", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "CM শ্বেডাৰ ৰিলোড কৰাত অসফল হৈছে, rgba/rgbx-লৈ ঘূৰি আহিছে।");
     registerEntry("as_IN", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "প্ৰসাৰিত ৰঙৰ বৰ্গ সক্ষম কৰা হৈছে কিন্তু ডিচপ্লে 10-বিট মোডত নাই।");
 
     // de_DE (German)
@@ -339,8 +326,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "mehr Informationen. Dies <b>wird</b> zu Problemen führen.");
     registerEntry("de_DE", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "Bildschirm {name} konnte keinen der angeforderten Modi setzen fällt auf den Modus {mode} zurück.");
     registerEntry("de_DE", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Ungültiger Skalierungsfaktor {scale} für Bildschirm {name}, es wird der empfohlene Faktor {fixed_scale} verwendet.");
-    registerEntry("de_DE", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "Plugin {name} konnte nicht geladen werden: {error}");
-    registerEntry("de_DE", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "CM shader konnte nicht neu geladen werden und es wird auf rgba/rgbx zurückgefallen.");
     registerEntry("de_DE", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Bildschirm {name}: wide color gamut ist aktiviert aber der Bildschirm ist nicht im 10-bit Modus.");
 
     // de_CH (Swiss German)
@@ -375,8 +360,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "(Monitors Siite) för meh Informatione. Das <b>werd</b> zo Problem füehre.");
     registerEntry("de_CH", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "De Beldscherm {name} hed keine vode aagforderete Modi chönne setze, ond fallt uf de Modus {mode} zrogg.");
     registerEntry("de_CH", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Ongöltige Skalierigsfaktor {scale} för de Beldscherm {name}, es werd de empfohleni Faktor {fixed_scale} verwändet.");
-    registerEntry("de_CH", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "S Plugin {name} hed ned chönne glade wärde: {error}");
-    registerEntry("de_CH", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "CM shader hed ned chönne neu glade wärde, es werd uf rgba/rgbx zrogggfalle.");
     registerEntry("de_CH", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Beldscherm {name}: wide color gamut esch aktiviert aber de Beldscherm esch ned im 10-bit Modus.");
 
     // pt_BR (Brazilian Portuguese)
@@ -416,8 +399,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "mais informações. Isso <b>vai</b> causar problemas.");
     registerEntry("pt_BR", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "O monitor {name} falhou em definir qualquer um dos modos solicitados, voltando ao modo {mode}.");
     registerEntry("pt_BR", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Um fator de escala inválido foi passado para o monitor {name}: {scale}, usando o fator sugerido: {fixed_scale}");
-    registerEntry("pt_BR", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "Falha ao carregar o plugin {name}: {error}");
-    registerEntry("pt_BR", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "Falha ao carregar o shader CM, voltando para rgba/rgbx.");
     registerEntry("pt_BR", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Monitor {name}: o modo de gama de cores amplo está ativado, mas a tela não está configurada para 10 bits.");
     registerEntry("pt_BR", TXT_KEY_NOTIF_NO_WATCHDOG,
                   "Hyprland foi iniciado sem o comando start-hyprland. Isso é altamente desaconselhável a menos que você esteja em um ambiente de depuração.");
@@ -467,8 +448,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "Monitors, en inglés) para más información. Esto <b>provocará</b> problemas.");
     registerEntry("es", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "El monitor {name} no pudo configurar ninguno de los modos solicitados y ha vuelto al modo {mode}.");
     registerEntry("es", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Se pasó una escala no válida al monitor {name}: {scale}; se usará la escala sugerida: {fixed_scale}");
-    registerEntry("es", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "Error al cargar el plugin {name}: {error}");
-    registerEntry("es", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "Error al recargar el shader CM; volviendo a rgba/rgbx.");
     registerEntry("es", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Monitor {name}: la gama de color amplia está habilitada, pero la pantalla no está en modo de 10 bits.");
 
     // fa_IR (Persian)
@@ -534,10 +513,6 @@ I18n::CI18nEngine::CI18nEngine() {
 
     registerEntry("fa_IR", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "مقیاس واردشده برای مانیتور {name} نامعتبر است: {scale}. مقیاس پیشنهادی اعمال شد: {fixed_scale}");
 
-    registerEntry("fa_IR", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "بارگذاری پلاگین {name} با خطا روبه‌رو شد: {error}");
-
-    registerEntry("fa_IR", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "بارگذاری دوبارهٔ شیدر CM ناموفق بود؛ از حالت rgba/rgbx استفاده شد.");
-
     registerEntry("fa_IR", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "مانیتور {name}: گسترهٔ رنگ وسیع فعال است اما نمایشگر در حالت ۱۰ بیتی نیست.");
 
     // fi_FI (Finnish)
@@ -575,8 +550,6 @@ I18n::CI18nEngine::CI18nEngine() {
         "Näyttöjesi asettelu on virheellinen. Näyttö {name} on muiden näyttöjen päällä.\nLisätietoja löydät wikistä (Monitors sivu). Tämä <b>tulee aiheuttamaan</b> ongelmia.");
     registerEntry("fi_FI", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "Näyttö {name} epäonnistui pyydetyn tilan asettamisessa, palataan tilaan {mode}.");
     registerEntry("fi_FI", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Näytölle {name} asetettu skaalaus: {scale} on virheellinen, asetetaan suositeltu skaalaus: {fixed_scale}.");
-    registerEntry("fi_FI", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "Laajennuksen {name} lataus epäonnistui: {error}");
-    registerEntry("fi_FI", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "CM varjostimen uudelleenlataus epäonnistui, palataan takaisin rgba/rgbx tilaan.");
     registerEntry("fi_FI", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Näyttö {name}: laaja väriskaala on otettu käyttöön, mutta näyttö ei ole 10-bit tilassa.");
 
     // fr_FR (French)
@@ -615,8 +588,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "en savoir plus. Cela <b>causera</> des problèmes.");
     registerEntry("fr_FR", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "Le moniteur {name} n'a pu appliquer les modes demandés, retour au mode {mode}.");
     registerEntry("fr_FR", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Échelle invalide pour le moniteur {name}: {scale}. Utilisation de l'échelle suggérée: {fixed_scale}.");
-    registerEntry("fr_FR", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "Échec du chargement du module {name} : {error}");
-    registerEntry("fr_FR", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "Le rechargement du shader CM a échoué, retour aux formats rgba/rgbx");
     registerEntry("fr_FR", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Moniteur {name} : l'espace colorimétrique étendu est activé, mais l'écran n'est pas en mode 10-bits.");
 
     // hi_IN (Hindi)
@@ -672,8 +643,6 @@ I18n::CI18nEngine::CI18nEngine() {
     registerEntry("hi_IN", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE,
                   "मॉनिटर {name} को अवैध स्केल दिया गया: {scale}, सुझाया "
                   "गया स्केल इस्तेमाल किया जा रहा है: {fixed_scale}");
-    registerEntry("hi_IN", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "प्लगइन {name} लोड करने में विफल: {error}");
-    registerEntry("hi_IN", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "CM शेडर रीलोड विफल हुआ, rgba/rgbx पर वापस जा रहा है।");
     registerEntry("hi_IN", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "मॉनिटर {name}: वाइड कलर गैम सक्षम है लेकिन डिस्प्ले 10-बिट मोड में नहीं है।");
 
     // id_ID (Indonesia)
@@ -712,8 +681,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "detailnya. Hal ini <b>pasti</b> akan menimbulkan masalah.");
     registerEntry("id_ID", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "Monitor {name} gagal menerapkan mode yang diminta, kembali ke mode {mode}.");
     registerEntry("id_ID", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Skala tidak valid diberikan ke monitor {name}: {scale}, skala yang disarankan: {fixed_scale}");
-    registerEntry("id_ID", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "Gagal memuat plugin {name}: {error}");
-    registerEntry("id_ID", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "Gagal memuat ulang shader CM, kembali ke rgba/rgbx.");
     registerEntry("id_ID", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Monitor {name}: <i>wide color gamut</i> aktif tetapi layar tidak dalam mode 10-bit.");
 
     // hr_HR (Croatian)
@@ -753,8 +720,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "više informacija. Ovo <b>hoće</b> izazvati probleme.");
     registerEntry("hr_HR", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "Monitor {name} nije uspio odrediti zatražene načine rada, povratak na zadani način rada: {mode}.");
     registerEntry("hr_HR", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Nevažeći razmjer proslijeđen monitoru {name}: {scale}, koristi se predloženi razmjer: {fixed_scale}");
-    registerEntry("hr_HR", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "Učitavanje dodatka {name} nije uspjelo: {error}");
-    registerEntry("hr_HR", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "Ponovno učitavanje CM shadera nije uspjelo, povratak na zadano: rgba/rgbx.");
     registerEntry("hr_HR", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Monitor {name}: široki raspon boja je omogućen, ali ekran nije u 10-bitnom načinu rada.");
 
     // it_IT (Italian)
@@ -789,8 +754,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "altre informazioni. Questo <b>causerà</b> problemi.");
     registerEntry("it_IT", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "Lo schermo {name} non ha potuto impostare alcuna modalità richiesta, sarà usata la modalità {mode}.");
     registerEntry("it_IT", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Fattore di scala non valido per lo schermo {name}: {scale}; verrà usato quello consigliato: {fixed_scale}");
-    registerEntry("it_IT", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "Impossibile caricare il plugin {name}: {error}");
-    registerEntry("it_IT", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "Impossibile ricaricare gli shader CM, verrà usato rgba/rgbx.");
     registerEntry("it_IT", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Schermo {name}: la gamma di colori ampia è abilitata ma lo schermo non è in modalità 10-bit.");
     registerEntry("it_IT", TXT_KEY_NOTIF_NO_WATCHDOG,
                   "Hyprland è stato avviato senza start-hyprland. Ciò è assolutamente sconsigliato a meno che tu non sia in un ambiente di debug.");
@@ -836,11 +799,8 @@ I18n::CI18nEngine::CI18nEngine() {
                   "の項目を参照してください。これは<b>絶対に</b>問題を起こします。");
     registerEntry("ja_JP", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "モニタ {name} のモード設定に失敗したため、モード {mode} を使用します。");
     registerEntry("ja_JP", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "モニタ {name} のスケール設定が正しくないため、代わりにスケール {fixed_scale} を使用します。");
-    registerEntry("ja_JP", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "プラグイン {name} のロードで、エラー {error} が発生しました。");
-    registerEntry("ja_JP", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "CM シェーダのリロードに失敗したため、rgba/rgbx を使用します。");
     registerEntry("ja_JP", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "広色域が有効なモニタ {name} を使用していますが、画面表示の設定は 10 ビットになっていません。");
     registerEntry("ja_JP", TXT_KEY_NOTIF_NO_WATCHDOG, "start-hyprland なしで Hyprland を実行しています。これは、デバッグ目的以外ではおすすめしません。");
-    registerEntry("ja_JP", TXT_KEY_NOTIF_NO_FP16, "お使いのGPUはFP16バッファがサポートしていないため、一部のエフェクトやCM設定を利用できない可能性があります。");
     registerEntry("ja_JP", TXT_KEY_NOTIF_DEPRECATED_CONFIG_OPTS, "廃止済みのオプションが{count}件使用されています。詳細は、hyprctl deprecated-configで確認してください。");
 
     registerEntry("ja_JP", TXT_KEY_SAFE_MODE_TITLE, "セーフモード");
@@ -886,8 +846,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "lai uzzinātu vairāk. Tas <b>radīs</b> problēmas.");
     registerEntry("lv_LV", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "Monitoram {name} neizdevās iestatīt nevienu no pieprasītajiem režīmiem, izmantojam {mode}.");
     registerEntry("lv_LV", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Monitoram {name} ir nodots nederīgs mērogs: {scale}, izmantojam ieteikto mērogu: {fixed_scale}");
-    registerEntry("lv_LV", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "Nevarēja ielādēt spraudni {name}: {error}");
-    registerEntry("lv_LV", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "CM šeiderus neizdevās pārlādēt, izmantojam rgba/rgbx.");
     registerEntry("lv_LV", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Monitors {name}: Ir iespējota plaša krāsu gamma, bet displejs nav 10-bitu režīmā.");
 
     // hu_HU (Hungarian)
@@ -926,8 +884,6 @@ I18n::CI18nEngine::CI18nEngine() {
         "(Monitors oldal). Ez <b>problémákat</b> fog okozni.");
     registerEntry("hu_HU", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "A(z) {name} monitor nem tudta beállítani a kért módokat, visszaáll a(z) {mode} módra.");
     registerEntry("hu_HU", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Érvénytelen skálázás a(z) {name} monitorhoz: {scale}, a javasolt skálázás használata: {fixed_scale}");
-    registerEntry("hu_HU", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "Nem sikerült betölteni a(z) {name} bővítményt: {error}");
-    registerEntry("hu_HU", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "A CM shader újratöltése sikertelen, visszaáll rgba/rgbx-re.");
     registerEntry("hu_HU", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Monitor {name}: A széles színtartomány engedélyezve van, de a kijelző nem 10 bites módban van.");
 
     // ml_IN (Malayalam)
@@ -971,8 +927,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "(Monitors page) കാണുക. ഇത് <b>പ്രശ്നങ്ങൾ ഉണ്ടാക്കും</b>.");
     registerEntry("ml_IN", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "മോണിറ്റർ {name} ആവശ്യപ്പെട്ട മോഡുകൾ സജ്ജമാക്കാൻ പരാജയപ്പെട്ടു, ഇപ്പോൾ {mode} ഉപയോഗിക്കുന്നു.");
     registerEntry("ml_IN", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "മോണിറ്റർ {name} ന് അസാധുവായ സ്കെയിൽ: {scale}, നിർദ്ദേശിച്ച സ്കെയിൽ: {fixed_scale}");
-    registerEntry("ml_IN", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "പ്ലഗിൻ {name} ലോഡ് ചെയ്യാൻ പരാജയപ്പെട്ടു: {error}");
-    registerEntry("ml_IN", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "CM ഷേഡർ റീലോഡ് പരാജയപ്പെട്ടു, rgba/rgbx ലേക്ക് മാറുന്നു.");
     registerEntry("ml_IN", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "മോണിറ്റർ {name}: വൈഡ് കളർ ഗാമട്ട് പ്രവർത്തനക്ഷമമാണെങ്കിലും, മോഡ് 10-bit അല്ല.");
 
     // nb_NO (Norwegian Bokmål)
@@ -1011,8 +965,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "mer. Dette <b>vil</b> skape problemer.");
     registerEntry("nb_NO", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "Skjerm {name} feilet å sette de forespurte modusene, faller tilbake til modus {mode}.");
     registerEntry("nb_NO", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Ugyldig skala sendt til skjerm {name}: {scale}, bruker foreslått skala: {fixed_scale}");
-    registerEntry("nb_NO", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "Feilet å laste plugin {name}: {error}");
-    registerEntry("nb_NO", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "CM shader omlading feilet, faller tilbake til rgba/rgbx.");
     registerEntry("nb_NO", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Skjerm {name}: bredt fargespekter er aktivert, men skjermen er ikke i 10-bit modus.");
 
     // ne_NP (Nepali)
@@ -1049,8 +1001,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "यसले <b>निश्चित रुपमा</b> समस्या निम्त्याउने छ।");
     registerEntry("ne_NP", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "{name} मनिटरले चाहेको कुनै पनि मोड सेट गर्न सकेन, {mode} मोडमा फर्कँदै।");
     registerEntry("ne_NP", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "{name} मनिटरलाई अमान्य स्केल पठाइयो: {scale}, सजेस्ट गरिएको स्केल प्रयोग गर्दै: {fixed_scale}");
-    registerEntry("ne_NP", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "{name} प्लगिन लोेड गर्न सकिएन: {error}");
-    registerEntry("ne_NP", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "CM shader रिलोड गर्न सकिएन, rgba/rgbx मा फर्कँदै।");
     registerEntry("ne_NP", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "{name} मनिटर: wide color gamut अन छ तर डिस्प्ले 10-bit मोड मा छैन।");
 
     // nl_NL (Dutch)
@@ -1089,8 +1039,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "Zie de wiki (Monitors pagina) voor meer informatie. Dit <b>zal</b> problemen veroorzaken.");
     registerEntry("nl_NL", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "Monitor {name} is er niet in geslaagd om een van de aangevraagde modi toe te passen en gebruikt nu de modus {mode}.");
     registerEntry("nl_NL", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Ongeldige schaal opgegeven voor monitor {name}: {scale}, de voorgestelde schaal {fixed_scale} wordt gebruikt.");
-    registerEntry("nl_NL", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "Plugin {name} kon niet worden geladen: {error}");
-    registerEntry("nl_NL", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "Het opnieuw laden van de CM-shader is mislukt. Er wordt teruggevallen op rgba/rgbx.");
     registerEntry("nl_NL", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Monitor {name}: breed kleurbereik is ingeschakeld maar het scherm staat niet in 10-bitmodus.");
 
     // pa_IN (Punjabi)
@@ -1129,8 +1077,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "ਜਾਣਕਾਰੀ ਲਈ ਵਿਕੀ (Monitors page) ਦੇਖੋ। ਇਸ ਨਾਲ ਸਮੱਸਿਆਵਾਂ <b>ਪੈਦਾ ਹੋਣਗੀਆਂ</b>।");
     registerEntry("pa_IN", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "ਮਾਨੀਟਰ {name} ਕਿਸੇ ਵੀ ਬੇਨਤੀ ਕੀਤੇ ਮੋਡ ਨੂੰ ਸੈੱਟ ਕਰਨ ਵਿੱਚ ਅਸਫਲ ਰਿਹਾ, ਵਾਪਸ ਮੋਡ {mode} 'ਤੇ ਜਾ ਰਿਹਾ ਹੈ।");
     registerEntry("pa_IN", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "ਮਾਨੀਟਰ {name} ਨੂੰ ਅਵੈਧ ਸਕੇਲ ਭੇਜਿਆ ਗਿਆ: {scale}, ਪ੍ਰਸਤਾਵਿਤ ਸਕੇਲ ਦੀ ਵਰਤੋਂ ਕਰ ਰਿਹਾ ਹੈ: {fixed_scale}");
-    registerEntry("pa_IN", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "ਪਲੱਗਇਨ {name} ਲੋਡ ਕਰਨ ਵਿੱਚ ਅਸਫਲ: {error}");
-    registerEntry("pa_IN", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "CM ਸ਼ੇਡਰ ਮੁੜ-ਲੋਡ ਕਰਨ ਵਿੱਚ ਅਸਫਲ, rgba/rgbx 'ਤੇ ਵਾਪਸ ਜਾ ਰਿਹਾ ਹੈ।");
     registerEntry("pa_IN", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "ਮਾਨੀਟਰ {name}: ਵਾਈਡ ਕਲਰ ਗੇਮਟ ਚਾਲੂ ਹੈ ਪਰ ਡਿਸਪਲੇ 10-ਬਿੱਟ ਮੋਡ ਵਿੱਚ ਨਹੀਂ ਹੈ।");
     registerEntry("pa_IN", TXT_KEY_NOTIF_NO_WATCHDOG, "Hyprland ਨੂੰ start-hyprland ਤੋਂ ਬਿਨਾਂ ਸ਼ੁਰੂ ਕੀਤਾ ਗਿਆ ਸੀ। ਜਦੋਂ ਤੱਕ ਤੁਸੀਂ ਡੀਬੱਗਿੰਗ ਵਾਤਾਵਰਣ ਵਿੱਚ ਨਹੀਂ ਹੋ, ਇਸਦੀ ਸਿਫਾਰਸ਼ ਨਹੀਂ ਕੀਤੀ ਜਾਂਦੀ।");
 
@@ -1179,11 +1125,8 @@ I18n::CI18nEngine::CI18nEngine() {
                   "po więcej. To <b>będzie</b> sprawiać problemy.");
     registerEntry("pl_PL", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "Monitor {name} nie zaakceptował żadnego wybranego programu. Użyto {mode}.");
     registerEntry("pl_PL", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Nieprawidłowa skala dla monitora {name}: {scale}, użyto proponowanej skali: {fixed_scale}");
-    registerEntry("pl_PL", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "Nie udało się załadować plugin'a {name}: {error}");
-    registerEntry("pl_PL", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "Nie udało się przeładować shader'a CM, użyto rgba/rgbx.");
     registerEntry("pl_PL", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Monitor {name}: skonfigurowano szeroką głębię barw, ale monitor nie jest w trybie 10-bit.");
     registerEntry("pl_PL", TXT_KEY_NOTIF_NO_WATCHDOG, "Hyprland został uruchomiony bez start-hyprland. Nie jest to zalecane, chyba, że jest to środowisko do debugowania.");
-    registerEntry("pl_PL", TXT_KEY_NOTIF_NO_FP16, "Twoja karta graficzna nie obsługuje buforów FP16, niektóre efekty i ustawienia zarządzania kolorami mogą być niedostępne.");
     registerEntry("pl_PL", TXT_KEY_NOTIF_DEPRECATED_CONFIG_OPTS, [](const Hyprutils::I18n::translationVarMap& vars) {
         int opts = std::stoi(vars.at("count"));
         if (opts == 1)
@@ -1244,8 +1187,6 @@ I18n::CI18nEngine::CI18nEngine() {
         "mais informações. Isto <b>vai</b> causar problemas.");
     registerEntry("pt_PT", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "Monitor {name} falhou ao configurar os modos requisitados, revertento para o modo {mode} de volta.");
     registerEntry("pt_PT", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Resolução inválida para o monitor {name}: {scale}, revertendo para a resolução sugerida: {fixed_scale}");
-    registerEntry("pt_PT", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "Falha ao carregar o plugin {name}: {error}");
-    registerEntry("pt_PT", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "CM shader falhou ao recarregar, revertendo para rgba/rgbx.");
     registerEntry("pt_PT", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Monitor {name}: gama de cores ampla está activada mas o monitor não está em modo 10-bits.");
 
     // zh_CN (Simplified Chinese)
@@ -1275,8 +1216,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "你的显示器没有被正确设置。显示器 {name} 和其他显示器的布局重叠了。请看wiki中的“显示器”一章获取更多信息。这<b>会</b>导致问题。");
     registerEntry("zh_CN", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "显示器 {name} 无法被设置为任何请求的模式，将使用 {mode} 兜底。");
     registerEntry("zh_CN", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "显示器 {name} 被设置了非法的缩放：{scale}，将使用建议的缩放：{fixed_scale}");
-    registerEntry("zh_CN", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "无法加载插件 {name}：{error}");
-    registerEntry("zh_CN", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "无法重新加载CM着色器，将使用rgba/rgbx兜底。");
     registerEntry("zh_CN", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "显示器 {name}：宽色域被启用了，但是显示器并不在10-bit模式。");
     registerEntry("zh_CN", TXT_KEY_NOTIF_NO_WATCHDOG, "Hyprland 启动时未使用 start-hyprland。除非你处于调试环境，否则极度不推荐这样做。");
 
@@ -1322,8 +1261,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "您的螢幕配置設定不正確。螢幕 {name} 與配置中的其他螢幕重疊了。\n請參閱 Wiki（螢幕頁面）以了解詳情。這<b>絕對會</b>導致問題。");
     registerEntry("zh_TW", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "螢幕 {name} 無法設定為任何請求的模式，將改用模式 {mode}。");
     registerEntry("zh_TW", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "傳遞給螢幕 {name} 的縮放比例無效：{scale}，將使用建議的比例：{fixed_scale}");
-    registerEntry("zh_TW", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "無法載入外掛 {name}：{error}");
-    registerEntry("zh_TW", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "CM 著色器重新載入失敗，將退回使用 rgba/rgbx。");
     registerEntry("zh_TW", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "螢幕 {name}：已啟用廣色域，但顯示器並非處於 10-bit 模式。");
     registerEntry("zh_TW", TXT_KEY_NOTIF_NO_WATCHDOG, "Hyprland 啟動時未使用 start-hyprland wrapper。除非您處於除錯環境，否則極度不建議這麼做。");
 
@@ -1372,8 +1309,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "يرجى مراجعة صفحة الشاشات في الويكي لمزيد من التفاصيل. هذا <b>سيسبب</b> مشكلات.");
     registerEntry("ar", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "فشلت الشاشة {name} في ضبط أي من الأوضاع المطلوبة، وسيتم الرجوع إلى الوضع {mode}.");
     registerEntry("ar", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "تم تمرير قيمة تحجيم غير صالحة إلى الشاشة {name}: {scale}. سيتم استخدام قيمة التحجيم المقترحة: {fixed_scale}.");
-    registerEntry("ar", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "فشل تحميل الإضافة {name}: {error}");
-    registerEntry("ar", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "فشلت إعادة تحميل نظام إدارة الألوان (CM). سيتم الرجوع إلى صيغة الألوان rgba/rgbx.");
     registerEntry("ar", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "الشاشة {name}: تم تفعيل نطاق الألوان الواسع، لكن العرض ليس في وضع 10 بت.");
 
     registerEntry("ar", TXT_KEY_SAFE_MODE_TITLE, "الوضع الآمن");
@@ -1422,8 +1357,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "mai multe informații. Acest lucru <b>va cauza</b> probleme.");
     registerEntry("ro_RO", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "Monitorul {name} nu a reușit să seteze niciun mod solicitat, revenind la modul {mode}.");
     registerEntry("ro_RO", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Scară nevalidă transmisă monitorului {name}: {scale}, se utilizează scara sugerată: {fixed_scale}");
-    registerEntry("ro_RO", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "Nu s-a putut încărca pluginul {name}: {error}");
-    registerEntry("ro_RO", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "Reîncărcarea shaderului CM a eșuat, revenind la rgba/rgbx.");
     registerEntry("ro_RO", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Monitor {name}: gama largă de culori este activată, dar afișajul nu este în modul pe 10 biți.");
     registerEntry("ro_RO", TXT_KEY_NOTIF_NO_WATCHDOG, "Hyprland a fost pornit fără start-hyprland. Acest lucru nu este recomandat decât dacă te afli într-un mediu de depanare.");
 
@@ -1473,8 +1406,6 @@ I18n::CI18nEngine::CI18nEngine() {
         "Неправильно настроен макет мониторов. Монитор {name} перекрывает другие.\nПодробнее см. в документации (страница Monitors). Это <b>обязательно</b> вызовет проблемы.");
     registerEntry("ru_RU", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "Монитор {name} не смог установить ни один из запрошенных режимов, выбран режим {mode}.");
     registerEntry("ru_RU", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Недопустимый масштаб для монитора {name}: {scale}, используется предложенный масштаб: {fixed_scale}");
-    registerEntry("ru_RU", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "Не удалось загрузить плагин {name}: {error}");
-    registerEntry("ru_RU", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "Не удалось перезагрузить CM shader, используется rgba/rgbx.");
     registerEntry("ru_RU", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Монитор {name}: расширенный цветовой охват включён, но дисплей не в 10-bit режиме.");
     registerEntry("ru_RU", TXT_KEY_NOTIF_NO_WATCHDOG, "Hyprland был запущен без start-hyprland. Это крайне не рекомендуется, если только вы не в отладочной среде.");
 
@@ -1521,8 +1452,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "Prosimo poglejte wiki (stran Monitors) za več. To <b>bo</b> povzročilo težave.");
     registerEntry("sl_SI", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "Zaslon {name} ni uspel nastaviti nobenega zahtevanega načina, vrnitev k načinu {mode}.");
     registerEntry("sl_SI", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Neveljavna skala je bila posredovana zaslonu {name}: {scale}, uporabljena je predlagana skala: {fixed_scale}");
-    registerEntry("sl_SI", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "Vtičnika {name} ni bilo mogoče naložiti: {error}");
-    registerEntry("sl_SI", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "Ponovno nalaganje senčnika CM ni uspelo, vrnitev k rgba/rgbx.");
     registerEntry("sl_SI", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Zaslon {name}: širok barvni razpon je omogočen, vendar zaslon ni v 10-bitnem načinu.");
 
     // sr_RS (Serbian)
@@ -1562,8 +1491,6 @@ I18n::CI18nEngine::CI18nEngine() {
         "више информација. Ово <b>ће</b> изазвати проблеме.");
     registerEntry("sr_RS", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "Монитор {name} није успео да постави ниједан тражени режим, враћање на режим {mode}.");
     registerEntry("sr_RS", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Невалидна скала прослеђена монитору {name}: {scale}, користи се препоручена скала: {fixed_scale}");
-    registerEntry("sr_RS", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "Неуспешно учитавање додатка {name}: {error}");
-    registerEntry("sr_RS", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "Поново учитавање CM шејдера није успело, враћање на rgba/rgbx.");
     registerEntry("sr_RS", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Монитор {name}: широк спектар боја је омогућен али екран није у 10-битном режиму.");
 
     // sr_RS@latin (Serbian Latin)
@@ -1604,8 +1531,6 @@ I18n::CI18nEngine::CI18nEngine() {
         "više informacija. Ovo <b>će</b> izazvati probleme.");
     registerEntry("sr_RS@latin", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "Monitor {name} nije uspeo da postavi nijedan traženi režim, vraćanje na režim {mode}.");
     registerEntry("sr_RS@latin", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Nevalidna skala prosleđena monitoru {name}: {scale}, koristi se preporučena skala: {fixed_scale}");
-    registerEntry("sr_RS@latin", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "Neuspešno učitavanje dodatka {name}: {error}");
-    registerEntry("sr_RS@latin", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "Ponovno učitavanje CM šejdera nije uspelo, vraćanje na rgba/rgbx.");
     registerEntry("sr_RS@latin", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Monitor {name}: širok spektar boja je omogućen ali ekran nije u 10-bitnom režimu.");
 
     // tr_TR (Turkish)
@@ -1639,8 +1564,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "Bu <b>sorunlara yol açacak</b>.");
     registerEntry("tr_TR", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "Monitör {name} istenen modları ayarlamada başarısız oldu, {mode} moduna geri dönülüyor.");
     registerEntry("tr_TR", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Monitöre geçersiz ölçek iletildi {name}: {scale}, önerilen ölçek kullanılıyor: {fixed_scale}");
-    registerEntry("tr_TR", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "{name} plugini yüklenemedi: {error}");
-    registerEntry("tr_TR", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "CM shader yeniden yüklemesi başarısız, rgba/rgbx'e geri dönülüyor.");
     registerEntry("tr_TR", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Monitör {name}: wide color gamut etkinleştirildi ama ekran 10-bit modunda değil.");
 
     // tt_RU (Tatar)
@@ -1675,8 +1598,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "Зинһар, өстәмә мәгълүмат өчен викидагы (Monitors бит) мөрәҗәгать итегез. Бу <b>һичшиксез</b> проблемалар тудырачак.");
     registerEntry("tt_RU", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "{name} мониторы соралган режимнарны куя алмады, {mode} режимына кайта.");
     registerEntry("tt_RU", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "{name} мониторы өчен яраксыз масштаб билгеләнгән: {scale}. Тәкъдим ителгән масштаб кулланыла: {fixed_scale}");
-    registerEntry("tt_RU", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "{name} плагинны йөкләүдә хата: {error}");
-    registerEntry("tt_RU", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "CM шейдерын яңадан йөкләү уңышсыз булды, rgba/rgbx режимына кайтыла.");
     registerEntry("tt_RU", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Монитор {name}: киң төсләр диапазоны кушылган, ләкин дисплей 10-бит режимында түгел.");
     registerEntry("tt_RU", TXT_KEY_NOTIF_NO_WATCHDOG, "Hyprland start-hyprland ярдәмендә эшләтелмәгән. Бу, төзәтү мохитеннән тыш, бик тәкъдим ителми.");
 
@@ -1726,8 +1647,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "Це <b>обов'язково</b> створить проблеми.");
     registerEntry("uk_UA", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "Монітор {name} не зміг встановити жодного із запитуваних режимів, повернення до режиму {mode}.");
     registerEntry("uk_UA", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Неправильний масштаб переданий монітору {name}: {scale}, використання запропонованого масштабу: {fixed_scale}");
-    registerEntry("uk_UA", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "Помилка завантаження плагіна {name}: {error}");
-    registerEntry("uk_UA", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "Не вдалося перезавантажити шейдер CM, повернення до rgba/rgbx.");
     registerEntry("uk_UA", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Монітор {name}: широка кольорова гама увімкнена, але дисплей не працює в 10-бітному режимі.");
 
     // vi_VN (Vietnamese)
@@ -1762,8 +1681,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "khắc phục, nếu không <b>chắc chắn</b> sẽ có lỗi xảy ra.");
     registerEntry("vi_VN", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "Màn hình {name} không thể áp dụng chế độ nào được yêu cầu, đang dùng tạm chế độ {mode}.");
     registerEntry("vi_VN", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Tỉ lệ {scale} cho màn hình {name} không hợp lệ, chuyển sang tỷ lệ gợi ý: {fixed_scale}");
-    registerEntry("vi_VN", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "Lỗi tải plugin {name}: {error}");
-    registerEntry("vi_VN", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "Tải lại CM shader thất bại, đang dùng tạm rgba/rgbx.");
     registerEntry("vi_VN", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Màn hình {name}: dải màu rộng (wide color gamut) khả dụng nhưng màn hình không ở chế độ 10-bit.");
     registerEntry("vi_VN", TXT_KEY_NOTIF_NO_WATCHDOG,
                   "Hyprland đã được khởi động mà không thông qua start-hyprland. Việc này không được khuyến khích trừ khi dùng cho mục đích gỡ lỗi.");
@@ -1814,8 +1731,6 @@ I18n::CI18nEngine::CI18nEngine() {
                   "(stránka Monitors). Toto <b>způsobí</b> problémy.");
     registerEntry("cs_CZ", TXT_KEY_NOTIF_MONITOR_MODE_FAIL, "Monitoru {name} se nepodařilo nastavit žádný z požadovaných režimů, vrací se k režimu {mode}.");
     registerEntry("cs_CZ", TXT_KEY_NOTIF_MONITOR_AUTO_SCALE, "Monitoru {name} bylo předáno neplatné měřítko: {scale}, použije se navrhované měřítko: {fixed_scale}");
-    registerEntry("cs_CZ", TXT_KEY_NOTIF_FAILED_TO_LOAD_PLUGIN, "Nepodařilo se načíst plugin {name}: {error}");
-    registerEntry("cs_CZ", TXT_KEY_NOTIF_CM_RELOAD_FAILED, "Nepodařilo se znovu načíst CM shader, vrací se k rgba/rgbx.");
     registerEntry("cs_CZ", TXT_KEY_NOTIF_WIDE_COLOR_NOT_10B, "Monitor {name}: široký barevný gamut je povolen, ale displej není v 10bitovém režimu.");
 }
 

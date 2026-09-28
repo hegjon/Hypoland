@@ -26,7 +26,6 @@ namespace Layout::Supplementary {
 
         // these fns can fail due to name collisions
         bool registerTiledAlgo(const std::string& name, const std::type_info* typeInfo, std::function<UP<ITiledAlgorithm>()>&& factory);
-        bool registerFloatingAlgo(const std::string& name, const std::type_info* typeInfo, std::function<UP<IFloatingAlgorithm>()>&& factory);
 
         // this fn fails if the algo isn't registered
         bool unregisterAlgo(const std::string& name);

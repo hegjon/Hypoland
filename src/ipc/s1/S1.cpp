@@ -228,7 +228,3 @@ SP<SCommand> CSocket1::registerCommand(SCommand command) {
 
     return m_commands.emplace_back(makeShared<SCommand>(std::move(command)));
 }
-
-void CSocket1::unregisterCommand(const SP<SCommand>& command) {
-    std::erase(m_commands, command);
-}

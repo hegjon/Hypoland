@@ -825,7 +825,7 @@ std::vector<SP<IValue>> Values::getConfigValues() {
          * quirks:
          */
 
-        MS<Int>("quirks:prefer_hdr", "Prefer HDR mode.", 0, {.min = 0, .max = 2, .map = OptionMap{{"disable", 0}, {"enable", 1}, {"gamescope_only", 2}}}),
+        MS<Int>("quirks:prefer_hdr", "no-op, HDR is not available with GLES2", 0, {.min = 0, .max = 2, .map = OptionMap{{"disable", 0}, {"enable", 1}, {"gamescope_only", 2}}}),
         // off by default: Gen4 primary planes have no alpha formats, so skipping would leave clients without any alpha EGL config
         MS<Bool>("quirks:skip_non_kms_dmabuf_formats", "Do not report dmabuf formats which cannot be imported into KMS", false),
     };

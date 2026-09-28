@@ -87,7 +87,6 @@
 using namespace Hyprutils::String;
 using namespace Aquamarine;
 using enum NContentType::eContentType;
-using namespace NColorManagement;
 using namespace Desktop::View;
 using namespace Render::GL;
 
@@ -959,18 +958,6 @@ void CCompositor::openSafeModeBox() {
             openSafeModeBox();
         }
     });
-}
-
-PImageDescription CCompositor::getPreferredImageDescription() {
-    return getDefaultImageDescription();
-}
-
-PImageDescription CCompositor::getHDRImageDescription() {
-    return getDefaultImageDescription();
-}
-
-bool CCompositor::shouldChangePreferredImageDescription() {
-    return false;
 }
 
 std::optional<unsigned int> CCompositor::getVTNr() {

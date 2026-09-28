@@ -20,8 +20,6 @@
 #include "render/Texture.hpp"
 #include <cstring>
 
-using namespace NColorManagement;
-
 static bool addSafeDamage(CRegion& damage, int32_t x, int32_t y, int32_t w, int32_t h) {
     if (w <= 0 || h <= 0)
         return false;
@@ -696,27 +694,6 @@ void CWLSurfaceResource::commitState(SSurfaceState& state) {
     // if it doesn't have a role, we can't release it yet, in case it gets turned into a cursor.
     if (m_current.buffer && m_current.buffer->isSynchronous() && m_role->role() != SURFACE_ROLE_UNASSIGNED)
         dropCurrentBuffer();
-}
-
-PImageDescription CWLSurfaceResource::getPreferredImageDescription() {
-    static const auto PFORCE_HDR = CConfigValue<Config::INTEGER>("quirks:prefer_hdr");
-    const auto        WINDOW     = m_hlSurface ? Desktop::View::CWindow::fromView(m_hlSurface->view()) : nullptr;
-
-    if (*PFORCE_HDR == 1 || (*PFORCE_HDR == 2 && m_hlSurface && WINDOW && WINDOW->metadata().appID() == "gamescope"))
-        return g_pCompositor->getHDRImageDescription();
-
-    auto parent = m_self;
-    if (parent->m_role->role() == SURFACE_ROLE_SUBSURFACE) {
-        auto subsurface = sc<CSubsurfaceRole*>(parent->m_role.get())->m_subsurface.lock();
-        parent          = subsurface->t1Parent();
-    }
-    PHLMONITORREF monitor;
-    if (parent->m_enteredOutputs.size() == 1)
-        monitor = parent->m_enteredOutputs[0];
-    else if (m_hlSurface.valid() && WINDOW)
-        monitor = WINDOW->m_monitor;
-
-    return monitor ? monitor->m_imageDescription : g_pCompositor->getPreferredImageDescription();
 }
 
 void CWLSurfaceResource::sortSubsurfaces() {

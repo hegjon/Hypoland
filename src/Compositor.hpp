@@ -14,7 +14,6 @@
 #include "desktop/state/OtherViewState.hpp"
 #include "desktop/state/ViewState.hpp"
 #include "desktop/state/WindowState.hpp"
-#include "helpers/cm/ColorManagement.hpp"
 
 #include <aquamarine/backend/Backend.hpp>
 #include <aquamarine/output/Output.hpp>
@@ -78,16 +77,12 @@ class CCompositor {
 
     // ------------------------------------------------- //
 
-    Vector2D                            parseWindowVectorArgsRelative(const std::string&, const Vector2D&);
-    void                                performUserChecks();
-    std::optional<unsigned int>         getVTNr();
+    Vector2D                    parseWindowVectorArgsRelative(const std::string&, const Vector2D&);
+    void                        performUserChecks();
+    std::optional<unsigned int> getVTNr();
 
-    NColorManagement::PImageDescription getPreferredImageDescription();
-    NColorManagement::PImageDescription getHDRImageDescription();
-    bool                                shouldChangePreferredImageDescription();
-
-    bool                                supportsDrmSyncobjTimeline() const;
-    std::string                         m_explicitConfigPath;
+    bool                        supportsDrmSyncobjTimeline() const;
+    std::string                 m_explicitConfigPath;
 
   private:
     void                           initAllSignals();

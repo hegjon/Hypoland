@@ -1297,8 +1297,6 @@ WP<CShader> CHyprOpenGLImpl::renderScreenShaderInternal() {
 WP<CShader> CHyprOpenGLImpl::renderToFBInternal(SP<ITexture> tex, const STextureRenderData& data, eTextureType texType, const CBox& newBox) {
     static auto        PBLEND = CConfigValue<Config::INTEGER>("render:use_shader_blur_blend");
 
-    auto&              m_renderData = g_pHyprRenderer->m_renderData;
-
     float              alpha = std::clamp(data.a, 0.f, 1.f);
 
     WP<CShader>        shader;

@@ -21,7 +21,6 @@
 #include "../../helpers/math/Math.hpp"
 #include "../../helpers/time/Time.hpp"
 #include "../types/Buffer.hpp"
-#include "../../helpers/cm/ColorManagement.hpp"
 #include "../types/SurfaceRole.hpp"
 #include "../types/SurfaceState.hpp"
 
@@ -123,7 +122,6 @@ class CWLSurfaceResource {
     void                                   scheduleState(WP<SSurfaceState> state);
     void                                   drainSyncFds(WP<SSurfaceState> state, eLockReason reason);
     void                                   commitState(SSurfaceState& state);
-    NColorManagement::PImageDescription    getPreferredImageDescription();
     void                                   sortSubsurfaces();
     bool                                   hasVisibleSubsurface();
     bool                                   isTearing();

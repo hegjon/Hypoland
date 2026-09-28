@@ -64,7 +64,6 @@ namespace IPC::Socket1 {
         SResponse    dispatch(std::string request, pid_t pid = 0);
         std::string  invoke(const std::string& request);
         SP<SCommand> registerCommand(SCommand command);
-        void         unregisterCommand(const SP<SCommand>& command);
 
       private:
         SRequest                  parseRequest(std::string request, pid_t pid) const;

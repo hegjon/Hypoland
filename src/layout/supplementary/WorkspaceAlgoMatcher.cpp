@@ -59,18 +59,6 @@ bool CWorkspaceAlgoMatcher::registerTiledAlgo(const std::string& name, const std
     return true;
 }
 
-bool CWorkspaceAlgoMatcher::registerFloatingAlgo(const std::string& name, const std::type_info* typeInfo, std::function<UP<IFloatingAlgorithm>()>&& factory) {
-    if (m_tiledAlgos.contains(name) || m_floatingAlgos.contains(name))
-        return false;
-
-    m_floatingAlgos.emplace(name, std::move(factory));
-    m_algoNames.emplace(typeInfo, name);
-
-    updateWorkspaceLayouts();
-
-    return true;
-}
-
 bool CWorkspaceAlgoMatcher::unregisterAlgo(const std::string& name) {
     if (!m_tiledAlgos.contains(name) && !m_floatingAlgos.contains(name))
         return false;
