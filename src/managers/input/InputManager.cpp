@@ -1203,6 +1203,9 @@ void CInputManager::setupKeyboard(SP<IKeyboard> keeb) {
 }
 
 void CInputManager::setKeyboardLayout() {
+    // the config was reloaded, compile keymaps again in case the XKB files changed
+    IKeyboard::clearKeymapCache();
+
     for (auto const& k : m_keyboards)
         applyConfigToKeyboard(k);
 

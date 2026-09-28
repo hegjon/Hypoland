@@ -22,6 +22,23 @@ constexpr static std::array<const char*, 8> MODNAMES = {
 
 constexpr static std::array<const char*, 3> LEDNAMES = {XKB_LED_NAME_NUM, XKB_LED_NAME_CAPS, XKB_LED_NAME_SCROLL};
 
+// The keymap compiled last and its rules. A laptop has several keyboard devices with the same rules (keyboard, power
+// button, video bus, ...), and compiling a keymap takes about 6 ms on a Core 2. Keymaps are immutable and reference
+// counted, so keyboards with the same rules share one. Cleared on every config reload, see clearKeymapCache().
+static IKeyboard::SStringRuleNames lastKeymapRules;
+static xkb_keymap*                 lastKeymap = nullptr;
+
+static bool                        sameRules(const IKeyboard::SStringRuleNames& a, const IKeyboard::SStringRuleNames& b) {
+    return a.layout == b.layout && a.model == b.model && a.variant == b.variant && a.options == b.options && a.rules == b.rules;
+}
+
+void IKeyboard::clearKeymapCache() {
+    if (lastKeymap)
+        xkb_keymap_unref(lastKeymap);
+
+    lastKeymap = nullptr;
+}
+
 //
 uint32_t IKeyboard::getCapabilities() {
     return HID_INPUT_CAPABILITY_KEYBOARD;
@@ -96,8 +113,18 @@ void IKeyboard::setKeymap(const SStringRuleNames& rules) {
         }
     }
 
-    if (!m_xkbKeymap)
+    if (!m_xkbKeymap && m_xkbFilePath.empty() && lastKeymap && sameRules(rules, lastKeymapRules))
+        m_xkbKeymap = xkb_keymap_ref(lastKeymap);
+
+    if (!m_xkbKeymap) {
         m_xkbKeymap = xkb_keymap_new_from_names2(CONTEXT, &XKBRULES, XKB_KEYMAP_FORMAT_TEXT_V2, XKB_KEYMAP_COMPILE_NO_FLAGS);
+
+        if (m_xkbKeymap && m_xkbFilePath.empty()) {
+            clearKeymapCache();
+            lastKeymap      = xkb_keymap_ref(m_xkbKeymap);
+            lastKeymapRules = rules;
+        }
+    }
 
     if (!m_xkbKeymap) {
         ErrorOverlay::overlay()->queueError(std::format("Invalid keyboard layout passed. ( rules: {}, model: {}, variant: {}, options: {}, layout: {} )", rules.rules, rules.model,
