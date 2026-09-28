@@ -255,8 +255,6 @@ Findings:
     inline assembly would not help.
   - `CEGLSync::create` is where Mesa's threaded context runs the whole frame (draws and batch submit). A frame
     with one 60 fps client is only 2 draws and 16 ioctls, all needed except the mode re-read below.
-- Open: aquamarine re-reads the CRTC mode (`getCurrentMode()`, 2 ioctls) on every commit, about 2% of the
-  compositor's CPU at 60 fps.
 
 Memory (X200, idle Omarchy session 60 s after start, `heaptrack` and `/proc/<pid>/smaps`):
 - Fixed: aquamarine created a second EGL context for the primary GPU, which is only needed when a secondary GPU
@@ -272,6 +270,37 @@ Memory (X200, idle Omarchy session 60 s after start, `heaptrack` and `/proc/<pid
   14 MiB of clean file pages.
 - The "started without start-hypoland" notification loads fontconfig and pango (about 1.5 MiB heap) on the X200
   loop, a normal start does not.
+
+Overnight run 2026-09-28 (branch `overnight/ram-cpu`, journal in `test-results/overnight/journal.md`), measured with
+`./bench-x200.sh` (`performance` governor), before -> after:
+
+| | before | after |
+|---|---|---|
+| Pss / Rss / anonymous, 60 s after the start | 62.2 / 102.5 / 29.2 MiB | 51.9 / 92.5 / 22.0 MiB |
+| binary | 18.1 MiB | 13.9 MiB |
+| GPU client at 60 fps | 3.69% | 3.18% |
+| terminal scrolling | 10.56% | 10.06% |
+| Chromium over shm | 11.01% | 10.25% |
+| workspace switching | 8.97% | 8.59% |
+
+- Transparent huge pages are off for the compositor (`prctl(PR_SET_THP_DISABLE)` in `main()`), an atfork handler
+  gives clients the system default back. The X200 runs with THP `always`.
+- Mesa keeps 5.7 MiB of GLSL built-in function tables after the first shader compile.
+  `CHyprOpenGLImpl::scheduleShaderCompilerRelease()` calls `glReleaseShaderCompiler()` and `malloc_trim()` 10 s
+  after the last compile. Without the trim the memory stays in the heap.
+- Frames get no EGL fence on i915 (`CHyprGLRenderer::needsRenderFence()`), the driver has implicit sync. The fence
+  is still made for explicit sync clients, screen sharing, multi GPU and other drivers.
+- aquamarine keeps the mode of the CRTC (`SDRMConnector::atomic.currentMode`) instead of reading it on every commit.
+  A frame with one 60 fps client is 13 ioctls now, 9 of them are Mesa's buffer cache (`GEM_MADVISE`, `GEM_BUSY`).
+- The binary is mapped almost completely, so its size is memory: `--gc-sections`, `-O2`, and `-Os` for code outside
+  the frame and input paths (`COLD_SRCFILES` in `CMakeLists.txt`). `-Os` for everything saves 5 MiB more but costs
+  3 to 9% CPU time, `-Os` for everything except render / helpers / output costs 4% in workspace switching.
+- Not worth it: the GSettings cursor sync leaves 4 glib threads in the compositor, moving it into a child saves
+  0.2 MiB. `malloc_trim` alone finds nothing, the heap is not fragmented. Idle is 3 wakeups per second.
+- The Chromium workload is bimodal, a round is either about 9.0% or about 10.5%. Look at the rounds in `bench.txt`.
+- Open: `CHyprBorderDecoration::damageEntire()` is about 7% of the compositor's time while windows animate.
+  Keyboards with the same rules compile their own keymap each (5 on the X200, about 0.9 MiB together).
+  The XCursor theme is loaded completely (0.6 MiB).
 
 Fixed upstream bugs that showed on this hardware:
 - `IHyprRenderer::renderText(STextResourceData&&)` queued the text on the hyprgraphics worker and blocked in
