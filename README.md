@@ -12,6 +12,15 @@ graphics (GMA X3100 / 965GM, GMA 4500MHD / GM45) and is developed and tested on 
 
 Hypoland is an independent project. It is not affiliated with or endorsed by Hyprland or its developers.
 
+## Screenshots
+
+Omarchy 4 running on Hypoland on a ThinkPad X200 (Core 2 Duo P8400, GMA 4500MHD, 1280x800):
+
+<p align="center">
+<img src="assets/screenshots/x200-fastfetch.png" width="49%" alt="fastfetch on a ThinkPad X200 running Hypoland">
+<img src="assets/screenshots/x200-btop.png" width="49%" alt="btop on a ThinkPad X200 running Hypoland">
+</p>
+
 ## Differences from Hyprland
 
 - The renderer runs on OpenGL ES 2.0, with shaders in GLSL ES 1.00.
