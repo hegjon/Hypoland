@@ -6,7 +6,7 @@ on:
     paths:
       - docs/**
     branches:
-      - 'main'
+      - 'master'
 
 jobs:
   main:

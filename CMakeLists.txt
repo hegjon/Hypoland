@@ -609,6 +609,15 @@ install(FILES ${CMAKE_SOURCE_DIR}/assets/hyprland-portals.conf
 # man pages
 file(GLOB_RECURSE MANPAGES "docs/*.1")
 install(FILES ${MANPAGES} DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+# the other names of the binary lead to the same page
+foreach(MANALIAS hypoland Hyprland hyprland)
+  install(
+    CODE "execute_process( \
+        COMMAND ${CMAKE_COMMAND} -E create_symlink \
+        Hypoland.1 \
+        \"\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_MANDIR}/man1/${MANALIAS}.1\" \
+        )")
+endforeach()
 
 if(BUILD_TESTING OR WITH_TESTS)
   message(STATUS "Building tests")

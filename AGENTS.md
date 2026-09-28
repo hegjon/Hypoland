@@ -40,6 +40,8 @@ Hypoland's renderer and shaders are GLES 2.0 / GLSL ES 1.00 only; that port is d
 - Rename status: binaries are `Hypoland` and `start-hypoland`, with `Hyprland`, `hyprland`, `hypoland` and
   `start-hyprland` installed as symlinks. CMake target names, session file names (`hyprland.desktop`,
   `hyprland-uwsm.desktop`) and the `hyprctl version` text are intentionally unchanged.
+  The man page is `Hypoland(1)` (`docs/Hypoland.1.rst`, built with `make man`, needs pandoc), installed with
+  `hypoland.1`, `Hyprland.1` and `hyprland.1` as symlinks. `hyprctl(1)` keeps its name.
 - GLES3 code is removed, the renderer is GLES2 only (no runtime switch):
   - Include `src/render/gl/GLES2.hpp` instead of any GLES header. It poisons every GLES3 entry point, so
     using one is a compile error. VAO calls go through `GL_OES_vertex_array_object`, loaded with `eglGetProcAddress`.
@@ -350,7 +352,7 @@ Open decisions for the user:
 
 Work that is left from the plan above:
 - Remove screen shaders.
-- Translated strings in `src/i18n/` and the man page still say Hyprland.
+- Translated strings in `src/i18n/` still say Hyprland.
 - The X200 loop starts `Hypoland` directly, so the "started without start-hypoland" notification shows.
 
 # Code guidelines

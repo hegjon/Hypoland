@@ -31,13 +31,13 @@ uninstall:
 	xargs rm < ./build/install_manifest.txt
 
 man:
-	pandoc ./docs/Hyprland.1.rst \
+	pandoc ./docs/Hypoland.1.rst \
 		--standalone \
-		--variable=header:"Hyprland User Manual" \
+		--variable=header:"Hypoland User Manual" \
 		--variable=date:"${DATE}" \
 		--variable=section:1 \
 		--from rst \
-		--to man > ./docs/Hyprland.1
+		--to man > ./docs/Hypoland.1
 
 	pandoc ./docs/hyprctl.1.rst \
 		--standalone \

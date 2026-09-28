@@ -4,7 +4,7 @@
 NAME
 ====
 
-hyprctl - Utility for controlling parts of Hyprland from a CLI or a script
+hyprctl - Utility for controlling parts of Hypoland from a CLI or a script
 
 SYNOPSIS
 ========
@@ -71,7 +71,7 @@ INFO COMMANDS
 
 **version**
 
-    Prints the Hyprland version, flags, commit and branch of build.
+    Prints the version, flags, commit and branch of build. The text names Hyprland, for tools that read it.
 
 **monitors**
 
@@ -125,12 +125,14 @@ BUGS
 ====
 
 Submit bug reports and request features online at:
-    <*https://github.com/hyprwm/Hyprland/issues*>
+    <*https://github.com/hegjon/Hypoland/issues*>
 
 SEE ALSO
 ========
 
-Sources at: <*https://github.com/hyprwm/Hyprland*>
+**Hypoland**\(1)
+
+Sources at: <*https://github.com/hegjon/Hypoland*>
 
 COPYRIGHT
 =========
