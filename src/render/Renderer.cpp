@@ -1918,9 +1918,14 @@ void IHyprRenderer::renderMonitor(PHLMONITOR pMonitor, bool commit) {
 
     bool renderCursor = true;
 
-    if (pMonitor->m_solitaryClient && (!finalDamage.empty() || *PSOLDAMAGE))
+    if (pMonitor->m_solitaryClient && (!finalDamage.empty() || *PSOLDAMAGE)) {
+        // only the damage from before the forced full frames was cleared, and nothing is cleared when rendering
+        // directly: clear what the window does not cover, so no old frame shows there (the pass drops the part the
+        // opaque window hides, so a window that fills the monitor costs nothing)
+        static auto PBACKGROUNDCOLOR = CConfigValue<Config::INTEGER>("misc:background_color");
+        m_renderPass.add(makeUnique<CClearPassElement>(CClearPassElement::SClearData{CHyprColor(*PBACKGROUNDCOLOR)}));
         renderWindow(pMonitor->m_solitaryClient.lock(), pMonitor, NOW, false, RENDER_PASS_MAIN /* solitary = no popups */);
-    else if (!finalDamage.empty()) {
+    } else if (!finalDamage.empty()) {
         if (pMonitor->isMirror()) {
             blend(false);
             renderMirrored();
