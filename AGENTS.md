@@ -44,6 +44,12 @@ Hypoland's renderer and shaders are GLES 2.0 / GLSL ES 1.00 only; that port is d
   `hyprland-session.target` is installed as an alias) and `hypoland-uwsm.desktop`.
   The man page is `Hypoland(1)` (`docs/Hypoland.1.rst`, built with `make man`, needs pandoc), installed with
   `hypoland.1` as a symlink. `hyprctl(1)` keeps its name.
+- Versions (decided by the user on 2026-09-28): `VERSION` is the version of Hypoland (0.1.0, the package
+  version), `VERSION_HYPRLAND` the Hyprland version it is based on (0.56.0). `HYPRLAND_VERSION` stays the Hyprland
+  version, because tools and configs compare it with Hyprland releases: the first line of `hyprctl version`, the
+  JSON `version`, `hl.version()`, the update news / donation logic and the package's `provides=hyprland=`.
+  `HYPOLAND_VERSION` shows up as an extra line `Hypoland 0.1.0, based on Hyprland 0.56.0` and as the JSON field
+  `hypolandVersion`. Bump `VERSION_HYPRLAND` when merging a new upstream release.
 - GLES3 code is removed, the renderer is GLES2 only (no runtime switch):
   - Include `src/render/gl/GLES2.hpp` instead of any GLES header. It poisons every GLES3 entry point, so
     using one is a compile error. VAO calls go through `GL_OES_vertex_array_object`, loaded with `eglGetProcAddress`.

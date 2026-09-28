@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.30)
 
-# Get version
+# Get version: VERSION is the version of Hypoland, VERSION_HYPRLAND the version of Hyprland it is based on
 file(READ "${CMAKE_SOURCE_DIR}/VERSION" VER_RAW)
 string(STRIP ${VER_RAW} VER)
+file(READ "${CMAKE_SOURCE_DIR}/VERSION_HYPRLAND" HYPRLAND_VER_RAW)
+string(STRIP ${HYPRLAND_VER_RAW} HYPRLAND_VER)
 
 project(
   Hypoland
@@ -13,7 +15,9 @@ include(CTest)
 include(CheckIncludeFile)
 include(GNUInstallDirs)
 
-set(HYPRLAND_VERSION ${VER})
+set(HYPOLAND_VERSION ${VER})
+# tools and configs compare this with Hyprland releases, so it stays the Hyprland version
+set(HYPRLAND_VERSION ${HYPRLAND_VER})
 set(PREFIX ${CMAKE_INSTALL_PREFIX})
 set(INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR})
 set(BINDIR ${CMAKE_INSTALL_BINDIR})
@@ -79,6 +83,7 @@ else()
 endif()
 
 add_compile_definitions(HYPRLAND_VERSION="${HYPRLAND_VERSION}")
+add_compile_definitions(HYPOLAND_VERSION="${HYPOLAND_VERSION}")
 
 include_directories(. "src/" "protocols/")
 

@@ -85,10 +85,12 @@ std::string SystemInfo::getVersion(eOutputFormat fmt) {
     std::ranges::replace(commitMsg, '#', ' ');
 
     if (fmt == IPC::Socket1::FORMAT_NORMAL) {
-        std::string result = std::format("Hyprland {} built from branch {} at commit {} {} ({}).\n"
-                                         "Date: {}\n"
-                                         "Tag: {}, commits: {}\n",
-                                         HYPRLAND_VERSION, GIT_BRANCH, GIT_COMMIT_HASH, GIT_DIRTY, commitMsg, GIT_COMMIT_DATE, GIT_TAG, GIT_COMMITS);
+        std::string result =
+            std::format("Hyprland {} built from branch {} at commit {} {} ({}).\n"
+                        "Date: {}\n"
+                        "Tag: {}, commits: {}\n"
+                        "Hypoland {}, based on Hyprland {}\n",
+                        HYPRLAND_VERSION, GIT_BRANCH, GIT_COMMIT_HASH, GIT_DIRTY, commitMsg, GIT_COMMIT_DATE, GIT_TAG, GIT_COMMITS, HYPOLAND_VERSION, HYPRLAND_VERSION);
 
         result += "\n";
         result += getBuiltSystemLibraryNames();
@@ -115,6 +117,7 @@ std::string SystemInfo::getVersion(eOutputFormat fmt) {
     "branch": "{}",
     "commit": "{}",
     "version": "{}",
+    "hypolandVersion": "{}",
     "dirty": {},
     "commit_message": "{}",
     "commit_date": "{}",
@@ -132,9 +135,10 @@ std::string SystemInfo::getVersion(eOutputFormat fmt) {
     "systemHyprgraphics": "{}",
     "abiHash": "{}",
     "flags": [)#",
-            GIT_BRANCH, GIT_COMMIT_HASH, HYPRLAND_VERSION, (GIT_DIRTY == std::string_view{"dirty"} ? "true" : "false"), escapeJSONStrings(commitMsg), GIT_COMMIT_DATE, GIT_TAG,
-            GIT_COMMITS, AQUAMARINE_VERSION, HYPRLANG_VERSION, HYPRUTILS_VERSION, HYPRCURSOR_VERSION, HYPRGRAPHICS_VERSION, getSystemLibraryVersion("aquamarine"),
-            getSystemLibraryVersion("hyprlang"), getSystemLibraryVersion("hyprutils"), getSystemLibraryVersion("hyprcursor"), getSystemLibraryVersion("hyprgraphics"), abiHash());
+            GIT_BRANCH, GIT_COMMIT_HASH, HYPRLAND_VERSION, HYPOLAND_VERSION, (GIT_DIRTY == std::string_view{"dirty"} ? "true" : "false"), escapeJSONStrings(commitMsg),
+            GIT_COMMIT_DATE, GIT_TAG, GIT_COMMITS, AQUAMARINE_VERSION, HYPRLANG_VERSION, HYPRUTILS_VERSION, HYPRCURSOR_VERSION, HYPRGRAPHICS_VERSION,
+            getSystemLibraryVersion("aquamarine"), getSystemLibraryVersion("hyprlang"), getSystemLibraryVersion("hyprutils"), getSystemLibraryVersion("hyprcursor"),
+            getSystemLibraryVersion("hyprgraphics"), abiHash());
 
 #if ISDEBUG
         result += "\"debug\",";

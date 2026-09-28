@@ -7,7 +7,7 @@
 # session files and the start-hyprland command name. There is no Hyprland / hyprland command.
 
 pkgname=hypoland
-pkgver=0.56.0.r543.gccc91ecb
+pkgver=0.1.0.r598.g1068e271
 pkgrel=1
 pkgdesc='A fork of the Hyprland Wayland compositor for OpenGL ES 2.0 hardware'
 arch=(x86_64)
@@ -69,12 +69,13 @@ makedepends=(
 optdepends=(
   'xdg-desktop-portal-hyprland: xdg-desktop-portal backend'
 )
-provides=("hyprland=${pkgver%%.r*}" wayland-compositor)
+_root="$(realpath "$startdir/../..")"
+
+# the Hyprland version it is based on, VERSION is the version of Hypoland
+provides=("hyprland=$(cat "$_root/VERSION_HYPRLAND")" wayland-compositor)
 conflicts=(hyprland)
 # the embedded aquamarine is linked statically and relies on weakened symbols
 options=(!lto)
-
-_root="$(realpath "$startdir/../..")"
 
 pkgver() {
   cd "$_root"
