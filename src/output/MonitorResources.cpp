@@ -2,6 +2,8 @@
 #include "../managers/screenshare/ScreenshareManager.hpp"
 #include "../helpers/cm/ColorManagement.hpp"
 #include "../render/Renderer.hpp"
+#include "../managers/eventLoop/EventLoopManager.hpp"
+#include "../managers/eventLoop/EventLoopTimer.hpp"
 #include <algorithm>
 #include <cstdint>
 #include <format>
@@ -18,6 +20,36 @@ CMonitorResources::CMonitorResources(WP<CMonitor> monitor, DRMFormat format, Vec
     m_monitor(monitor), m_drmFormat(format), m_size(size), m_imageDescription(imageDescription) {
     initFB(m_blurFB);
     monitor->m_blurFBDirty = true;
+}
+
+CMonitorResources::~CMonitorResources() {
+    if (m_cleanupTimer && g_pEventLoopManager)
+        g_pEventLoopManager->removeTimer(m_cleanupTimer);
+}
+
+// Work buffers used to be dropped only when the next one was asked for. A monitor that renders directly
+// never asks again, and kept the buffers of its first frames for good: 5 MiB each at 1280x800.
+void CMonitorResources::scheduleCleanup() {
+    if (!g_pEventLoopManager)
+        return;
+
+    if (!m_cleanupTimer) {
+        m_cleanupTimer = makeShared<CEventLoopTimer>(std::nullopt, [this](SP<CEventLoopTimer> self, void* data) { releaseUnusedWorkBuffers(); }, nullptr);
+        g_pEventLoopManager->addTimer(m_cleanupTimer);
+    }
+
+    if (!m_cleanupTimer->armed())
+        m_cleanupTimer->updateTimeout(std::chrono::seconds(MAX_UNUSED_SECONDS + 1));
+}
+
+void CMonitorResources::releaseUnusedWorkBuffers() {
+    const auto UNUSED = [](const auto& res) { return res.buffer.strongRef() < 2 && res.lastUsed.getSeconds() >= MAX_UNUSED_SECONDS; };
+
+    std::erase_if(m_workBuffers, UNUSED);
+    std::erase_if(m_sizedWorkBuffers, UNUSED);
+
+    if (!m_workBuffers.empty() || !m_sizedWorkBuffers.empty())
+        m_cleanupTimer->updateTimeout(std::chrono::seconds(MAX_UNUSED_SECONDS + 1));
 }
 
 void CMonitorResources::initFB(SP<Render::IFramebuffer> fb) {
@@ -46,6 +78,7 @@ SP<Render::IFramebuffer> CMonitorResources::getUnusedWorkBuffer() {
     auto found = std::ranges::find_if(m_workBuffers, [](const auto& res) { return res.buffer.strongRef() < 2; });
     if (found != m_workBuffers.end()) {
         found->lastUsed.reset();
+        scheduleCleanup();
         return found->buffer;
     }
     if (m_workBuffers.size() >= MAX_WORK_BUFFERS)
@@ -54,6 +87,7 @@ SP<Render::IFramebuffer> CMonitorResources::getUnusedWorkBuffer() {
     auto& res = m_workBuffers.emplace_back(g_pHyprRenderer->createFB(std::format("Monitor {} workbuffer", m_monitor->m_name)));
     initFB(res.buffer);
     res.lastUsed.reset();
+    scheduleCleanup();
     return res.buffer;
 }
 
@@ -67,6 +101,7 @@ SP<Render::IFramebuffer> CMonitorResources::getUnusedWorkBuffer(const Vector2D& 
     });
     if (found != m_sizedWorkBuffers.end()) {
         found->lastUsed.reset();
+        scheduleCleanup();
         return found->buffer;
     }
 
@@ -99,6 +134,7 @@ SP<Render::IFramebuffer> CMonitorResources::getUnusedWorkBuffer(const Vector2D& 
         }
         res.buffer->setImageDescription(m_imageDescription);
         res.lastUsed.reset();
+        scheduleCleanup();
         return res.buffer;
     }
 
@@ -108,6 +144,7 @@ SP<Render::IFramebuffer> CMonitorResources::getUnusedWorkBuffer(const Vector2D& 
 
     found->buffer->setImageDescription(m_imageDescription);
     found->lastUsed.reset();
+    scheduleCleanup();
     return found->buffer;
 }
 

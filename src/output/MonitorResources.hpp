@@ -7,10 +7,13 @@
 #include <hyprutils/math/Vector2D.hpp>
 #include <vector>
 
+class CEventLoopTimer;
+
 namespace Monitor {
     class CMonitorResources {
       public:
         CMonitorResources(WP<CMonitor> monitor, DRMFormat format, Vector2D size, NColorManagement::PImageDescription imageDescription);
+        ~CMonitorResources();
 
         SP<Render::IFramebuffer> getUnusedWorkBuffer();
         SP<Render::IFramebuffer> getUnusedWorkBuffer(const Vector2D& size);
@@ -34,6 +37,8 @@ namespace Monitor {
         void                                setImageDescription(NColorManagement::PImageDescription imageDescription);
         NColorManagement::PImageDescription getMirrorTexImageDescription();
         Vector2D                            mirrorFBDamageSize() const;
+        void                                scheduleCleanup();
+        void                                releaseUnusedWorkBuffers();
 
         struct SResource {
             SP<Render::IFramebuffer> buffer;
@@ -51,6 +56,7 @@ namespace Monitor {
 
         std::vector<SResource>              m_workBuffers;
         std::vector<SResource>              m_sizedWorkBuffers;
+        SP<CEventLoopTimer>                 m_cleanupTimer;
 
         friend class CMonitor;
     };
