@@ -271,17 +271,17 @@ Memory (X200, idle Omarchy session 60 s after start, `heaptrack` and `/proc/<pid
 - The "started without start-hypoland" notification loads fontconfig and pango (about 1.5 MiB heap) on the X200
   loop, a normal start does not.
 
-Overnight run 2026-09-28 (branch `overnight/ram-cpu`, journal in `test-results/overnight/journal.md`), measured with
-`./bench-x200.sh` (`performance` governor), before -> after:
+Overnight run 2026-09-28 (journal in `test-results/overnight/journal.md`), measured with `./bench-x200.sh`
+(`performance` governor), before -> after:
 
 | | before | after |
 |---|---|---|
-| Pss / Rss / anonymous, 60 s after the start | 62.2 / 102.5 / 29.2 MiB | 51.9 / 92.5 / 22.0 MiB |
-| binary | 18.1 MiB | 13.9 MiB |
-| GPU client at 60 fps | 3.69% | 3.18% |
-| terminal scrolling | 10.56% | 10.06% |
-| Chromium over shm | 11.01% | 10.25% |
-| workspace switching | 8.97% | 8.59% |
+| Pss / Rss / anonymous, 60 s after the start | 62.2 / 102.5 / 29.2 MiB | 55.2 / 95.8 / 22.1 MiB |
+| GPU memory, 60 s after a plain restart | 73.5 MiB | 52.0 MiB |
+| GPU client at 60 fps | 3.69% | 3.17% |
+| terminal scrolling | 10.56% | 10.13% |
+| Chromium over shm | 11.01% | 10.20% |
+| workspace switching | 8.97% | 8.62% |
 
 - Transparent huge pages are off for the compositor (`prctl(PR_SET_THP_DISABLE)` in `main()`), an atfork handler
   gives clients the system default back. The X200 runs with THP `always`.
@@ -292,15 +292,17 @@ Overnight run 2026-09-28 (branch `overnight/ram-cpu`, journal in `test-results/o
   is still made for explicit sync clients, screen sharing, multi GPU and other drivers.
 - aquamarine keeps the mode of the CRTC (`SDRMConnector::atomic.currentMode`) instead of reading it on every commit.
   A frame with one 60 fps client is 13 ioctls now, 9 of them are Mesa's buffer cache (`GEM_MADVISE`, `GEM_BUSY`).
-- The binary is mapped almost completely, so its size is memory: `--gc-sections`, `-O2`, and `-Os` for code outside
-  the frame and input paths (`COLD_SRCFILES` in `CMakeLists.txt`). `-Os` for everything saves 5 MiB more but costs
-  3 to 9% CPU time, `-Os` for everything except render / helpers / output costs 4% in workspace switching.
+- Not merged, by decision of the user (2026-09-28): the build changes. They are the commits `13ee9d36` and
+  `4b16588f` on the local branch `overnight/ram-cpu`. The binary is mapped almost completely, so its size is
+  memory: `--gc-sections`, `-O2`, and `-Os` for code outside the frame and input paths take the binary from
+  18.1 to 13.9 MiB and Pss down by 2.9 MiB without a change in CPU time. `-Os` for everything saves 5 MiB more
+  but costs 3 to 9% CPU time, `-Os` for everything except render / helpers / output costs 4% in workspace switching.
 - Not worth it: the GSettings cursor sync leaves 4 glib threads in the compositor, moving it into a child saves
   0.2 MiB. `malloc_trim` alone finds nothing, the heap is not fragmented. Idle is 3 wakeups per second.
 - GPU buffers are system memory on Gen4 and in no process statistic; read them from `/proc/<pid>/fdinfo`
   (`drm-total-system0`), the benchmark reports them as `mem.*.gpu_kB`. The compositor held 100.4 MiB 60 s after the
   start of the benchmark (73.5 MiB after a plain restart), more than its Pss. Now 65 to 74 MiB in the benchmark and
-  53.2 MiB after a plain restart (Pss 49.7 MiB, anonymous 20.8 MiB there). The totals vary by up to 8 MiB between runs because
+  52.0 MiB after a plain restart (Pss 53.1 MiB, anonymous 20.8 MiB there). The totals vary by up to 8 MiB between runs because
   `test-x200.sh` switches blur on and takes a screenshot (blur and mirror framebuffers).
   - The group bar kept four gradient textures of the size of the monitor (15.6 MiB), also without any window
     group. They are one pixel wide now, the picture is identical.
