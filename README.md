@@ -19,11 +19,16 @@ Hypoland is an independent project. It is not affiliated with or endorsed by Hyp
   statically. Its DRM renderer uses OpenGL ES 2.0 only. The system aquamarine is not used.
 - The binaries are named `Hypoland` and `start-hypoland`. `hypoland`, `Hyprland`, `hyprland` and
   `start-hyprland` are installed as symlinks.
-- Color management, HDR, motion blur and the plugin manager are removed. Their config options stay
-  registered and are ignored, so existing configs keep loading.
-- Plugins are not supported. Hyprland plugins are built against the exact Hyprland source they load into, and
-  Hypoland's renderer is GLES2 only. `hl.plugin.load()` is ignored with a warning, `hyprctl plugin list`
-  reports no plugins and `hyprctl plugin load` fails. No headers or `hyprland.pc` are installed.
+- Color management, HDR and motion blur are removed. Their config options stay registered and are ignored,
+  so existing configs keep loading.
+- The blur variants ripple, water, fluid_jar, prism and acrylic are removed, selecting one gives the normal
+  dual Kawase blur.
+- Screen shaders (`decoration:screen_shader`) must be written in GLSL ES 1.00. Shaders written for Hyprland
+  are GLSL ES 3.00 and fail to compile.
+- Plugins and hyprpm are not supported. Hyprland plugins are built against the exact Hyprland source they
+  load into, and Hypoland's renderer is GLES2 only. `hl.plugin.load()` is ignored with a warning,
+  `hyprctl plugin list` reports no plugins and `hyprctl plugin load` fails. No headers or `hyprland.pc`
+  are installed.
 - The logo background and splash text are removed, `misc:disable_hyprland_logo` and
   `misc:disable_splash_rendering` are ignored.
 
@@ -50,7 +55,7 @@ Source: <https://github.com/hegjon/Hypoland>
 
 ## Building
 
-Dependencies are the same as for Hyprland, except aquamarine. See the
+Dependencies are the same as for Hyprland, except aquamarine (embedded) and udis86 (not needed). See the
 [Hyprland wiki](https://wiki.hypr.land/Getting-Started/Installation/).
 
 ```sh
