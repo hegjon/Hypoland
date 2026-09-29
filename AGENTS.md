@@ -37,6 +37,8 @@ Hypoland's renderer and shaders are GLES 2.0 / GLSL ES 1.00 only; that port is d
   the fork had before (copies of upstream branches, `main`, `gles2-legacy-renderer`) were deleted on 2026-09-27;
   their names and commits are listed in `docs/baseline/removed-branches.txt`.
   Commit and push only when the user asks.
+- `CHANGELOG.md` lists Hypoland's changes per release. Add user-visible changes and measured speedups to
+  "Unreleased" with the commit that makes them, and move them under the version when releasing.
 - aquamarine is embedded: `subprojects/aquamarine` is a squashed `git subtree` of
   `hegjon/aquamarine` branch `gles2-support` (remote `aquamarine`). It is built as a static library by
   `cmake/aquamarine.cmake`, not by its own CMakeLists.txt. Its generated `wl_*_interface` symbols are
