@@ -39,6 +39,8 @@ Omarchy 4 running on Hypoland on a ThinkPad X200 (Core 2 Duo P8400, GMA 4500MHD,
   load into, and Hypoland's renderer is GLES2 only. `hl.plugin.load()` is ignored with a warning,
   `hyprctl plugin list` reports no plugins and `hyprctl plugin load` fails. No headers or `hyprland.pc`
   are installed.
+- Xwayland starts when the first X11 program connects, not together with the compositor. `DISPLAY` is set from
+  the start as before.
 - The logo background and splash text are removed, `misc:disable_hyprland_logo` and
   `misc:disable_splash_rendering` are ignored.
 - Hypoland does not start Hyprland's welcome app, update news or donation popup

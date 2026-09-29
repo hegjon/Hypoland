@@ -181,6 +181,11 @@ static void startServer(void* data) {
         Log::logger->log(Log::ERR, "The XWayland server could not start! XWayland will not work...");
 }
 
+static int xSocketReadable(int fd, uint32_t mask, void* data) {
+    g_pXWayland->m_server->startOnFirstClient();
+    return 0;
+}
+
 static int xwaylandReady(int fd, uint32_t mask, void* data) {
     return g_pXWayland->m_server->ready(fd, mask);
 }
@@ -271,10 +276,15 @@ void CXWaylandServer::die() {
     if (m_display < 0)
         return;
 
-    if (m_xFDReadEvents[0]) {
-        wl_event_source_remove(m_xFDReadEvents[0]);
-        wl_event_source_remove(m_xFDReadEvents[1]);
-        m_xFDReadEvents = {nullptr, nullptr};
+    for (auto& source : m_xFDReadEvents) {
+        if (source)
+            wl_event_source_remove(source);
+        source = nullptr;
+    }
+
+    if (m_idleSource) {
+        wl_event_source_remove(m_idleSource);
+        m_idleSource = nullptr;
     }
 
     if (m_pipeSource)
@@ -293,11 +303,26 @@ bool CXWaylandServer::create() {
 
     setenv("DISPLAY", m_displayName.c_str(), true);
 
-    // TODO: lazy mode
-
-    m_idleSource = wl_event_loop_add_idle(g_pCompositor->m_wlEventLoop, ::startServer, nullptr);
+    // Xwayland starts when the first X11 client connects, not with the compositor: it and the GL driver it loads cost
+    // startup time and memory that a session without X11 programs never needs. The client's connection waits in the
+    // socket's backlog, Xwayland accepts it once it runs.
+    for (size_t i = 0; i < m_xFDs.size(); ++i) {
+        m_xFDReadEvents[i] = wl_event_loop_add_fd(g_pCompositor->m_wlEventLoop, m_xFDs[i].get(), WL_EVENT_READABLE, ::xSocketReadable, nullptr);
+    }
 
     return true;
+}
+
+void CXWaylandServer::startOnFirstClient() {
+    for (auto& source : m_xFDReadEvents) {
+        if (source)
+            wl_event_source_remove(source);
+        source = nullptr;
+    }
+
+    Log::logger->log(Log::DEBUG, "An X11 client connected to {}, starting XWayland", m_displayName);
+
+    m_idleSource = wl_event_loop_add_idle(g_pCompositor->m_wlEventLoop, ::startServer, nullptr);
 }
 
 void CXWaylandServer::runXWayland(CFileDescriptor& notifyFD) {

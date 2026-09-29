@@ -7,7 +7,6 @@
 struct wl_event_source;
 struct wl_client;
 
-// TODO: add lazy mode
 class CXWaylandServer {
   public:
     CXWaylandServer();
@@ -18,6 +17,9 @@ class CXWaylandServer {
 
     // starts the server, meant to be called by CXWaylandServer.
     bool start();
+
+    // an X11 client connected before the server runs, start it
+    void startOnFirstClient();
 
     // called on ready
     int        ready(int fd, uint32_t mask);
