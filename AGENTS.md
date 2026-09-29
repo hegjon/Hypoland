@@ -136,6 +136,9 @@ Optional, default off: animations (keep short slides only, no fades), animated/g
 rounded corners (radius 0 must skip the shader path), dim inactive, inactive opacity, fractional scaling.
 
 CPU/RAM: drop the plugin system and hyprpm; default to XCursor over hyprcursor SVG; keep Xwayland optional.
+Window opacity of 0.98 or more is drawn as 1.0 (`Desktop::View::opaqueAlpha()`, decided by the user on 2026-09-29):
+Omarchy gives every window 0.985 active and 0.96 inactive, which lets 1.5% / 4% of the background through (1-2
+colour steps on a dark theme) but makes every window blended and unable to hide anything behind it.
 Done so far for Xwayland: it starts when the first X11 client connects to its socket (`DISPLAY` is set at startup as
 before), not with the compositor. It costs 150 ms of CPU and 31 MiB Pss (19 MiB private) on the X200. In an Omarchy
 session it still starts a few seconds after login: fcitx5's XIM / xcb addons connect, and `xdg-settings` runs

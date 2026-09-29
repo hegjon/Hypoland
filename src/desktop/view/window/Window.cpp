@@ -1485,10 +1485,10 @@ void CWindow::mapWindow() {
         if (!m_backend->isX11() || !g_pInputManager->hasHeldButtons() || !TRAITS.overrideRedirect)
             Desktop::focusState()->fullWindowFocus(m_self.lock(), FOCUS_REASON_NEW_WINDOW);
 
-        m_presentation->alpha(WINDOW_ALPHA_ACTIVE)->setValueAndWarp(*PACTIVEALPHA);
+        m_presentation->alpha(WINDOW_ALPHA_ACTIVE)->setValueAndWarp(opaqueAlpha(*PACTIVEALPHA));
         m_presentation->warpDimPercent(m_ruleApplicator->noDim().valueOrDefault() ? 0.F : *PDIMSTRENGTH);
     } else {
-        m_presentation->alpha(WINDOW_ALPHA_ACTIVE)->setValueAndWarp(*PINACTIVEALPHA);
+        m_presentation->alpha(WINDOW_ALPHA_ACTIVE)->setValueAndWarp(opaqueAlpha(*PINACTIVEALPHA));
         m_presentation->warpDimPercent(0.F);
     }
 

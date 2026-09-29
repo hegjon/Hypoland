@@ -14,6 +14,9 @@ class CHyprDropShadowDecoration;
 class CHyprInnerGlowDecoration;
 
 namespace Desktop::View {
+    // An opacity of 0.98 or more is drawn fully opaque, see the definition.
+    float opaqueAlpha(float alpha);
+
     class CWindow;
     enum eWindowAlpha : uint8_t;
 

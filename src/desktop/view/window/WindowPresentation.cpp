@@ -420,6 +420,13 @@ void CWindowPresentation::onFocusAnimUpdate() {
     }
 }
 
+// A window with an opacity of 0.98 or more is drawn fully opaque. The difference cannot be seen (Omarchy's 0.985
+// lets 1.5% of the background through, less than a colour step on its dark themes), but a window that is not opaque
+// is blended over everything behind it on every redraw and hides nothing, which old GPUs pay for in fill rate.
+float Desktop::View::opaqueAlpha(float alpha) {
+    return alpha >= 0.98F ? 1.F : alpha;
+}
+
 void CWindowPresentation::refreshValues() {
     static auto PINACTIVEALPHA   = CConfigValue<Config::FLOAT>("decoration:inactive_opacity");
     static auto PACTIVEALPHA     = CConfigValue<Config::FLOAT>("decoration:active_opacity");
@@ -431,11 +438,11 @@ void CWindowPresentation::refreshValues() {
     const bool  IS_SHADOWED_BY_MODAL = m_window.backend().traits().hasModalChild;
 
     if (Fullscreen::controller()->getFullscreenModes(m_window.m_self.lock()).internal == Fullscreen::FSMODE_FULLSCREEN)
-        *alpha(WINDOW_ALPHA_ACTIVE) = m_window.m_ruleApplicator->alphaFullscreen().valueOrDefault().applyAlpha(*PFULLSCREENALPHA);
+        *alpha(WINDOW_ALPHA_ACTIVE) = opaqueAlpha(m_window.m_ruleApplicator->alphaFullscreen().valueOrDefault().applyAlpha(*PFULLSCREENALPHA));
     else if (m_window.m_self == Desktop::focusState()->window())
-        *alpha(WINDOW_ALPHA_ACTIVE) = m_window.m_ruleApplicator->alpha().valueOrDefault().applyAlpha(*PACTIVEALPHA);
+        *alpha(WINDOW_ALPHA_ACTIVE) = opaqueAlpha(m_window.m_ruleApplicator->alpha().valueOrDefault().applyAlpha(*PACTIVEALPHA));
     else
-        *alpha(WINDOW_ALPHA_ACTIVE) = m_window.m_ruleApplicator->alphaInactive().valueOrDefault().applyAlpha(*PINACTIVEALPHA);
+        *alpha(WINDOW_ALPHA_ACTIVE) = opaqueAlpha(m_window.m_ruleApplicator->alphaInactive().valueOrDefault().applyAlpha(*PINACTIVEALPHA));
 
     float goalDim = 1.F;
     if (m_window.m_self == Desktop::focusState()->window() || m_window.m_ruleApplicator->noDim().valueOrDefault() || !*PDIMENABLED)
