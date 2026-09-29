@@ -42,6 +42,9 @@ class CSurfacePassElement : public IPassElement {
 
         bool      popup = false;
 
+        // The surface is the bottom of the frame, see CSurfacePassElement::isBackdrop().
+        bool backdrop = false;
+
         // counts how many surfaces this pass has rendered
         int     surfaceCounter = 0;
 
@@ -63,7 +66,11 @@ class CSurfacePassElement : public IPassElement {
     virtual void                discard();
     CRegion                     visibleRegion(bool& cancel);
 
-    virtual const char*         passName() {
+    // A wallpaper: the lowest surface of the background layer, when it covers the whole monitor and is drawn without
+    // fade or blur. It counts as opaque even if its buffer has an alpha channel, see the definition.
+    static bool         isBackdrop(bool lowestBackgroundLayer, const CBox& surfaceBox, const CBox& monitorBox, float fadeAlpha, bool blur);
+
+    virtual const char* passName() {
         return "CSurfacePassElement";
     }
 

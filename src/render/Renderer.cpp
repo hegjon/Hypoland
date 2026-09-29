@@ -923,6 +923,22 @@ SP<ITexture> IHyprRenderer::createTexture(const SP<Aquamarine::IBuffer> buffer, 
     return tex;
 }
 
+static bool isLowestBackgroundLayer(PHLLS pLayer, PHLMONITOR pMonitor) {
+    if (pLayer->m_layer != ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND)
+        return false;
+
+    for (auto const& ls : pMonitor->m_layerSurfaceLayers[ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND]) {
+        const auto LAYER = ls.lock();
+        // the layers renderLayer() skips
+        if (!LAYER || !LAYER->mapped() || !LAYER->acceptsInput() || !LAYER->alphaNonZero())
+            continue;
+
+        return LAYER == pLayer;
+    }
+
+    return false;
+}
+
 void IHyprRenderer::renderLayer(PHLLS pLayer, PHLMONITOR pMonitor, const Time::steady_tp& time, bool popups, bool lockscreen) {
     if (!pLayer)
         return;
@@ -963,9 +979,13 @@ void IHyprRenderer::renderLayer(PHLLS pLayer, PHLMONITOR pMonitor, const Time::s
         renderdata.discardOpacity = pLayer->m_ruleApplicator->ignoreAlpha().valueOrDefault();
     }
 
+    const bool BACKDROP = !popups && !m_bRenderingSnapshot &&
+        CSurfacePassElement::isBackdrop(isLowestBackgroundLayer(pLayer, pMonitor), CBox{REALPOS, REALSIZ}, CBox{pMonitor->m_position, pMonitor->m_size}, renderdata.fadeAlpha,
+                                        renderdata.blur);
+
     if (!popups)
         pLayer->wlSurface()->resource()->breadthfirst(
-            [this, &renderdata, &pLayer](SP<CWLSurfaceResource> s, const Vector2D& offset, void* data) {
+            [this, &renderdata, &pLayer, BACKDROP](SP<CWLSurfaceResource> s, const Vector2D& offset, void* data) {
                 if (!s->m_current.texture)
                     return;
 
@@ -976,6 +996,7 @@ void IHyprRenderer::renderLayer(PHLLS pLayer, PHLMONITOR pMonitor, const Time::s
                 renderdata.texture     = s->m_current.texture;
                 renderdata.surface     = s;
                 renderdata.mainSurface = s == pLayer->wlSurface()->resource();
+                renderdata.backdrop    = BACKDROP && renderdata.mainSurface;
                 m_renderPass.add(makeUnique<CSurfacePassElement>(renderdata));
                 renderdata.surfaceCounter++;
             },

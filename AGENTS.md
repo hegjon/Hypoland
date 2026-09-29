@@ -290,6 +290,13 @@ Performance (X200, `HYPOLAND_PROFILE_PASS`, GPU time per frame, 4 windows plus a
 - Omarchy gives every window an opacity rule (`default-opacity` tag), so no window occludes the wallpaper.
   With opaque windows the occlusion pass skips what is underneath.
 - Quickshell's notification overlay is a transparent fullscreen layer that is blended over every damaged area.
+- The wallpaper counts as opaque (`CSurfacePassElement::isBackdrop()`, 2026-09-29): the lowest surface of the
+  background layer, when it covers the monitor and has no fade or blur. Omarchy's wallpaper is a Quickshell window
+  with `color: "transparent"`, so its buffer has alpha and no opaque region, and the pass painted
+  `misc:background_color` under it on every redraw (1.0 ms of a full-screen redraw) and blended it. It is drawn
+  without blending now and hides the clear. Transparent pixels of a wallpaper show over black instead of over
+  `misc:background_color`. A full tile with a window at opacity 0.9: 6.89 -> 5.78 ms GPU time per frame; opaque
+  windows (2.95 ms) hide the wallpaper anyway. Measured with i915 request tracing, not `HYPOLAND_PROFILE_PASS`.
 
 CPU profile: run `./profile.sh`. It builds with frame pointers in `build-prof`, deploys, switches the
 Omarchy screensaver and idle lock off, records five workloads with `perf` as root, prints the report to

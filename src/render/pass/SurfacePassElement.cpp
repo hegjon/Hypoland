@@ -118,6 +118,20 @@ std::optional<CBox> CSurfacePassElement::boundingBox() {
     return getTexBox();
 }
 
+// Wallpaper clients tend to hand in a buffer with an alpha channel and no opaque region (Quickshell does, unless the
+// shell asks for an opaque surface), so the pass could not drop anything under the wallpaper: every redraw painted
+// the background color first and the wallpaper over the same pixels, and the wallpaper was blended. Without fast
+// clears that is one more fill of every damaged pixel. Only the background color is under a backdrop, so it is
+// drawn without blending and hides the clear. Where a wallpaper does have transparent pixels, they show as its
+// premultiplied color over black instead of over misc:background_color.
+bool CSurfacePassElement::isBackdrop(bool lowestBackgroundLayer, const CBox& surfaceBox, const CBox& monitorBox, float fadeAlpha, bool blur) {
+    if (!lowestBackgroundLayer || blur || fadeAlpha < 1.F)
+        return false;
+
+    return surfaceBox.x <= monitorBox.x && surfaceBox.y <= monitorBox.y && surfaceBox.x + surfaceBox.width >= monitorBox.x + monitorBox.width &&
+        surfaceBox.y + surfaceBox.height >= monitorBox.y + monitorBox.height;
+}
+
 CRegion CSurfacePassElement::opaqueRegion() {
     auto        PSURFACE = Desktop::View::CWLSurface::fromResource(m_data.surface);
 
@@ -125,6 +139,9 @@ CRegion CSurfacePassElement::opaqueRegion() {
 
     if (ALPHA < 1.F)
         return {};
+
+    if (m_data.backdrop)
+        return *boundingBox();
 
     if (m_data.surface && m_data.surface->m_current.size == Vector2D{m_data.w, m_data.h}) {
         CRegion    opaqueSurf = m_data.surface->m_current.opaque.copy().intersect(CBox{{}, {m_data.w, m_data.h}});
